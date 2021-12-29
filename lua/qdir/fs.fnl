@@ -73,5 +73,9 @@
   (assert (uv.fs_open path :w mode))
   nil)
 
+(lambda M.rename [path newpath]
+  (assert-doesnt-exist newpath)
+  (assert (uv.fs_rename path newpath)))
+
 M
 

@@ -138,10 +138,18 @@
       (render state))
     (u.clear-prompt)))
 
-;; TODO
 (fn M.rename []
-  (let [state (store.get)]
-    nil))
+  (let [state (store.get)
+        line (u.get-line)
+        path (.. state.cwd "/" line)
+        name (vim.fn.input "New name: ")
+        newpath (.. state.cwd "/" name)]
+    (fs.rename path newpath)
+    (render state)
+    (u.clear-prompt)
+    ;; Set cursor position
+    (local line (u.find-line #(= $1 (fs.basename newpath))))
+    (if line (api.nvim_win_set_cursor 0 [line 0]))))
 
 (fn M.create []
   (let [state (store.get)

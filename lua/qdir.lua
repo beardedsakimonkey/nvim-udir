@@ -159,7 +159,21 @@ M.delete = function()
 end
 M.rename = function()
   local state = store.get()
-  return nil
+  local line = u["get-line"]()
+  local path = (state.cwd .. "/" .. line)
+  local name = vim.fn.input("New name: ")
+  local newpath = (state.cwd .. "/" .. name)
+  fs.rename(path, newpath)
+  render(state)
+  u["clear-prompt"]()
+  local line0
+  local function _18_(_241)
+    return (_241 == fs.basename(newpath))
+  end
+  line0 = u["find-line"](_18_)
+  if line0 then
+    return api.nvim_win_set_cursor(0, {line0, 0})
+  end
 end
 M.create = function()
   local state = store.get()
@@ -174,10 +188,10 @@ M.create = function()
   render(state)
   u["clear-prompt"]()
   local line0
-  local function _19_(_241)
+  local function _21_(_241)
     return (_241 == fs.basename(path))
   end
-  line0 = u["find-line"](_19_)
+  line0 = u["find-line"](_21_)
   if line0 then
     return api.nvim_win_set_cursor(0, {line0, 0})
   end
@@ -230,10 +244,10 @@ M.qdir = function()
   render(state)
   if origin_filename then
     local line
-    local function _25_(_241)
+    local function _27_(_241)
       return (_241 == origin_filename)
     end
-    line = u["find-line"](_25_)
+    line = u["find-line"](_27_)
     if line then
       return api.nvim_win_set_cursor(0, {line, 0})
     end

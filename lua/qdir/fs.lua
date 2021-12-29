@@ -78,4 +78,10 @@ M["create-file"] = function(path)
   assert(uv.fs_open(path, "w", mode))
   return nil
 end
+M.rename = function(path, newpath)
+  assert((nil ~= newpath), string.format("Missing argument %s on %s:%s", "newpath", "lua/qdir/fs.fnl", 76))
+  assert((nil ~= path), string.format("Missing argument %s on %s:%s", "path", "lua/qdir/fs.fnl", 76))
+  assert_doesnt_exist(newpath)
+  return assert(uv.fs_rename(path, newpath))
+end
 return M
