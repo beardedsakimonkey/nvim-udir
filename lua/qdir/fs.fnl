@@ -29,6 +29,24 @@
   (local link (uv.fs_readlink path))
   (not= link nil))
 
+(fn copy-file [src dest]
+  (assert (uv.fs_copyfile src dest)))
+
+;; TODO: Factor our the scandir stuff
+(fn copy-dir [src dest]
+  (local stat (assert (uv.fs_stat src)))
+  (assert (uv.fs_mkdir dest stat.mode))
+  ;; For each entry in `src`, copy it to `dest`
+  (let [fs (assert (uv.fs_scandir src))]
+    (var done? false)
+    (while (not done?)
+      (let [(name type) (uv.fs_scandir_next fs)]
+        (if (not name) (set done? true) :else
+            (let [src2 (u.join-path src name)
+                  dest2 (u.join-path dest name)]
+              (if (= type :directory) (copy-dir src2 dest2)
+                  :else (copy-file src2 dest2))))))))
+
 ;; --------------------------------------
 ;; PUBLIC
 ;; --------------------------------------
@@ -95,6 +113,11 @@
   (assert-doesnt-exist newpath)
   (assert (uv.fs_rename path newpath))
   nil)
+
+(lambda M.copy [src dest]
+  (assert-doesnt-exist dest)
+  (if (M.is-dir? src) (copy-dir src dest)
+      :else (copy-file src dest)))
 
 M
 

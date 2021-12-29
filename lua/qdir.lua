@@ -64,10 +64,10 @@ local function noremap(mode, buf, mappings)
 end
 local function setup_keymaps(buf)
   assert((nil ~= buf), string.format("Missing argument %s on %s:%s", "buf", "lua/qdir.fnl", 49))
-  return noremap("n", buf, {R = "<Cmd>lua require'qdir'.reload()<CR>", ["+"] = "<Cmd>lua require'qdir'.create()<CR>", ["-"] = "<Cmd>lua require'qdir'[\"up-dir\"]()<CR>", ["<CR>"] = "<Cmd>lua require'qdir'.open()<CR>", d = "<Cmd>lua require'qdir'.delete()<CR>", h = "<Cmd>lua require'qdir'[\"up-dir\"]()<CR>", l = "<Cmd>lua require'qdir'.open()<CR>", m = "<Cmd>lua require'qdir'.rename()<CR>", q = "<Cmd>lua require'qdir'.quit()<CR>", r = "<Cmd>lua require'qdir'.rename()<CR>", s = "<Cmd>lua require'qdir'.open('split')<CR>", t = "<Cmd>lua require'qdir'.open('tabedit')<CR>", v = "<Cmd>lua require'qdir'.open('vsplit')<CR>"})
+  return noremap("n", buf, {R = "<Cmd>lua require'qdir'.reload()<CR>", ["+"] = "<Cmd>lua require'qdir'.create()<CR>", ["-"] = "<Cmd>lua require'qdir'[\"up-dir\"]()<CR>", ["<CR>"] = "<Cmd>lua require'qdir'.open()<CR>", c = "<Cmd>lua require'qdir'.copy()<CR>", d = "<Cmd>lua require'qdir'.delete()<CR>", h = "<Cmd>lua require'qdir'[\"up-dir\"]()<CR>", l = "<Cmd>lua require'qdir'.open()<CR>", m = "<Cmd>lua require'qdir'.rename()<CR>", q = "<Cmd>lua require'qdir'.quit()<CR>", r = "<Cmd>lua require'qdir'.rename()<CR>", s = "<Cmd>lua require'qdir'.open('split')<CR>", t = "<Cmd>lua require'qdir'.open('tabedit')<CR>", v = "<Cmd>lua require'qdir'.open('vsplit')<CR>"})
 end
 local function cleanup(buf)
-  assert((nil ~= buf), string.format("Missing argument %s on %s:%s", "buf", "lua/qdir.fnl", 64))
+  assert((nil ~= buf), string.format("Missing argument %s on %s:%s", "buf", "lua/qdir.fnl", 65))
   api.nvim_buf_delete(buf, {force = true})
   return store.remove(buf)
 end
@@ -147,22 +147,28 @@ M.delete = function()
     return u["clear-prompt"]()
   end
 end
-M.rename = function()
+local function copy_or_rename(operation, prompt)
   local state = store.get()
   local filename = u["get-line"]()
   if (filename == "") then
     return u.err("Empty filename")
   elseif "else" then
     local path = u["join-path"](state.cwd, filename)
-    local name = vim.fn.input("New name: ")
+    local name = vim.fn.input(prompt)
     if (name ~= "") then
       local newpath = u["join-path"](state.cwd, name)
-      fs.rename(path, newpath)
+      operation(path, newpath)
       render(state)
       u["clear-prompt"]()
       return u["set-cursor-pos"](fs.basename(newpath))
     end
   end
+end
+M.rename = function()
+  return copy_or_rename(fs.rename, "New name: ")
+end
+M.copy = function()
+  return copy_or_rename(fs.copy, "Copy to: ")
 end
 M.create = function()
   local state = store.get()

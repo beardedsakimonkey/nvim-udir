@@ -59,7 +59,8 @@
                    :d "<Cmd>lua require'qdir'.delete()<CR>"
                    :+ "<Cmd>lua require'qdir'.create()<CR>"
                    :r "<Cmd>lua require'qdir'.rename()<CR>"
-                   :m "<Cmd>lua require'qdir'.rename()<CR>"}))
+                   :m "<Cmd>lua require'qdir'.rename()<CR>"
+                   :c "<Cmd>lua require'qdir'.copy()<CR>"}))
 
 (lambda cleanup [buf]
   ;; This is useful in case no other buffer exists
@@ -134,18 +135,24 @@
             (render state))
           (u.clear-prompt)))))
 
-(fn M.rename []
+(fn copy-or-rename [operation prompt]
   (let [state (store.get)
         filename (u.get-line)]
     (if (= filename "") (u.err "Empty filename") :else
         (let [path (u.join-path state.cwd filename)
-              name (vim.fn.input "New name: ")]
+              name (vim.fn.input prompt)]
           (when (not= name "")
             (let [newpath (u.join-path state.cwd name)]
-              (fs.rename path newpath)
+              (operation path newpath)
               (render state)
               (u.clear-prompt)
               (u.set-cursor-pos (fs.basename newpath))))))))
+
+(fn M.rename []
+  (copy-or-rename fs.rename "New name: "))
+
+(fn M.copy []
+  (copy-or-rename fs.copy "Copy to: "))
 
 (fn M.create []
   (let [state (store.get)
