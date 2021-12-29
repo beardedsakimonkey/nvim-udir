@@ -78,4 +78,7 @@ M["delete-buffer"] = function(name)
   end
   return nil
 end
+M["clear-prompt"] = function()
+  return vim.cmd("norm! :<esc>")
+end
 return M

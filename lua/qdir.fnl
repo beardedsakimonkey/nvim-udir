@@ -137,8 +137,7 @@
       ;; TODO: Need to handle the case of recursive delete
       (u.delete-buffer path)
       (render state))
-    ;; Clear prompt
-    (print "")))
+    (u.clear-prompt)))
 
 ;; TODO
 (fn M.rename []
@@ -153,6 +152,7 @@
     (if (vim.endswith name "/") (fs.create-dir (path:sub 1 -1))
         :else (fs.create-file path))
     (render state)
+    (u.clear-prompt)
     ;; Set cursor position
     (local line (u.find-line #(= $1 (fs.basename path))))
     (if line (api.nvim_win_set_cursor 0 [line 0]))))

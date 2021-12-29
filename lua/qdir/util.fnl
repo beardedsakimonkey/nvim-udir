@@ -75,5 +75,8 @@
       (when (= buf.name name)
         (api.nvim_buf_delete buf.bufnr {})))))
 
+(lambda M.clear-prompt []
+  (vim.cmd "norm! :<esc>"))
+
 M
 

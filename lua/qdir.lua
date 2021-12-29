@@ -153,7 +153,7 @@ M.delete = function()
     u["delete-buffer"](path)
     render(state)
   end
-  return print("")
+  return u["clear-prompt"]()
 end
 M.rename = function()
   local state = store.get()
@@ -170,6 +170,7 @@ M.create = function()
     fs["create-file"](path)
   end
   render(state)
+  u["clear-prompt"]()
   local line0
   local function _19_(_241)
     return (_241 == fs.basename(path))
