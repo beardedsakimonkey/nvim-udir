@@ -19,7 +19,7 @@
   ;; Add virtual text to each directory
   (each [i file (ipairs files)]
     (let [(virttext hl) (match file.type
-                          :directory (values "/" :Directory)
+                          :directory (values u.sep :Directory)
                           :link (values "@" :Constant))]
       (when virttext
         (api.nvim_buf_set_extmark 0 ns (- i 1) (length file.name)
@@ -92,7 +92,7 @@
   (let [state (store.get)
         filename (u.get-line)]
     (if (= filename "") (print "Empty filename") :else
-        (let [path (.. state.cwd "/" filename)
+        (let [path (u.join-path state.cwd filename)
               realpath (fs.canonicalize path)]
           (if (fs.is-dir? path)
               (if cmd
@@ -122,7 +122,7 @@
   (let [state (store.get)
         filename (u.get-line)]
     (if (= filename "") (print "Empty filename") :else
-        (let [path (fs.canonicalize (.. state.cwd "/" filename))
+        (let [path (fs.canonicalize (u.join-path state.cwd filename))
               _ (print (string.format "Are you sure you want to delete %q? (y/n)"
                                       path))
               input (vim.fn.getchar)
@@ -136,9 +136,9 @@
   (let [state (store.get)
         filename (u.get-line)]
     (if (= filename "") (print "Empty filename") :else
-        (let [path (.. state.cwd "/" filename)
+        (let [path (u.join-path state.cwd filename)
               name (vim.fn.input "New name: ")
-              newpath (.. state.cwd "/" name)]
+              newpath (u.join-path state.cwd name)]
           (fs.rename path newpath)
           (render state)
           (u.clear-prompt)
@@ -147,8 +147,8 @@
 (fn M.create []
   (let [state (store.get)
         name (vim.fn.input "New file: ")
-        path (.. state.cwd "/" name)]
-    (if (vim.endswith name "/") (fs.create-dir (path:sub 1 -1))
+        path (u.join-path state.cwd name)]
+    (if (vim.endswith name u.sep) (fs.create-dir (path:sub 1 -1))
         :else (fs.create-file path))
     (render state)
     (u.clear-prompt)

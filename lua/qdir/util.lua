@@ -83,6 +83,12 @@ end
 M["clear-prompt"] = function()
   return vim.cmd("norm! :<esc>")
 end
+M["sep"] = (package.config):sub(1, 1)
+M["join-path"] = function(fst, snd)
+  assert((nil ~= snd), string.format("Missing argument %s on %s:%s", "snd", "lua/qdir/util.fnl", 83))
+  assert((nil ~= fst), string.format("Missing argument %s on %s:%s", "fst", "lua/qdir/util.fnl", 83))
+  return (fst .. M.sep .. snd)
+end
 M["set-cursor-pos"] = function(filename)
   if filename then
     local line

@@ -24,7 +24,7 @@ local function render_virttext(ns, files)
     do
       local _3_ = file.type
       if (_3_ == "directory") then
-        virttext, hl = "/", "Directory"
+        virttext, hl = u.sep, "Directory"
       elseif (_3_ == "link") then
         virttext, hl = "@", "Constant"
       else
@@ -106,7 +106,7 @@ M.open = function(cmd)
   if (filename == "") then
     return print("Empty filename")
   elseif "else" then
-    local path = (state.cwd .. "/" .. filename)
+    local path = u["join-path"](state.cwd, filename)
     local realpath = fs.canonicalize(path)
     if fs["is-dir?"](path) then
       if cmd then
@@ -136,7 +136,7 @@ M.delete = function()
   if (filename == "") then
     return print("Empty filename")
   elseif "else" then
-    local path = fs.canonicalize((state.cwd .. "/" .. filename))
+    local path = fs.canonicalize(u["join-path"](state.cwd, filename))
     local _ = print(string.format("Are you sure you want to delete %q? (y/n)", path))
     local input = vim.fn.getchar()
     local confirmed_3f = (vim.fn.nr2char(input) == "y")
@@ -153,9 +153,9 @@ M.rename = function()
   if (filename == "") then
     return print("Empty filename")
   elseif "else" then
-    local path = (state.cwd .. "/" .. filename)
+    local path = u["join-path"](state.cwd, filename)
     local name = vim.fn.input("New name: ")
-    local newpath = (state.cwd .. "/" .. name)
+    local newpath = u["join-path"](state.cwd, name)
     fs.rename(path, newpath)
     render(state)
     u["clear-prompt"]()
@@ -165,8 +165,8 @@ end
 M.create = function()
   local state = store.get()
   local name = vim.fn.input("New file: ")
-  local path = (state.cwd .. "/" .. name)
-  if vim.endswith(name, "/") then
+  local path = u["join-path"](state.cwd, name)
+  if vim.endswith(name, u.sep) then
     fs["create-dir"](path:sub(1, -1))
   elseif "else" then
     fs["create-file"](path)

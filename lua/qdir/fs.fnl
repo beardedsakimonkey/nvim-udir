@@ -21,9 +21,8 @@
     (while (not done?)
       (let [(name type) (uv.fs_scandir_next fs)]
         (if (not name) (set done? true) :else
-            (let [entry-path (.. path "/" name)]
-              (if (= type :directory) (delete-dir entry-path)
-                  :else (delete-file entry-path))))))
+            (if (= type :directory) (delete-dir (u.join-path path name))
+                :else (delete-file (u.join-path path name))))))
     (assert (uv.fs_rmdir path))))
 
 ;; --------------------------------------
@@ -58,14 +57,14 @@
 
 (lambda M.get-parent-dir [dir]
   "Returns the absolute path of the parent directory"
-  (let [parent-dir (M.canonicalize (.. dir "/.."))]
+  (let [parent-dir (M.canonicalize (.. dir u.sep ".."))]
     (assert-readable parent-dir)
     parent-dir))
 
 (lambda M.basename [path]
   (local path-without-trailing-slash
-         (if (vim.endswith path "/") (path:sub 1 -2) path))
-  (local split (vim.split path-without-trailing-slash "/"))
+         (if (vim.endswith path u.sep) (path:sub 1 -2) path))
+  (local split (vim.split path-without-trailing-slash u.sep))
   (. split (length split)))
 
 (lambda M.delete [path]

@@ -78,6 +78,11 @@
 (lambda M.clear-prompt []
   (vim.cmd "norm! :<esc>"))
 
+(tset M :sep (package.config:sub 1 1))
+
+(lambda M.join-path [fst snd]
+  (.. fst M.sep snd))
+
 (fn M.set-cursor-pos [filename]
   (when filename
     (local line (M.find-line #(= $1 filename)))
