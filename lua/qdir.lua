@@ -173,15 +173,17 @@ end
 M.create = function()
   local state = store.get()
   local name = vim.fn.input("New file: ")
-  local path = u["join-path"](state.cwd, name)
-  if vim.endswith(name, u.sep) then
-    fs["create-dir"](path)
-  elseif "else" then
-    fs["create-file"](path)
+  if (name ~= "") then
+    local path = u["join-path"](state.cwd, name)
+    if vim.endswith(name, u.sep) then
+      fs["create-dir"](path)
+    elseif "else" then
+      fs["create-file"](path)
+    end
+    render(state)
+    u["clear-prompt"]()
+    return u["set-cursor-pos"](fs.basename(path))
   end
-  render(state)
-  u["clear-prompt"]()
-  return u["set-cursor-pos"](fs.basename(path))
 end
 M.init = function(cfg)
   local cfg0 = (cfg or {})

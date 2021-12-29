@@ -156,13 +156,14 @@
 
 (fn M.create []
   (let [state (store.get)
-        name (vim.fn.input "New file: ")
-        path (u.join-path state.cwd name)]
-    (if (vim.endswith name u.sep) (fs.create-dir path)
-        :else (fs.create-file path))
-    (render state)
-    (u.clear-prompt)
-    (u.set-cursor-pos (fs.basename path))))
+        name (vim.fn.input "New file: ")]
+    (when (not= name "")
+      (let [path (u.join-path state.cwd name)]
+        (if (vim.endswith name u.sep) (fs.create-dir path)
+            :else (fs.create-file path))
+        (render state)
+        (u.clear-prompt)
+        (u.set-cursor-pos (fs.basename path))))))
 
 ;; --------------------------------------
 ;; INITIALIZATION
