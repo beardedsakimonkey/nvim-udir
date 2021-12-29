@@ -78,5 +78,10 @@
 (lambda M.clear-prompt []
   (vim.cmd "norm! :<esc>"))
 
+(fn M.set-cursor-pos [filename]
+  (when filename
+    (local line (M.find-line #(= $1 filename)))
+    (if line (api.nvim_win_set_cursor 0 [line 0]))))
+
 M
 

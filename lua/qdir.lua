@@ -94,14 +94,7 @@ M["up-dir"] = function()
     state["cwd"] = parent_dir
     render(state)
     u["update-statusline"](state.cwd)
-    local line
-    local function _10_(_241)
-      return (_241 == fs.basename(cwd))
-    end
-    line = u["find-line"](_10_)
-    if line then
-      api.nvim_win_set_cursor(0, {line, 0})
-    end
+    u["set-cursor-pos"](fs.basename(cwd))
   end
   return nil
 end
@@ -119,16 +112,7 @@ M.open = function(cmd)
         render(state)
         local hovered_file = (state["hovered-filenames"])[realpath]
         u["update-statusline"](state.cwd)
-        if hovered_file then
-          local line
-          local function _12_(_241)
-            return (_241 == hovered_file)
-          end
-          line = u["find-line"](_12_)
-          if line then
-            api.nvim_win_set_cursor(0, {line, 0})
-          end
-        end
+        u["set-cursor-pos"](hovered_file)
       end
     elseif "else" then
       u["set-current-buf"](state["origin-buf"])
@@ -166,14 +150,7 @@ M.rename = function()
   fs.rename(path, newpath)
   render(state)
   u["clear-prompt"]()
-  local line0
-  local function _18_(_241)
-    return (_241 == fs.basename(newpath))
-  end
-  line0 = u["find-line"](_18_)
-  if line0 then
-    return api.nvim_win_set_cursor(0, {line0, 0})
-  end
+  return u["set-cursor-pos"](fs.basename(newpath))
 end
 M.create = function()
   local state = store.get()
@@ -187,14 +164,7 @@ M.create = function()
   end
   render(state)
   u["clear-prompt"]()
-  local line0
-  local function _21_(_241)
-    return (_241 == fs.basename(path))
-  end
-  line0 = u["find-line"](_21_)
-  if line0 then
-    return api.nvim_win_set_cursor(0, {line0, 0})
-  end
+  return u["set-cursor-pos"](fs.basename(path))
 end
 M.init = function(cfg)
   local cfg0 = (cfg or {})
@@ -242,15 +212,6 @@ M.qdir = function()
   setup_keymaps(buf)
   store["set!"](buf, state)
   render(state)
-  if origin_filename then
-    local line
-    local function _27_(_241)
-      return (_241 == origin_filename)
-    end
-    line = u["find-line"](_27_)
-    if line then
-      return api.nvim_win_set_cursor(0, {line, 0})
-    end
-  end
+  return u["set-cursor-pos"](origin_filename)
 end
 return M

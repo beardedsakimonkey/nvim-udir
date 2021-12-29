@@ -83,4 +83,16 @@ end
 M["clear-prompt"] = function()
   return vim.cmd("norm! :<esc>")
 end
+M["set-cursor-pos"] = function(filename)
+  if filename then
+    local line
+    local function _7_(_241)
+      return (_241 == filename)
+    end
+    line = M["find-line"](_7_)
+    if line then
+      return api.nvim_win_set_cursor(0, {line, 0})
+    end
+  end
+end
 return M

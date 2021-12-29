@@ -85,9 +85,7 @@
     (tset state :cwd parent-dir)
     (render state)
     (u.update-statusline state.cwd)
-    ;; Set cursor position
-    (local line (u.find-line #(= $1 (fs.basename cwd))))
-    (if line (api.nvim_win_set_cursor 0 [line 0])))
+    (u.set-cursor-pos (fs.basename cwd)))
   nil)
 
 (fn M.open [cmd]
@@ -104,10 +102,7 @@
               (render state)
               (local hovered-file (. state.hovered-filenames realpath))
               (u.update-statusline state.cwd)
-              ;; Set cursor position
-              (when hovered-file
-                (local line (u.find-line #(= $1 hovered-file)))
-                (if line (api.nvim_win_set_cursor 0 [line 0])))))
+              (u.set-cursor-pos hovered-file)))
         :else
         ;; It's a file
         (do
@@ -147,9 +142,7 @@
     (fs.rename path newpath)
     (render state)
     (u.clear-prompt)
-    ;; Set cursor position
-    (local line (u.find-line #(= $1 (fs.basename newpath))))
-    (if line (api.nvim_win_set_cursor 0 [line 0]))))
+    (u.set-cursor-pos (fs.basename newpath))))
 
 (fn M.create []
   (let [state (store.get)
@@ -160,9 +153,7 @@
         :else (fs.create-file path))
     (render state)
     (u.clear-prompt)
-    ;; Set cursor position
-    (local line (u.find-line #(= $1 (fs.basename path))))
-    (if line (api.nvim_win_set_cursor 0 [line 0]))))
+    (u.set-cursor-pos (fs.basename path))))
 
 ;; --------------------------------------
 ;; INITIALIZATION
@@ -200,10 +191,7 @@
     (setup-keymaps buf)
     (store.set! buf state)
     (render state)
-    ;; Set cursor position
-    (when origin-filename
-      (local line (u.find-line #(= $1 origin-filename)))
-      (if line (api.nvim_win_set_cursor 0 [line 0])))))
+    (u.set-cursor-pos origin-filename)))
 
 M
 
