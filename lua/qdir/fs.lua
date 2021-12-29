@@ -50,7 +50,7 @@ M.basename = function(path)
   assert((nil ~= path), string.format("Missing argument %s on %s:%s", "path", "lua/qdir/fs.fnl", 53))
   local path_without_trailing_slash
   if vim.endswith(path, "/") then
-    path_without_trailing_slash = path:sub(1, -1)
+    path_without_trailing_slash = path:sub(1, -2)
   else
     path_without_trailing_slash = path
   end

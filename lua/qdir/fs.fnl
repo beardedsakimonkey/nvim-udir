@@ -52,7 +52,7 @@
 
 (lambda M.basename [path]
   (local path-without-trailing-slash
-         (if (vim.endswith path "/") (path:sub 1 -1) path))
+         (if (vim.endswith path "/") (path:sub 1 -2) path))
   (local split (vim.split path-without-trailing-slash "/"))
   (. split (length split)))
 
