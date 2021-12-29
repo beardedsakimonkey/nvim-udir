@@ -136,7 +136,7 @@ M.delete = function()
   if (filename == "") then
     return u.err("Empty filename")
   elseif "else" then
-    local path = fs.canonicalize(u["join-path"](state.cwd, filename))
+    local path = u["join-path"](state.cwd, filename)
     local _ = print(string.format("Are you sure you want to delete %q? (y/n)", path))
     local input = vim.fn.getchar()
     local confirmed_3f = (vim.fn.nr2char(input) == "y")

@@ -25,6 +25,10 @@
                 :else (delete-file (u.join-path path name))))))
     (assert (uv.fs_rmdir path))))
 
+(lambda is-symlink? [path]
+  (local link (uv.fs_readlink path))
+  (not= link nil))
+
 ;; --------------------------------------
 ;; PUBLIC
 ;; --------------------------------------
@@ -33,6 +37,7 @@
   "Returns the absolute filename, with symlinks resolved, extra `/` removed, and `.` and `..` resolved."
   (assert (uv.fs_realpath path)))
 
+;; NOTE: Symlink dirs are considered directories
 (lambda M.is-dir? [path]
   (assert-readable path)
   (let [file-info (uv.fs_stat path)]
@@ -68,7 +73,7 @@
   (. split (length split)))
 
 (lambda M.delete [path]
-  (if (M.is-dir? path) (delete-dir path)
+  (if (and (M.is-dir? path) (not (is-symlink? path))) (delete-dir path)
       :else (delete-file path))
   nil)
 

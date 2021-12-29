@@ -124,7 +124,7 @@
   (let [state (store.get)
         filename (u.get-line)]
     (if (= filename "") (u.err "Empty filename") :else
-        (let [path (fs.canonicalize (u.join-path state.cwd filename))
+        (let [path (u.join-path state.cwd filename)
               _ (print (string.format "Are you sure you want to delete %q? (y/n)"
                                       path))
               input (vim.fn.getchar)
