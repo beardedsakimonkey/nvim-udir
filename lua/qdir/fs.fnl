@@ -11,41 +11,50 @@
   (assert (not (uv.fs_access path :R)) (string.format "%q already exists" path))
   nil)
 
+(macro foreach-entry [path syms form]
+  (let [name-sym (. syms 1)
+        type-sym (. syms 2)]
+    (assert (sym? name-sym))
+    (assert (sym? type-sym))
+    (assert (not= nil form))
+    `(let [fs# (assert (uv.fs_scandir ,path))]
+       (var done?# false)
+       (while (not done?#)
+         (let [(,name-sym ,type-sym) (uv.fs_scandir_next fs#)]
+           (if (not ,name-sym)
+               (do
+                 (set done?# true)
+                 ;; If the first return value is nil and the second
+                 ;; return value is non-nil then there was an error.
+                 (assert (not type)))
+               :else
+               ,form))))))
+
 (lambda delete-file [path]
   (assert (uv.fs_unlink path))
   (u.delete-buffer path))
 
 (lambda delete-dir [path]
-  (let [fs (assert (uv.fs_scandir path))]
-    (var done? false)
-    (while (not done?)
-      (let [(name type) (uv.fs_scandir_next fs)]
-        (if (not name) (set done? true) :else
-            (if (= type :directory) (delete-dir (u.join-path path name))
-                :else (delete-file (u.join-path path name))))))
-    (assert (uv.fs_rmdir path))))
-
-(lambda is-symlink? [path]
-  (local link (uv.fs_readlink path))
-  (not= link nil))
+  (foreach-entry path [name type]
+                 (if (= type :directory) (delete-dir (u.join-path path name))
+                     :else (delete-file (u.join-path path name))))
+  (assert (uv.fs_rmdir path)))
 
 (fn copy-file [src dest]
   (assert (uv.fs_copyfile src dest)))
 
-;; TODO: Factor our the scandir stuff
 (fn copy-dir [src dest]
   (local stat (assert (uv.fs_stat src)))
   (assert (uv.fs_mkdir dest stat.mode))
-  ;; For each entry in `src`, copy it to `dest`
-  (let [fs (assert (uv.fs_scandir src))]
-    (var done? false)
-    (while (not done?)
-      (let [(name type) (uv.fs_scandir_next fs)]
-        (if (not name) (set done? true) :else
-            (let [src2 (u.join-path src name)
-                  dest2 (u.join-path dest name)]
-              (if (= type :directory) (copy-dir src2 dest2)
-                  :else (copy-file src2 dest2))))))))
+  (foreach-entry src [name type]
+                 (let [src2 (u.join-path src name)
+                       dest2 (u.join-path dest name)]
+                   (if (= type :directory) (copy-dir src2 dest2)
+                       :else (copy-file src2 dest2)))))
+
+(lambda is-symlink? [path]
+  (local link (uv.fs_readlink path))
+  (not= nil link))
 
 ;; --------------------------------------
 ;; PUBLIC
@@ -63,19 +72,11 @@
 
 (lambda M.list [path]
   "Returns a sequential table of {: name : type} items"
-  (let [fs (assert (uv.fs_scandir path))
-        ret []]
-    (var done? false)
-    (while (not done?)
-      (let [(name type err-name) (uv.fs_scandir_next fs)]
-        (if (= name nil) (do
-                           (set done? true)
-                           ;; If the first return value is nil and the second
-                           ;; return value is non-nil then there was an error.
-                           (assert (not type)))
-            ;; `type` can be "file", "directory", "link"
-            ;; `name` is the file's basename
-            (table.insert ret {: name : type}))))
+  (let [ret []]
+    (foreach-entry path [name type]
+                   ;; `type` can be "file", "directory", "link"
+                   ;; `name` is the file's basename
+                   (table.insert ret {: name : type}))
     ret))
 
 (lambda M.get-parent-dir [dir]
