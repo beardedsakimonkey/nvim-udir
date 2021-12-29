@@ -1,4 +1,5 @@
 (local uv vim.loop)
+(local u (require :qdir.util))
 
 (local M {})
 
@@ -10,9 +11,20 @@
   (assert (not (uv.fs_access path :R)) (string.format "%q already exists" path))
   nil)
 
-;; TODO: Use libuv
+(lambda delete-file [path]
+  (assert (uv.fs_unlink path))
+  (u.delete-buffer path))
+
 (lambda delete-dir [path]
-  (vim.fn.system (.. "rm -rf " (vim.fn.fnameescape path))))
+  (let [fs (assert (uv.fs_scandir path))]
+    (var done? false)
+    (while (not done?)
+      (let [(name type) (uv.fs_scandir_next fs)]
+        (if (not name) (set done? true) :else
+            (let [entry-path (.. path "/" name)]
+              (if (= type :directory) (delete-dir entry-path)
+                  :else (delete-file entry-path))))))
+    (assert (uv.fs_rmdir path))))
 
 ;; --------------------------------------
 ;; PUBLIC
@@ -58,7 +70,7 @@
 
 (lambda M.delete [path]
   (if (M.is-dir? path) (delete-dir path)
-      :else (assert (uv.fs_unlink path))))
+      :else (delete-file path)))
 
 (lambda M.create-dir [path]
   (assert-doesnt-exist path)

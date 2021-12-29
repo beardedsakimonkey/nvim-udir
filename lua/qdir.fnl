@@ -129,8 +129,6 @@
               confirmed? (= (vim.fn.nr2char input) :y)]
           (when confirmed?
             (fs.delete path)
-            ;; TODO: Need to handle the case of recursive delete
-            (u.delete-buffer path)
             (render state))
           (u.clear-prompt)))))
 

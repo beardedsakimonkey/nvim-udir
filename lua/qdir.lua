@@ -142,7 +142,6 @@ M.delete = function()
     local confirmed_3f = (vim.fn.nr2char(input) == "y")
     if confirmed_3f then
       fs.delete(path)
-      u["delete-buffer"](path)
       render(state)
     end
     return u["clear-prompt"]()
