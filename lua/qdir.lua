@@ -39,7 +39,7 @@ local function render_virttext(ns, files)
   return nil
 end
 local function render(state)
-  assert((nil ~= state), string.format("Missing argument %s on %s:%s", "state", "lua/qdir.fnl", 32))
+  assert((nil ~= state), string.format("Missing argument %s on %s:%s", "state", "lua/qdir.fnl", 31))
   local _let_6_ = state
   local buf = _let_6_["buf"]
   local cwd = _let_6_["cwd"]
@@ -54,20 +54,20 @@ local function render(state)
   return render_virttext(state.ns, files)
 end
 local function noremap(mode, buf, mappings)
-  assert((nil ~= mappings), string.format("Missing argument %s on %s:%s", "mappings", "lua/qdir.fnl", 45))
-  assert((nil ~= buf), string.format("Missing argument %s on %s:%s", "buf", "lua/qdir.fnl", 45))
-  assert((nil ~= mode), string.format("Missing argument %s on %s:%s", "mode", "lua/qdir.fnl", 45))
+  assert((nil ~= mappings), string.format("Missing argument %s on %s:%s", "mappings", "lua/qdir.fnl", 44))
+  assert((nil ~= buf), string.format("Missing argument %s on %s:%s", "buf", "lua/qdir.fnl", 44))
+  assert((nil ~= mode), string.format("Missing argument %s on %s:%s", "mode", "lua/qdir.fnl", 44))
   for lhs, rhs in pairs(mappings) do
     api.nvim_buf_set_keymap(buf, mode, lhs, rhs, {noremap = true, nowait = true, silent = true})
   end
   return nil
 end
 local function setup_keymaps(buf)
-  assert((nil ~= buf), string.format("Missing argument %s on %s:%s", "buf", "lua/qdir.fnl", 50))
+  assert((nil ~= buf), string.format("Missing argument %s on %s:%s", "buf", "lua/qdir.fnl", 49))
   return noremap("n", buf, {R = "<Cmd>lua require'qdir'.reload()<CR>", ["+"] = "<Cmd>lua require'qdir'.create()<CR>", ["-"] = "<Cmd>lua require'qdir'[\"up-dir\"]()<CR>", ["<CR>"] = "<Cmd>lua require'qdir'.open()<CR>", d = "<Cmd>lua require'qdir'.delete()<CR>", h = "<Cmd>lua require'qdir'[\"up-dir\"]()<CR>", l = "<Cmd>lua require'qdir'.open()<CR>", m = "<Cmd>lua require'qdir'.rename()<CR>", q = "<Cmd>lua require'qdir'.quit()<CR>", r = "<Cmd>lua require'qdir'.rename()<CR>", s = "<Cmd>lua require'qdir'.open('split')<CR>", t = "<Cmd>lua require'qdir'.open('tabedit')<CR>", v = "<Cmd>lua require'qdir'.open('vsplit')<CR>"})
 end
 local function cleanup(buf)
-  assert((nil ~= buf), string.format("Missing argument %s on %s:%s", "buf", "lua/qdir.fnl", 65))
+  assert((nil ~= buf), string.format("Missing argument %s on %s:%s", "buf", "lua/qdir.fnl", 64))
   api.nvim_buf_delete(buf, {force = true})
   return store.remove(buf)
 end
@@ -90,7 +90,9 @@ M["up-dir"] = function()
     local cwd = state.cwd
     local parent_dir = fs["get-parent-dir"](state.cwd)
     local hovered_filename = u["get-line"]()
-    do end (state["hovered-filenames"])[state.cwd] = hovered_filename
+    if hovered_filename then
+      state["hovered-filenames"][state.cwd] = hovered_filename
+    end
     state["cwd"] = parent_dir
     render(state)
     u["update-statusline"](state.cwd)
@@ -99,29 +101,30 @@ M["up-dir"] = function()
   return nil
 end
 M.open = function(cmd)
-  do
-    local state = store.get()
-    local filename = u["get-line"]()
+  local state = store.get()
+  local filename = u["get-line"]()
+  if (filename == "") then
+    return print("Empty filename")
+  elseif "else" then
     local path = (state.cwd .. "/" .. filename)
     local realpath = fs.canonicalize(path)
     if fs["is-dir?"](path) then
       if cmd then
-        vim.cmd((cmd .. " " .. vim.fn.fnameescape(realpath)))
+        return vim.cmd((cmd .. " " .. vim.fn.fnameescape(realpath)))
       elseif "else" then
         state["cwd"] = realpath
         render(state)
         local hovered_file = (state["hovered-filenames"])[realpath]
         u["update-statusline"](state.cwd)
-        u["set-cursor-pos"](hovered_file)
+        return u["set-cursor-pos"](hovered_file)
       end
     elseif "else" then
       u["set-current-buf"](state["origin-buf"])
       vim.cmd(((cmd or "edit") .. " " .. vim.fn.fnameescape(realpath)))
       vim.opt_local.modifiable = true
-      cleanup(state.buf)
+      return cleanup(state.buf)
     end
   end
-  return nil
 end
 M.reload = function()
   local state = store.get()
@@ -129,33 +132,40 @@ M.reload = function()
 end
 M.delete = function()
   local state = store.get()
-  local line = u["get-line"]()
-  local path = fs.canonicalize((state.cwd .. "/" .. line))
-  local _ = print(string.format("Are you sure you want to delete %q? (y/n)", path))
-  local input = vim.fn.getchar()
-  local confirmed_3f = (vim.fn.nr2char(input) == "y")
-  if confirmed_3f then
-    fs.delete(path)
-    u["delete-buffer"](path)
-    render(state)
+  local filename = u["get-line"]()
+  if (filename == "") then
+    return print("Empty filename")
+  elseif "else" then
+    local path = fs.canonicalize((state.cwd .. "/" .. filename))
+    local _ = print(string.format("Are you sure you want to delete %q? (y/n)", path))
+    local input = vim.fn.getchar()
+    local confirmed_3f = (vim.fn.nr2char(input) == "y")
+    if confirmed_3f then
+      fs.delete(path)
+      u["delete-buffer"](path)
+      render(state)
+    end
+    return u["clear-prompt"]()
   end
-  return u["clear-prompt"]()
 end
 M.rename = function()
   local state = store.get()
-  local line = u["get-line"]()
-  local path = (state.cwd .. "/" .. line)
-  local name = vim.fn.input("New name: ")
-  local newpath = (state.cwd .. "/" .. name)
-  fs.rename(path, newpath)
-  render(state)
-  u["clear-prompt"]()
-  return u["set-cursor-pos"](fs.basename(newpath))
+  local filename = u["get-line"]()
+  if (filename == "") then
+    return print("Empty filename")
+  elseif "else" then
+    local path = (state.cwd .. "/" .. filename)
+    local name = vim.fn.input("New name: ")
+    local newpath = (state.cwd .. "/" .. name)
+    fs.rename(path, newpath)
+    render(state)
+    u["clear-prompt"]()
+    return u["set-cursor-pos"](fs.basename(newpath))
+  end
 end
 M.create = function()
   local state = store.get()
-  local line = u["get-line"]()
-  local name = vim.fn.input("New file name: ")
+  local name = vim.fn.input("New file: ")
   local path = (state.cwd .. "/" .. name)
   if vim.endswith(name, "/") then
     fs["create-dir"](path:sub(1, -1))

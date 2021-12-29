@@ -52,8 +52,8 @@ M["get-line"] = function()
   local row = _let_3_[1]
   local _col = _let_3_[2]
   local _let_4_ = api.nvim_buf_get_lines(0, (row - 1), row, true)
-  local fst = _let_4_[1]
-  return assert(fst)
+  local line = _let_4_[1]
+  return line
 end
 local function find_index(list, predicate)
   assert((nil ~= predicate), string.format("Missing argument %s on %s:%s", "predicate", "lua/qdir/util.fnl", 61))

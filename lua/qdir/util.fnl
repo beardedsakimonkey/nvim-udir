@@ -55,8 +55,8 @@
 
 (lambda M.get-line []
   (let [[row _col] (api.nvim_win_get_cursor 0)
-        [fst] (api.nvim_buf_get_lines 0 (- row 1) row true)]
-    (assert fst)))
+        [line] (api.nvim_buf_get_lines 0 (- row 1) row true)]
+    line))
 
 (lambda find-index [list predicate]
   (each [i item (ipairs list)]

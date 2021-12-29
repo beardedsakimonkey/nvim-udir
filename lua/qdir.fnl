@@ -15,7 +15,6 @@
   nil)
 
 (lambda render-virttext [ns files]
-  ;; Clear the namespace
   (api.nvim_buf_clear_namespace 0 ns 0 -1)
   ;; Add virtual text to each directory
   (each [i file (ipairs files)]
@@ -81,7 +80,8 @@
         parent-dir (fs.get-parent-dir state.cwd)]
     ;; Cache hovered filename
     (local hovered-filename (u.get-line))
-    (tset state.hovered-filenames state.cwd hovered-filename)
+    (if hovered-filename (tset state.hovered-filenames state.cwd
+                               hovered-filename))
     (tset state :cwd parent-dir)
     (render state)
     (u.update-statusline state.cwd)
@@ -90,29 +90,29 @@
 
 (fn M.open [cmd]
   (let [state (store.get)
-        filename (u.get-line)
-        path (.. state.cwd "/" filename)
-        realpath (fs.canonicalize path)]
-    (if (fs.is-dir? path)
-        (if cmd
-            (vim.cmd (.. cmd " " (vim.fn.fnameescape realpath)))
-            :else
-            (do
-              (tset state :cwd realpath)
-              (render state)
-              (local hovered-file (. state.hovered-filenames realpath))
-              (u.update-statusline state.cwd)
-              (u.set-cursor-pos hovered-file)))
-        :else
-        ;; It's a file
-        (do
-          ;; Update the altfile
-          (u.set-current-buf state.origin-buf)
-          ;; Open the file
-          (vim.cmd (.. (or cmd :edit) " " (vim.fn.fnameescape realpath)))
-          (set vim.opt_local.modifiable true)
-          (cleanup state.buf))))
-  nil)
+        filename (u.get-line)]
+    (if (= filename "") (print "Empty filename") :else
+        (let [path (.. state.cwd "/" filename)
+              realpath (fs.canonicalize path)]
+          (if (fs.is-dir? path)
+              (if cmd
+                  (vim.cmd (.. cmd " " (vim.fn.fnameescape realpath)))
+                  :else
+                  (do
+                    (tset state :cwd realpath)
+                    (render state)
+                    (local hovered-file (. state.hovered-filenames realpath))
+                    (u.update-statusline state.cwd)
+                    (u.set-cursor-pos hovered-file)))
+              :else
+              ;; It's a file
+              (do
+                ;; Update the altfile
+                (u.set-current-buf state.origin-buf)
+                ;; Open the file
+                (vim.cmd (.. (or cmd :edit) " " (vim.fn.fnameescape realpath)))
+                (set vim.opt_local.modifiable true)
+                (cleanup state.buf)))))))
 
 (fn M.reload []
   (let [state (store.get)]
@@ -120,34 +120,35 @@
 
 (fn M.delete []
   (let [state (store.get)
-        line (u.get-line)
-        path (fs.canonicalize (.. state.cwd "/" line))
-        _ (print (string.format "Are you sure you want to delete %q? (y/n)"
-                                path))
-        input (vim.fn.getchar)
-        confirmed? (= (vim.fn.nr2char input) :y)]
-    (when confirmed?
-      (fs.delete path)
-      ;; TODO: Need to handle the case of recursive delete
-      (u.delete-buffer path)
-      (render state))
-    (u.clear-prompt)))
+        filename (u.get-line)]
+    (if (= filename "") (print "Empty filename") :else
+        (let [path (fs.canonicalize (.. state.cwd "/" filename))
+              _ (print (string.format "Are you sure you want to delete %q? (y/n)"
+                                      path))
+              input (vim.fn.getchar)
+              confirmed? (= (vim.fn.nr2char input) :y)]
+          (when confirmed?
+            (fs.delete path)
+            ;; TODO: Need to handle the case of recursive delete
+            (u.delete-buffer path)
+            (render state))
+          (u.clear-prompt)))))
 
 (fn M.rename []
   (let [state (store.get)
-        line (u.get-line)
-        path (.. state.cwd "/" line)
-        name (vim.fn.input "New name: ")
-        newpath (.. state.cwd "/" name)]
-    (fs.rename path newpath)
-    (render state)
-    (u.clear-prompt)
-    (u.set-cursor-pos (fs.basename newpath))))
+        filename (u.get-line)]
+    (if (= filename "") (print "Empty filename") :else
+        (let [path (.. state.cwd "/" filename)
+              name (vim.fn.input "New name: ")
+              newpath (.. state.cwd "/" name)]
+          (fs.rename path newpath)
+          (render state)
+          (u.clear-prompt)
+          (u.set-cursor-pos (fs.basename newpath))))))
 
 (fn M.create []
   (let [state (store.get)
-        line (u.get-line)
-        name (vim.fn.input "New file name: ")
+        name (vim.fn.input "New file: ")
         path (.. state.cwd "/" name)]
     (if (vim.endswith name "/") (fs.create-dir (path:sub 1 -1))
         :else (fs.create-file path))
