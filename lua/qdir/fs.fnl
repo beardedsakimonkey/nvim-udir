@@ -69,13 +69,15 @@
 
 (lambda M.delete [path]
   (if (M.is-dir? path) (delete-dir path)
-      :else (delete-file path)))
+      :else (delete-file path))
+  nil)
 
 (lambda M.create-dir [path]
   (assert-doesnt-exist path)
   ;; 755 = RWX for owner, RX for group/other
   (local mode (tonumber :755 8))
-  (assert (uv.fs_mkdir path mode)))
+  (assert (uv.fs_mkdir path mode))
+  nil)
 
 (lambda M.create-file [path]
   (assert-doesnt-exist path)
@@ -86,7 +88,8 @@
 
 (lambda M.rename [path newpath]
   (assert-doesnt-exist newpath)
-  (assert (uv.fs_rename path newpath)))
+  (assert (uv.fs_rename path newpath))
+  nil)
 
 M
 

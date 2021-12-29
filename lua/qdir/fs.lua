@@ -80,28 +80,31 @@ end
 M.delete = function(path)
   assert((nil ~= path), string.format("Missing argument %s on %s:%s", "path", "lua/qdir/fs.fnl", 70))
   if M["is-dir?"](path) then
-    return delete_dir(path)
+    delete_dir(path)
   elseif "else" then
-    return delete_file(path)
+    delete_file(path)
   end
+  return nil
 end
 M["create-dir"] = function(path)
-  assert((nil ~= path), string.format("Missing argument %s on %s:%s", "path", "lua/qdir/fs.fnl", 74))
+  assert((nil ~= path), string.format("Missing argument %s on %s:%s", "path", "lua/qdir/fs.fnl", 75))
   assert_doesnt_exist(path)
   local mode = tonumber("755", 8)
-  return assert(uv.fs_mkdir(path, mode))
+  assert(uv.fs_mkdir(path, mode))
+  return nil
 end
 M["create-file"] = function(path)
-  assert((nil ~= path), string.format("Missing argument %s on %s:%s", "path", "lua/qdir/fs.fnl", 80))
+  assert((nil ~= path), string.format("Missing argument %s on %s:%s", "path", "lua/qdir/fs.fnl", 82))
   assert_doesnt_exist(path)
   local mode = tonumber("644", 8)
   assert(uv.fs_open(path, "w", mode))
   return nil
 end
 M.rename = function(path, newpath)
-  assert((nil ~= newpath), string.format("Missing argument %s on %s:%s", "newpath", "lua/qdir/fs.fnl", 87))
-  assert((nil ~= path), string.format("Missing argument %s on %s:%s", "path", "lua/qdir/fs.fnl", 87))
+  assert((nil ~= newpath), string.format("Missing argument %s on %s:%s", "newpath", "lua/qdir/fs.fnl", 89))
+  assert((nil ~= path), string.format("Missing argument %s on %s:%s", "path", "lua/qdir/fs.fnl", 89))
   assert_doesnt_exist(newpath)
-  return assert(uv.fs_rename(path, newpath))
+  assert(uv.fs_rename(path, newpath))
+  return nil
 end
 return M

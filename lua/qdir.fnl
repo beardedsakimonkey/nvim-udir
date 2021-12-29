@@ -70,6 +70,8 @@
   (let [{: alt-buf : origin-buf : buf} (store.get)]
     (if alt-buf (u.set-current-buf alt-buf))
     (u.set-current-buf origin-buf)
+    ;; FIXME: This should restore the original value of 'modfiable' (also in
+    ;; `open`)
     (set vim.opt_local.modifiable true)
     (cleanup buf)
     nil))
@@ -91,7 +93,7 @@
 (fn M.open [cmd]
   (let [state (store.get)
         filename (u.get-line)]
-    (if (= filename "") (print "Empty filename") :else
+    (if (= filename "") (u.err "Empty filename") :else
         (let [path (u.join-path state.cwd filename)
               realpath (fs.canonicalize path)]
           (if (fs.is-dir? path)
@@ -121,7 +123,7 @@
 (fn M.delete []
   (let [state (store.get)
         filename (u.get-line)]
-    (if (= filename "") (print "Empty filename") :else
+    (if (= filename "") (u.err "Empty filename") :else
         (let [path (fs.canonicalize (u.join-path state.cwd filename))
               _ (print (string.format "Are you sure you want to delete %q? (y/n)"
                                       path))
@@ -135,20 +137,21 @@
 (fn M.rename []
   (let [state (store.get)
         filename (u.get-line)]
-    (if (= filename "") (print "Empty filename") :else
+    (if (= filename "") (u.err "Empty filename") :else
         (let [path (u.join-path state.cwd filename)
-              name (vim.fn.input "New name: ")
-              newpath (u.join-path state.cwd name)]
-          (fs.rename path newpath)
-          (render state)
-          (u.clear-prompt)
-          (u.set-cursor-pos (fs.basename newpath))))))
+              name (vim.fn.input "New name: ")]
+          (when (not= name "")
+            (let [newpath (u.join-path state.cwd name)]
+              (fs.rename path newpath)
+              (render state)
+              (u.clear-prompt)
+              (u.set-cursor-pos (fs.basename newpath))))))))
 
 (fn M.create []
   (let [state (store.get)
         name (vim.fn.input "New file: ")
         path (u.join-path state.cwd name)]
-    (if (vim.endswith name u.sep) (fs.create-dir (path:sub 1 -1))
+    (if (vim.endswith name u.sep) (fs.create-dir path)
         :else (fs.create-file path))
     (render state)
     (u.clear-prompt)

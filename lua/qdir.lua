@@ -104,7 +104,7 @@ M.open = function(cmd)
   local state = store.get()
   local filename = u["get-line"]()
   if (filename == "") then
-    return print("Empty filename")
+    return u.err("Empty filename")
   elseif "else" then
     local path = u["join-path"](state.cwd, filename)
     local realpath = fs.canonicalize(path)
@@ -134,7 +134,7 @@ M.delete = function()
   local state = store.get()
   local filename = u["get-line"]()
   if (filename == "") then
-    return print("Empty filename")
+    return u.err("Empty filename")
   elseif "else" then
     local path = fs.canonicalize(u["join-path"](state.cwd, filename))
     local _ = print(string.format("Are you sure you want to delete %q? (y/n)", path))
@@ -151,15 +151,17 @@ M.rename = function()
   local state = store.get()
   local filename = u["get-line"]()
   if (filename == "") then
-    return print("Empty filename")
+    return u.err("Empty filename")
   elseif "else" then
     local path = u["join-path"](state.cwd, filename)
     local name = vim.fn.input("New name: ")
-    local newpath = u["join-path"](state.cwd, name)
-    fs.rename(path, newpath)
-    render(state)
-    u["clear-prompt"]()
-    return u["set-cursor-pos"](fs.basename(newpath))
+    if (name ~= "") then
+      local newpath = u["join-path"](state.cwd, name)
+      fs.rename(path, newpath)
+      render(state)
+      u["clear-prompt"]()
+      return u["set-cursor-pos"](fs.basename(newpath))
+    end
   end
 end
 M.create = function()
@@ -167,7 +169,7 @@ M.create = function()
   local name = vim.fn.input("New file: ")
   local path = u["join-path"](state.cwd, name)
   if vim.endswith(name, u.sep) then
-    fs["create-dir"](path:sub(1, -1))
+    fs["create-dir"](path)
   elseif "else" then
     fs["create-file"](path)
   end

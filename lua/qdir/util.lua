@@ -101,4 +101,7 @@ M["set-cursor-pos"] = function(filename)
     end
   end
 end
+M.err = function(msg)
+  return api.nvim_err_writeln(msg)
+end
 return M

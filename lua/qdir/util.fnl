@@ -88,5 +88,8 @@
     (local line (M.find-line #(= $1 filename)))
     (if line (api.nvim_win_set_cursor 0 [line 0]))))
 
+(fn M.err [msg]
+  (api.nvim_err_writeln msg))
+
 M
 
