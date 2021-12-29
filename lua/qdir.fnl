@@ -71,7 +71,7 @@
   (let [{: alt-buf : origin-buf : buf} (store.get)]
     (if alt-buf (u.set-current-buf alt-buf))
     (u.set-current-buf origin-buf)
-    ;; (api.nvim_buf_set_option 0 :modifiable true)
+    (set vim.opt_local.modifiable true)
     (cleanup buf)
     nil))
 
@@ -115,8 +115,7 @@
           (u.set-current-buf state.origin-buf)
           ;; Open the file
           (vim.cmd (.. (or cmd :edit) " " (vim.fn.fnameescape realpath)))
-          ;; FIXME: 'modifiable' is causing problems with several plugins
-          ;; (api.nvim_buf_set_option 0 :modifiable true)
+          (set vim.opt_local.modifiable true)
           (cleanup state.buf))))
   nil)
 

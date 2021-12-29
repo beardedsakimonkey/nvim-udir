@@ -80,6 +80,7 @@ M.quit = function()
     u["set-current-buf"](alt_buf)
   end
   u["set-current-buf"](origin_buf)
+  vim.opt_local.modifiable = true
   cleanup(buf)
   return nil
 end
@@ -132,6 +133,7 @@ M.open = function(cmd)
     elseif "else" then
       u["set-current-buf"](state["origin-buf"])
       vim.cmd(((cmd or "edit") .. " " .. vim.fn.fnameescape(realpath)))
+      vim.opt_local.modifiable = true
       cleanup(state.buf)
     end
   end

@@ -42,7 +42,9 @@ M["set-lines"] = function(buf, start, _end, strict_indexing, replacement)
   assert((nil ~= _end), string.format("Missing argument %s on %s:%s", "end", "lua/qdir/util.fnl", 50))
   assert((nil ~= start), string.format("Missing argument %s on %s:%s", "start", "lua/qdir/util.fnl", 50))
   assert((nil ~= buf), string.format("Missing argument %s on %s:%s", "buf", "lua/qdir/util.fnl", 50))
+  vim.opt_local.modifiable = true
   api.nvim_buf_set_lines(buf, start, _end, strict_indexing, replacement)
+  vim.opt_local.modifiable = false
   return nil
 end
 M["get-line"] = function()

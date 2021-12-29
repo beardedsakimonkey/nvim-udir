@@ -48,9 +48,9 @@
     nil))
 
 (lambda M.set-lines [buf start end strict-indexing replacement]
-  ;; (set vim.opt.modifiable true)
+  (set vim.opt_local.modifiable true)
   (api.nvim_buf_set_lines buf start end strict-indexing replacement)
-  ;; (set vim.opt.modifiable false)
+  (set vim.opt_local.modifiable false)
   nil)
 
 (lambda M.get-line []
