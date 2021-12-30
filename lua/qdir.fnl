@@ -7,6 +7,56 @@
 (local M {})
 
 ;; --------------------------------------
+;; CONFIGURATION
+;; --------------------------------------
+
+(tset M :actions
+      {:quit "<Cmd>lua require'qdir'.quit()<CR>"
+       :up-dir "<Cmd>lua require'qdir'[\"up-dir\"]()<CR>"
+       :open "<Cmd>lua require'qdir'.open()<CR>"
+       :open-split "<Cmd>lua require'qdir'.open('split')<CR>"
+       :open-vsplit "<Cmd>lua require'qdir'.open('vsplit')<CR>"
+       :open-tab "<Cmd>lua require'qdir'.open('tabedit')<CR>"
+       :reload "<Cmd>lua require'qdir'.reload()<CR>"
+       :delete "<Cmd>lua require'qdir'.delete()<CR>"
+       :create "<Cmd>lua require'qdir'.create()<CR>"
+       :rename "<Cmd>lua require'qdir'.rename()<CR>"
+       :copy "<Cmd>lua require'qdir'.copy()<CR>"
+       :toggle-hidden-files "<Cmd>lua require'qdir'[\"toggle-hidden-files\"]()<CR>"})
+
+(local config {:keymaps {:q M.actions.quit
+                         :h M.actions.up-dir
+                         :- M.actions.up-dir
+                         :l M.actions.open
+                         :<CR> M.actions.open
+                         :s M.actions.open-split
+                         :v M.actions.open-vsplit
+                         :t M.actions.open-tab
+                         :R M.actions.reload
+                         :d M.actions.delete
+                         :+ M.actions.create
+                         :r M.actions.rename
+                         :m M.actions.rename
+                         :c M.actions.copy
+                         :gh M.actions.toggle-hidden-files}
+               :show-hidden-files true
+               :is-file-hidden (fn []
+                                 false)})
+
+(fn M.init [cfg]
+  (let [cfg (or cfg {})]
+    ;; Whether to automatically open Qdir when editing a directory
+    (when cfg.auto-open
+      (vim.cmd "aug qdir")
+      (vim.cmd :au!)
+      (vim.cmd "au BufEnter * if !empty(expand('%')) && isdirectory(expand('%')) && !get(b:, 'is_qdir') | Qdir | endif")
+      (vim.cmd "aug END"))
+    (when cfg.keymaps
+      (tset config :keymaps cfg.keymaps))
+    (when cfg.is-file-hidden
+      (tset config :is-file-hidden cfg.is-file-hidden))))
+
+;; --------------------------------------
 ;; RENDER
 ;; --------------------------------------
 
@@ -32,6 +82,8 @@
 (lambda render [state]
   (let [{: buf : cwd} state
         files (fs.list cwd)
+        files (if config.show-hidden-files files :else
+                  (vim.tbl_filter #(not (config.is-file-hidden $1 cwd)) files))
         _ (sort-in-place files)
         filenames (->> files
                        (vim.tbl_map #$1.name))]
@@ -47,37 +99,8 @@
     (api.nvim_buf_set_keymap buf mode lhs rhs
                              {:nowait true :noremap true :silent true})))
 
-(tset M :actions {:quit "<Cmd>lua require'qdir'.quit()<CR>"
-                  :up-dir "<Cmd>lua require'qdir'[\"up-dir\"]()<CR>"
-                  :open "<Cmd>lua require'qdir'.open()<CR>"
-                  :open-split "<Cmd>lua require'qdir'.open('split')<CR>"
-                  :open-vsplit "<Cmd>lua require'qdir'.open('vsplit')<CR>"
-                  :open-tab "<Cmd>lua require'qdir'.open('tabedit')<CR>"
-                  :reload "<Cmd>lua require'qdir'.reload()<CR>"
-                  :delete "<Cmd>lua require'qdir'.delete()<CR>"
-                  :create "<Cmd>lua require'qdir'.create()<CR>"
-                  :rename "<Cmd>lua require'qdir'.rename()<CR>"
-                  :copy "<Cmd>lua require'qdir'.copy()<CR>"})
-
-(local default-keymaps {:q M.actions.quit
-                        :h M.actions.up-dir
-                        :- M.actions.up-dir
-                        :l M.actions.open
-                        :<CR> M.actions.open
-                        :s M.actions.open-split
-                        :v M.actions.open-vsplit
-                        :t M.actions.open-tab
-                        :R M.actions.reload
-                        :d M.actions.delete
-                        :+ M.actions.create
-                        :r M.actions.rename
-                        :m M.actions.rename
-                        :c M.actions.copy})
-
-(var keymaps nil)
-
 (lambda setup-keymaps [buf]
-  (noremap :n buf (or keymaps default-keymaps)))
+  (noremap :n buf config.keymaps))
 
 (lambda cleanup [state]
   ;; This is useful in case no other buffer exists
@@ -197,20 +220,14 @@
         (u.clear-prompt)
         (u.set-cursor-pos (fs.basename path))))))
 
+(fn M.toggle-hidden-files []
+  (let [state (store.get)]
+    (set config.show-hidden-files (not config.show-hidden-files))
+    (render state)))
+
 ;; --------------------------------------
 ;; INITIALIZATION
 ;; --------------------------------------
-
-(fn M.init [cfg]
-  (let [cfg (or cfg {})]
-    ;; Whether to automatically open Qdir when editing a directory
-    (when cfg.auto-open
-      (vim.cmd "aug qdir")
-      (vim.cmd :au!)
-      (vim.cmd "au BufEnter * if !empty(expand('%')) && isdirectory(expand('%')) && !get(b:, 'is_qdir') | Qdir | endif")
-      (vim.cmd "aug END"))
-    (when cfg.keyamps
-      (set keymaps cfg.keymaps))))
 
 ;; This gets called by the `:Qdir` command
 (fn M.qdir []
