@@ -106,9 +106,10 @@
 (lambda M.create-file [path]
   (assert-doesnt-exist path)
   ;; 644 = RW for owner, R for group/other
-  (local mode (tonumber :644 8))
-  (assert (uv.fs_open path :w mode))
-  nil)
+  (let [mode (tonumber :644 8)
+        fd (assert (uv.fs_open path :w mode))]
+    (assert (uv.fs_close fd))
+    nil))
 
 (lambda M.rename [path newpath]
   (assert-doesnt-exist newpath)

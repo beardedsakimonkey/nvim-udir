@@ -132,19 +132,20 @@ M["create-file"] = function(path)
   assert((nil ~= path), string.format("Missing argument %s on %s:%s", "path", "lua/qdir/fs.fnl", 106))
   assert_doesnt_exist(path)
   local mode = tonumber("644", 8)
-  assert(uv.fs_open(path, "w", mode))
+  local fd = assert(uv.fs_open(path, "w", mode))
+  assert(uv.fs_close(fd))
   return nil
 end
 M.rename = function(path, newpath)
-  assert((nil ~= newpath), string.format("Missing argument %s on %s:%s", "newpath", "lua/qdir/fs.fnl", 113))
-  assert((nil ~= path), string.format("Missing argument %s on %s:%s", "path", "lua/qdir/fs.fnl", 113))
+  assert((nil ~= newpath), string.format("Missing argument %s on %s:%s", "newpath", "lua/qdir/fs.fnl", 114))
+  assert((nil ~= path), string.format("Missing argument %s on %s:%s", "path", "lua/qdir/fs.fnl", 114))
   assert_doesnt_exist(newpath)
   assert(uv.fs_rename(path, newpath))
   return nil
 end
 M.copy = function(src, dest)
-  assert((nil ~= dest), string.format("Missing argument %s on %s:%s", "dest", "lua/qdir/fs.fnl", 118))
-  assert((nil ~= src), string.format("Missing argument %s on %s:%s", "src", "lua/qdir/fs.fnl", 118))
+  assert((nil ~= dest), string.format("Missing argument %s on %s:%s", "dest", "lua/qdir/fs.fnl", 119))
+  assert((nil ~= src), string.format("Missing argument %s on %s:%s", "src", "lua/qdir/fs.fnl", 119))
   assert_doesnt_exist(dest)
   if M["is-dir?"](src) then
     return copy_dir(src, dest)
