@@ -126,9 +126,6 @@
         {: alt-buf : origin-buf} state]
     (if alt-buf (u.set-current-buf alt-buf))
     (u.set-current-buf origin-buf)
-    ;; FIXME: This should restore the original value of 'modfiable' (also in
-    ;; `open`)
-    (set vim.opt_local.modifiable true)
     (cleanup state)
     nil))
 
@@ -169,7 +166,6 @@
                 (u.set-current-buf state.origin-buf)
                 ;; Open the file
                 (vim.cmd (.. (or cmd :edit) " " (vim.fn.fnameescape realpath)))
-                (set vim.opt_local.modifiable true)
                 (cleanup state)))))))
 
 (fn M.reload []
