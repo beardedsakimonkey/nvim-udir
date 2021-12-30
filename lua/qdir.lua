@@ -2,9 +2,10 @@ local fs = require("qdir.fs")
 local store = require("qdir.store")
 local u = require("qdir.util")
 local api = vim.api
+local uv = vim.loop
 local M = {}
 local function sort_in_place(files)
-  assert((nil ~= files), string.format("Missing argument %s on %s:%s", "files", "lua/qdir.fnl", 12))
+  assert((nil ~= files), string.format("Missing argument %s on %s:%s", "files", "lua/qdir.fnl", 13))
   local function _1_(_241, _242)
     if (_241.type == _242.type) then
       return (_241.name < _242.name)
@@ -16,8 +17,8 @@ local function sort_in_place(files)
   return nil
 end
 local function render_virttext(ns, files)
-  assert((nil ~= files), string.format("Missing argument %s on %s:%s", "files", "lua/qdir.fnl", 17))
-  assert((nil ~= ns), string.format("Missing argument %s on %s:%s", "ns", "lua/qdir.fnl", 17))
+  assert((nil ~= files), string.format("Missing argument %s on %s:%s", "files", "lua/qdir.fnl", 18))
+  assert((nil ~= ns), string.format("Missing argument %s on %s:%s", "ns", "lua/qdir.fnl", 18))
   api.nvim_buf_clear_namespace(0, ns, 0, -1)
   for i, file in ipairs(files) do
     local virttext, hl = nil, nil
@@ -39,7 +40,7 @@ local function render_virttext(ns, files)
   return nil
 end
 local function render(state)
-  assert((nil ~= state), string.format("Missing argument %s on %s:%s", "state", "lua/qdir.fnl", 31))
+  assert((nil ~= state), string.format("Missing argument %s on %s:%s", "state", "lua/qdir.fnl", 32))
   local _let_6_ = state
   local buf = _let_6_["buf"]
   local cwd = _let_6_["cwd"]
@@ -54,34 +55,48 @@ local function render(state)
   return render_virttext(state.ns, files)
 end
 local function noremap(mode, buf, mappings)
-  assert((nil ~= mappings), string.format("Missing argument %s on %s:%s", "mappings", "lua/qdir.fnl", 44))
-  assert((nil ~= buf), string.format("Missing argument %s on %s:%s", "buf", "lua/qdir.fnl", 44))
-  assert((nil ~= mode), string.format("Missing argument %s on %s:%s", "mode", "lua/qdir.fnl", 44))
+  assert((nil ~= mappings), string.format("Missing argument %s on %s:%s", "mappings", "lua/qdir.fnl", 45))
+  assert((nil ~= buf), string.format("Missing argument %s on %s:%s", "buf", "lua/qdir.fnl", 45))
+  assert((nil ~= mode), string.format("Missing argument %s on %s:%s", "mode", "lua/qdir.fnl", 45))
   for lhs, rhs in pairs(mappings) do
     api.nvim_buf_set_keymap(buf, mode, lhs, rhs, {noremap = true, nowait = true, silent = true})
   end
   return nil
 end
 local function setup_keymaps(buf)
-  assert((nil ~= buf), string.format("Missing argument %s on %s:%s", "buf", "lua/qdir.fnl", 49))
+  assert((nil ~= buf), string.format("Missing argument %s on %s:%s", "buf", "lua/qdir.fnl", 50))
   return noremap("n", buf, {R = "<Cmd>lua require'qdir'.reload()<CR>", ["+"] = "<Cmd>lua require'qdir'.create()<CR>", ["-"] = "<Cmd>lua require'qdir'[\"up-dir\"]()<CR>", ["<CR>"] = "<Cmd>lua require'qdir'.open()<CR>", c = "<Cmd>lua require'qdir'.copy()<CR>", d = "<Cmd>lua require'qdir'.delete()<CR>", h = "<Cmd>lua require'qdir'[\"up-dir\"]()<CR>", l = "<Cmd>lua require'qdir'.open()<CR>", m = "<Cmd>lua require'qdir'.rename()<CR>", q = "<Cmd>lua require'qdir'.quit()<CR>", r = "<Cmd>lua require'qdir'.rename()<CR>", s = "<Cmd>lua require'qdir'.open('split')<CR>", t = "<Cmd>lua require'qdir'.open('tabedit')<CR>", v = "<Cmd>lua require'qdir'.open('vsplit')<CR>"})
 end
-local function cleanup(buf)
-  assert((nil ~= buf), string.format("Missing argument %s on %s:%s", "buf", "lua/qdir.fnl", 65))
-  api.nvim_buf_delete(buf, {force = true})
-  return store.remove(buf)
+local function cleanup(state)
+  assert((nil ~= state), string.format("Missing argument %s on %s:%s", "state", "lua/qdir.fnl", 66))
+  api.nvim_buf_delete(state.buf, {force = true})
+  do end (state.event):stop()
+  return store.remove(state.buf)
+end
+local function on_fs_event(err, filename, _events)
+  assert(not err)
+  local state = store.get()
+  return render(state)
+end
+local function update_cwd(state, path)
+  assert((nil ~= path), string.format("Missing argument %s on %s:%s", "path", "lua/qdir.fnl", 79))
+  assert((nil ~= state), string.format("Missing argument %s on %s:%s", "state", "lua/qdir.fnl", 79))
+  do end (state)["cwd"] = path
+  assert((state.event):stop())
+  assert((state.event):start(path, {}, vim.schedule_wrap(on_fs_event)))
+  return nil
 end
 M.quit = function()
-  local _let_8_ = store.get()
+  local state = store.get()
+  local _let_8_ = state
   local alt_buf = _let_8_["alt-buf"]
-  local buf = _let_8_["buf"]
   local origin_buf = _let_8_["origin-buf"]
   if alt_buf then
     u["set-current-buf"](alt_buf)
   end
   u["set-current-buf"](origin_buf)
   vim.opt_local.modifiable = true
-  cleanup(buf)
+  cleanup(state)
   return nil
 end
 M["up-dir"] = function()
@@ -93,7 +108,7 @@ M["up-dir"] = function()
     if hovered_filename then
       state["hovered-filenames"][state.cwd] = hovered_filename
     end
-    state["cwd"] = parent_dir
+    update_cwd(state, parent_dir)
     render(state)
     u["update-statusline"](state.cwd)
     u["set-cursor-pos"](fs.basename(cwd))
@@ -112,7 +127,7 @@ M.open = function(cmd)
       if cmd then
         return vim.cmd((cmd .. " " .. vim.fn.fnameescape(realpath)))
       elseif "else" then
-        state["cwd"] = realpath
+        update_cwd(state, realpath)
         render(state)
         local hovered_file = (state["hovered-filenames"])[realpath]
         u["update-statusline"](state.cwd)
@@ -122,7 +137,7 @@ M.open = function(cmd)
       u["set-current-buf"](state["origin-buf"])
       vim.cmd(((cmd or "edit") .. " " .. vim.fn.fnameescape(realpath)))
       vim.opt_local.modifiable = true
-      return cleanup(state.buf)
+      return cleanup(state)
     end
   end
 end
@@ -227,10 +242,12 @@ M.qdir = function()
   local buf = assert(u["find-or-create-buf"](cwd, win))
   local ns = api.nvim_create_namespace(("qdir." .. buf))
   local hovered_filenames = {}
-  local state = {["alt-buf"] = alt_buf, ["hovered-filenames"] = hovered_filenames, ["origin-buf"] = origin_buf, buf = buf, cwd = cwd, ns = ns, win = win}
+  local event = assert(uv.new_fs_event())
+  local state = {["alt-buf"] = alt_buf, ["hovered-filenames"] = hovered_filenames, ["origin-buf"] = origin_buf, buf = buf, cwd = cwd, event = event, ns = ns, win = win}
   setup_keymaps(buf)
   store["set!"](buf, state)
   render(state)
-  return u["set-cursor-pos"](origin_filename)
+  u["set-cursor-pos"](origin_filename)
+  return event:start(cwd, {}, vim.schedule_wrap(on_fs_event))
 end
 return M

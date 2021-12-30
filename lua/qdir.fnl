@@ -2,6 +2,7 @@
 (local store (require :qdir.store))
 (local u (require :qdir.util))
 (local api vim.api)
+(local uv vim.loop)
 
 (local M {})
 
@@ -16,7 +17,7 @@
 
 (lambda render-virttext [ns files]
   (api.nvim_buf_clear_namespace 0 ns 0 -1)
-  ;; Add virtual text to each directory
+  ;; Add virtual text to each directory/symlink
   (each [i file (ipairs files)]
     (let [(virttext hl) (match file.type
                           :directory (values u.sep :Directory)
@@ -62,19 +63,34 @@
                    :m "<Cmd>lua require'qdir'.rename()<CR>"
                    :c "<Cmd>lua require'qdir'.copy()<CR>"}))
 
-(lambda cleanup [buf]
+(lambda cleanup [state]
   ;; This is useful in case no other buffer exists
-  (api.nvim_buf_delete buf {:force true})
-  (store.remove buf))
+  (api.nvim_buf_delete state.buf {:force true})
+  (state.event:stop)
+  (store.remove state.buf))
+
+;; This can cause an unavoidable cascading render when modifying a file from
+;; Qdir
+(fn on-fs-event [err filename _events]
+  (assert (not err))
+  (local state (store.get))
+  (render state))
+
+(lambda update-cwd [state path]
+  (tset state :cwd path)
+  (assert (state.event:stop))
+  (assert (state.event:start path {} (vim.schedule_wrap on-fs-event)))
+  nil)
 
 (fn M.quit []
-  (let [{: alt-buf : origin-buf : buf} (store.get)]
+  (let [state (store.get)
+        {: alt-buf : origin-buf} state]
     (if alt-buf (u.set-current-buf alt-buf))
     (u.set-current-buf origin-buf)
     ;; FIXME: This should restore the original value of 'modfiable' (also in
     ;; `open`)
     (set vim.opt_local.modifiable true)
-    (cleanup buf)
+    (cleanup state)
     nil))
 
 (fn M.up-dir []
@@ -85,7 +101,7 @@
     (local hovered-filename (u.get-line))
     (if hovered-filename (tset state.hovered-filenames state.cwd
                                hovered-filename))
-    (tset state :cwd parent-dir)
+    (update-cwd state parent-dir)
     (render state)
     (u.update-statusline state.cwd)
     (u.set-cursor-pos (fs.basename cwd)))
@@ -102,7 +118,7 @@
                   (vim.cmd (.. cmd " " (vim.fn.fnameescape realpath)))
                   :else
                   (do
-                    (tset state :cwd realpath)
+                    (update-cwd state realpath)
                     (render state)
                     (local hovered-file (. state.hovered-filenames realpath))
                     (u.update-statusline state.cwd)
@@ -115,7 +131,7 @@
                 ;; Open the file
                 (vim.cmd (.. (or cmd :edit) " " (vim.fn.fnameescape realpath)))
                 (set vim.opt_local.modifiable true)
-                (cleanup state.buf)))))))
+                (cleanup state)))))))
 
 (fn M.reload []
   (let [state (store.get)]
@@ -191,17 +207,20 @@
         buf (assert (u.find-or-create-buf cwd win))
         ns (api.nvim_create_namespace (.. :qdir. buf))
         hovered-filenames {}
+        event (assert (uv.new_fs_event))
         state {: buf
                : win
                : origin-buf
                : alt-buf
                : cwd
                : ns
-               : hovered-filenames}]
+               : hovered-filenames
+               : event}]
     (setup-keymaps buf)
     (store.set! buf state)
     (render state)
-    (u.set-cursor-pos origin-filename)))
+    (u.set-cursor-pos origin-filename)
+    (event:start cwd {} (vim.schedule_wrap on-fs-event))))
 
 M
 
