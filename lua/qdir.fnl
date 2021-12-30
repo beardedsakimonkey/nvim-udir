@@ -47,21 +47,37 @@
     (api.nvim_buf_set_keymap buf mode lhs rhs
                              {:nowait true :noremap true :silent true})))
 
+(tset M :actions {:quit "<Cmd>lua require'qdir'.quit()<CR>"
+                  :up-dir "<Cmd>lua require'qdir'[\"up-dir\"]()<CR>"
+                  :open "<Cmd>lua require'qdir'.open()<CR>"
+                  :open-split "<Cmd>lua require'qdir'.open('split')<CR>"
+                  :open-vsplit "<Cmd>lua require'qdir'.open('vsplit')<CR>"
+                  :open-tab "<Cmd>lua require'qdir'.open('tabedit')<CR>"
+                  :reload "<Cmd>lua require'qdir'.reload()<CR>"
+                  :delete "<Cmd>lua require'qdir'.delete()<CR>"
+                  :create "<Cmd>lua require'qdir'.create()<CR>"
+                  :rename "<Cmd>lua require'qdir'.rename()<CR>"
+                  :copy "<Cmd>lua require'qdir'.copy()<CR>"})
+
+(local default-keymaps {:q M.actions.quit
+                        :h M.actions.up-dir
+                        :- M.actions.up-dir
+                        :l M.actions.open
+                        :<CR> M.actions.open
+                        :s M.actions.open-split
+                        :v M.actions.open-vsplit
+                        :t M.actions.open-tab
+                        :R M.actions.reload
+                        :d M.actions.delete
+                        :+ M.actions.create
+                        :r M.actions.rename
+                        :m M.actions.rename
+                        :c M.actions.copy})
+
+(var keymaps nil)
+
 (lambda setup-keymaps [buf]
-  (noremap :n buf {:q "<Cmd>lua require'qdir'.quit()<CR>"
-                   :h "<Cmd>lua require'qdir'[\"up-dir\"]()<CR>"
-                   :- "<Cmd>lua require'qdir'[\"up-dir\"]()<CR>"
-                   :l "<Cmd>lua require'qdir'.open()<CR>"
-                   :<CR> "<Cmd>lua require'qdir'.open()<CR>"
-                   :s "<Cmd>lua require'qdir'.open('split')<CR>"
-                   :v "<Cmd>lua require'qdir'.open('vsplit')<CR>"
-                   :t "<Cmd>lua require'qdir'.open('tabedit')<CR>"
-                   :R "<Cmd>lua require'qdir'.reload()<CR>"
-                   :d "<Cmd>lua require'qdir'.delete()<CR>"
-                   :+ "<Cmd>lua require'qdir'.create()<CR>"
-                   :r "<Cmd>lua require'qdir'.rename()<CR>"
-                   :m "<Cmd>lua require'qdir'.rename()<CR>"
-                   :c "<Cmd>lua require'qdir'.copy()<CR>"}))
+  (noremap :n buf (or keymaps default-keymaps)))
 
 (lambda cleanup [state]
   ;; This is useful in case no other buffer exists
@@ -192,7 +208,9 @@
       (vim.cmd "aug qdir")
       (vim.cmd :au!)
       (vim.cmd "au BufEnter * if !empty(expand('%')) && isdirectory(expand('%')) && !get(b:, 'is_qdir') | Qdir | endif")
-      (vim.cmd "aug END"))))
+      (vim.cmd "aug END"))
+    (when cfg.keyamps
+      (set keymaps cfg.keymaps))))
 
 ;; This gets called by the `:Qdir` command
 (fn M.qdir []

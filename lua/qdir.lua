@@ -63,12 +63,15 @@ local function noremap(mode, buf, mappings)
   end
   return nil
 end
+M["actions"] = {["open-split"] = "<Cmd>lua require'qdir'.open('split')<CR>", ["open-tab"] = "<Cmd>lua require'qdir'.open('tabedit')<CR>", ["open-vsplit"] = "<Cmd>lua require'qdir'.open('vsplit')<CR>", ["up-dir"] = "<Cmd>lua require'qdir'[\"up-dir\"]()<CR>", copy = "<Cmd>lua require'qdir'.copy()<CR>", create = "<Cmd>lua require'qdir'.create()<CR>", delete = "<Cmd>lua require'qdir'.delete()<CR>", open = "<Cmd>lua require'qdir'.open()<CR>", quit = "<Cmd>lua require'qdir'.quit()<CR>", reload = "<Cmd>lua require'qdir'.reload()<CR>", rename = "<Cmd>lua require'qdir'.rename()<CR>"}
+local default_keymaps = {R = M.actions.reload, ["+"] = M.actions.create, ["-"] = M.actions["up-dir"], ["<CR>"] = M.actions.open, c = M.actions.copy, d = M.actions.delete, h = M.actions["up-dir"], l = M.actions.open, m = M.actions.rename, q = M.actions.quit, r = M.actions.rename, s = M.actions["open-split"], t = M.actions["open-tab"], v = M.actions["open-vsplit"]}
+local keymaps = nil
 local function setup_keymaps(buf)
-  assert((nil ~= buf), string.format("Missing argument %s on %s:%s", "buf", "lua/qdir.fnl", 50))
-  return noremap("n", buf, {R = "<Cmd>lua require'qdir'.reload()<CR>", ["+"] = "<Cmd>lua require'qdir'.create()<CR>", ["-"] = "<Cmd>lua require'qdir'[\"up-dir\"]()<CR>", ["<CR>"] = "<Cmd>lua require'qdir'.open()<CR>", c = "<Cmd>lua require'qdir'.copy()<CR>", d = "<Cmd>lua require'qdir'.delete()<CR>", h = "<Cmd>lua require'qdir'[\"up-dir\"]()<CR>", l = "<Cmd>lua require'qdir'.open()<CR>", m = "<Cmd>lua require'qdir'.rename()<CR>", q = "<Cmd>lua require'qdir'.quit()<CR>", r = "<Cmd>lua require'qdir'.rename()<CR>", s = "<Cmd>lua require'qdir'.open('split')<CR>", t = "<Cmd>lua require'qdir'.open('tabedit')<CR>", v = "<Cmd>lua require'qdir'.open('vsplit')<CR>"})
+  assert((nil ~= buf), string.format("Missing argument %s on %s:%s", "buf", "lua/qdir.fnl", 79))
+  return noremap("n", buf, (keymaps or default_keymaps))
 end
 local function cleanup(state)
-  assert((nil ~= state), string.format("Missing argument %s on %s:%s", "state", "lua/qdir.fnl", 66))
+  assert((nil ~= state), string.format("Missing argument %s on %s:%s", "state", "lua/qdir.fnl", 82))
   api.nvim_buf_delete(state.buf, {force = true})
   do end (state.event):stop()
   return store.remove(state.buf)
@@ -79,8 +82,8 @@ local function on_fs_event(err, filename, _events)
   return render(state)
 end
 local function update_cwd(state, path)
-  assert((nil ~= path), string.format("Missing argument %s on %s:%s", "path", "lua/qdir.fnl", 79))
-  assert((nil ~= state), string.format("Missing argument %s on %s:%s", "state", "lua/qdir.fnl", 79))
+  assert((nil ~= path), string.format("Missing argument %s on %s:%s", "path", "lua/qdir.fnl", 95))
+  assert((nil ~= state), string.format("Missing argument %s on %s:%s", "state", "lua/qdir.fnl", 95))
   do end (state)["cwd"] = path
   assert((state.event):stop())
   assert((state.event):start(path, {}, vim.schedule_wrap(on_fs_event)))
@@ -206,7 +209,11 @@ M.init = function(cfg)
     vim.cmd("aug qdir")
     vim.cmd("au!")
     vim.cmd("au BufEnter * if !empty(expand('%')) && isdirectory(expand('%')) && !get(b:, 'is_qdir') | Qdir | endif")
-    return vim.cmd("aug END")
+    vim.cmd("aug END")
+  end
+  if cfg0.keyamps then
+    keymaps = cfg0.keymaps
+    return nil
   end
 end
 M.qdir = function()
