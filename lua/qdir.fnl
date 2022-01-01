@@ -43,7 +43,7 @@
                :is-file-hidden (fn []
                                  false)})
 
-(fn M.init [cfg]
+(fn M.setup [cfg]
   (let [cfg (or cfg {})]
     ;; Whether to automatically open Qdir when editing a directory
     (when cfg.auto-open
@@ -53,6 +53,8 @@
       (vim.cmd "aug END"))
     (when cfg.keymaps
       (tset config :keymaps cfg.keymaps))
+    (when (not= nil cfg.show-hidden-files)
+      (tset config :show-hidden-files cfg.show-hidden-files))
     (when cfg.is-file-hidden
       (tset config :is-file-hidden cfg.is-file-hidden))))
 
@@ -251,7 +253,9 @@
     (store.set! buf state)
     (render state)
     (u.set-cursor-pos origin-filename)
-    (event:start cwd {} (vim.schedule_wrap on-fs-event))))
+    ;; FIXME: This is sometimes causing an error on save
+    ;; (event:start cwd {} (vim.schedule_wrap on-fs-event))
+    ))
 
 M
 
