@@ -141,11 +141,12 @@ M.rename = function(path, newpath)
   assert((nil ~= path), string.format("Missing argument %s on %s:%s", "path", "lua/qdir/fs.fnl", 114))
   assert_doesnt_exist(newpath)
   assert(uv.fs_rename(path, newpath))
+  u["delete-buffer"](path)
   return nil
 end
 M.copy = function(src, dest)
-  assert((nil ~= dest), string.format("Missing argument %s on %s:%s", "dest", "lua/qdir/fs.fnl", 119))
-  assert((nil ~= src), string.format("Missing argument %s on %s:%s", "src", "lua/qdir/fs.fnl", 119))
+  assert((nil ~= dest), string.format("Missing argument %s on %s:%s", "dest", "lua/qdir/fs.fnl", 120))
+  assert((nil ~= src), string.format("Missing argument %s on %s:%s", "src", "lua/qdir/fs.fnl", 120))
   assert_doesnt_exist(dest)
   if M["is-dir?"](src) then
     return copy_dir(src, dest)

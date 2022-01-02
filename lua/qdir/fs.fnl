@@ -114,6 +114,7 @@
 (lambda M.rename [path newpath]
   (assert-doesnt-exist newpath)
   (assert (uv.fs_rename path newpath))
+  (u.delete-buffer path)
   nil)
 
 (lambda M.copy [src dest]
