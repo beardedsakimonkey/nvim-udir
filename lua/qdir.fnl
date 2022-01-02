@@ -218,9 +218,11 @@
         (u.set-cursor-pos (fs.basename path))))))
 
 (fn M.toggle-hidden-files []
-  (let [state (store.get)]
+  (let [state (store.get)
+        hovered-filename (u.get-line)]
     (set config.show-hidden-files (not config.show-hidden-files))
-    (render state)))
+    (render state)
+    (u.set-cursor-pos (fs.basename hovered-filename))))
 
 ;; --------------------------------------
 ;; INITIALIZATION

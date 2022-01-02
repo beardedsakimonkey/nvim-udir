@@ -234,8 +234,10 @@ M.create = function()
 end
 M["toggle-hidden-files"] = function()
   local state = store.get()
+  local hovered_filename = u["get-line"]()
   config["show-hidden-files"] = not config["show-hidden-files"]
-  return render(state)
+  render(state)
+  return u["set-cursor-pos"](fs.basename(hovered_filename))
 end
 M.qdir = function()
   local origin_buf = api.nvim_get_current_buf()
