@@ -81,7 +81,7 @@ M["delete-buffer"] = function(name)
   return nil
 end
 M["clear-prompt"] = function()
-  return vim.cmd("norm! :<esc>")
+  return vim.cmd("norm! :")
 end
 M["sep"] = (package.config):sub(1, 1)
 M["join-path"] = function(fst, snd)
@@ -89,16 +89,25 @@ M["join-path"] = function(fst, snd)
   assert((nil ~= fst), string.format("Missing argument %s on %s:%s", "fst", "lua/qdir/util.fnl", 83))
   return (fst .. M.sep .. snd)
 end
-M["set-cursor-pos"] = function(filename)
+M["set-cursor-pos"] = function(filename, or_top)
+  local line
+  if or_top then
+    line = 1
+  else
+    line = nil
+  end
   if filename then
-    local line
-    local function _7_(_241)
+    local found
+    local function _8_(_241)
       return (_241 == filename)
     end
-    line = M["find-line"](_7_)
-    if line then
-      return api.nvim_win_set_cursor(0, {line, 0})
+    found = M["find-line"](_8_)
+    if (found ~= nil) then
+      line = found
     end
+  end
+  if (nil ~= line) then
+    return api.nvim_win_set_cursor(0, {line, 0})
   end
 end
 M.err = function(msg)

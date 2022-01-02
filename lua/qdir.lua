@@ -115,11 +115,9 @@ local function on_fs_event(err, filename, _events)
   return render(state)
 end
 local function update_cwd(state, path)
-  assert((nil ~= path), string.format("Missing argument %s on %s:%s", "path", "lua/qdir.fnl", 120))
-  assert((nil ~= state), string.format("Missing argument %s on %s:%s", "state", "lua/qdir.fnl", 120))
+  assert((nil ~= path), string.format("Missing argument %s on %s:%s", "path", "lua/qdir.fnl", 119))
+  assert((nil ~= state), string.format("Missing argument %s on %s:%s", "state", "lua/qdir.fnl", 119))
   do end (state)["cwd"] = path
-  assert((state.event):stop())
-  assert((state.event):start(path, {}, vim.schedule_wrap(on_fs_event)))
   return nil
 end
 M.quit = function()
@@ -146,7 +144,7 @@ M["up-dir"] = function()
     update_cwd(state, parent_dir)
     render(state)
     u["update-statusline"](state.cwd)
-    u["set-cursor-pos"](fs.basename(cwd))
+    u["set-cursor-pos"](fs.basename(cwd), "or-top")
   end
   return nil
 end
@@ -166,7 +164,7 @@ M.open = function(cmd)
         render(state)
         local hovered_file = (state["hovered-filenames"])[realpath]
         u["update-statusline"](state.cwd)
-        return u["set-cursor-pos"](hovered_file)
+        return u["set-cursor-pos"](hovered_file, "or-top")
       end
     elseif "else" then
       u["set-current-buf"](state["origin-buf"])

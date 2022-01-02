@@ -76,17 +76,19 @@
         (api.nvim_buf_delete buf.bufnr {})))))
 
 (lambda M.clear-prompt []
-  (vim.cmd "norm! :<esc>"))
+  (vim.cmd "norm! :"))
 
 (tset M :sep (package.config:sub 1 1))
 
 (lambda M.join-path [fst snd]
   (.. fst M.sep snd))
 
-(fn M.set-cursor-pos [filename]
-  (when filename
-    (local line (M.find-line #(= $1 filename)))
-    (if line (api.nvim_win_set_cursor 0 [line 0]))))
+(fn M.set-cursor-pos [filename or-top]
+  (var line (if or-top 1 nil))
+  (if filename
+      (let [found (M.find-line #(= $1 filename))]
+        (if (not= found nil) (set line found))))
+  (if (not= nil line) (api.nvim_win_set_cursor 0 [line 0])))
 
 (fn M.err [msg]
   (api.nvim_err_writeln msg))

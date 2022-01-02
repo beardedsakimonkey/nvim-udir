@@ -105,7 +105,6 @@
   (noremap :n buf config.keymaps))
 
 (lambda cleanup [state]
-  ;; This is useful in case no other buffer exists
   (api.nvim_buf_delete state.buf {:force true})
   (state.event:stop)
   (store.remove state.buf))
@@ -119,8 +118,8 @@
 
 (lambda update-cwd [state path]
   (tset state :cwd path)
-  (assert (state.event:stop))
-  (assert (state.event:start path {} (vim.schedule_wrap on-fs-event)))
+  ;; (assert (state.event:stop))
+  ;; (assert (state.event:start path {} (vim.schedule_wrap on-fs-event)))
   nil)
 
 (fn M.quit []
@@ -142,7 +141,7 @@
     (update-cwd state parent-dir)
     (render state)
     (u.update-statusline state.cwd)
-    (u.set-cursor-pos (fs.basename cwd)))
+    (u.set-cursor-pos (fs.basename cwd) :or-top))
   nil)
 
 (fn M.open [cmd]
@@ -160,7 +159,7 @@
                     (render state)
                     (local hovered-file (. state.hovered-filenames realpath))
                     (u.update-statusline state.cwd)
-                    (u.set-cursor-pos hovered-file)))
+                    (u.set-cursor-pos hovered-file :or-top)))
               :else
               ;; It's a file
               (do
