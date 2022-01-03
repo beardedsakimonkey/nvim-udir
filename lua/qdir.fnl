@@ -41,7 +41,8 @@
                          :gh M.actions.toggle-hidden-files}
                :show-hidden-files true
                :is-file-hidden (fn []
-                                 false)})
+                                 false)
+               :watch-fs false})
 
 (fn M.setup [cfg]
   (let [cfg (or cfg {})]
@@ -55,6 +56,8 @@
       (tset config :keymaps cfg.keymaps))
     (when (not= nil cfg.show-hidden-files)
       (tset config :show-hidden-files cfg.show-hidden-files))
+    (when (not= nil cfg.watch-fs)
+      (tset config :watch-fs cfg.watch-fs))
     (when cfg.is-file-hidden
       (tset config :is-file-hidden cfg.is-file-hidden))))
 
@@ -106,7 +109,7 @@
 
 (lambda cleanup [state]
   (api.nvim_buf_delete state.buf {:force true})
-  (state.event:stop)
+  (if config.watch-fs (state.event:stop))
   (store.remove state.buf))
 
 ;; This can cause an unavoidable cascading render when modifying a file from
@@ -118,8 +121,9 @@
 
 (lambda update-cwd [state path]
   (tset state :cwd path)
-  ;; (assert (state.event:stop))
-  ;; (assert (state.event:start path {} (vim.schedule_wrap on-fs-event)))
+  (when config.watch-fs
+    (assert (state.event:stop))
+    (assert (state.event:start path {} (vim.schedule_wrap on-fs-event))))
   nil)
 
 (fn M.quit []
@@ -255,8 +259,7 @@
     (render state)
     (u.set-cursor-pos origin-filename)
     ;; FIXME: This is sometimes causing an error on save
-    ;; (event:start cwd {} (vim.schedule_wrap on-fs-event))
-    ))
+    (if config.watch-fs (event:start cwd {} (vim.schedule_wrap on-fs-event)))))
 
 M
 
