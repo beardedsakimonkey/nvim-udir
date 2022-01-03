@@ -22,6 +22,7 @@
        :create "<Cmd>lua require'qdir'.create()<CR>"
        :rename "<Cmd>lua require'qdir'.rename()<CR>"
        :copy "<Cmd>lua require'qdir'.copy()<CR>"
+       :cd "<Cmd>lua require'qdir'.cd()<CR>"
        :toggle-hidden-files "<Cmd>lua require'qdir'[\"toggle-hidden-files\"]()<CR>"})
 
 (local config {:keymaps {:q M.actions.quit
@@ -38,6 +39,7 @@
                          :r M.actions.rename
                          :m M.actions.rename
                          :c M.actions.copy
+                         :C M.actions.cd
                          :gh M.actions.toggle-hidden-files}
                :show-hidden-files true
                :is-file-hidden (fn []
@@ -227,6 +229,11 @@
     (set config.show-hidden-files (not config.show-hidden-files))
     (render state)
     (u.set-cursor-pos (fs.basename hovered-filename))))
+
+(fn M.cd []
+  (let [{: cwd} (store.get)]
+    (vim.cmd (.. "cd " (vim.fn.fnameescape cwd)))
+    (vim.cmd :pwd)))
 
 ;; --------------------------------------
 ;; INITIALIZATION
