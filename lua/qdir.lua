@@ -4,12 +4,12 @@ local u = require("qdir.util")
 local api = vim.api
 local uv = vim.loop
 local M = {}
-M["actions"] = {["open-split"] = "<Cmd>lua require'qdir'.open('split')<CR>", ["open-tab"] = "<Cmd>lua require'qdir'.open('tabedit')<CR>", ["open-vsplit"] = "<Cmd>lua require'qdir'.open('vsplit')<CR>", ["toggle-hidden-files"] = "<Cmd>lua require'qdir'[\"toggle-hidden-files\"]()<CR>", ["up-dir"] = "<Cmd>lua require'qdir'[\"up-dir\"]()<CR>", cd = "<Cmd>lua require'qdir'.cd()<CR>", copy = "<Cmd>lua require'qdir'.copy()<CR>", create = "<Cmd>lua require'qdir'.create()<CR>", delete = "<Cmd>lua require'qdir'.delete()<CR>", open = "<Cmd>lua require'qdir'.open()<CR>", quit = "<Cmd>lua require'qdir'.quit()<CR>", reload = "<Cmd>lua require'qdir'.reload()<CR>", rename = "<Cmd>lua require'qdir'.rename()<CR>"}
+M["keymap"] = {["open-split"] = "<Cmd>lua require'qdir'.open('split')<CR>", ["open-tab"] = "<Cmd>lua require'qdir'.open('tabedit')<CR>", ["open-vsplit"] = "<Cmd>lua require'qdir'.open('vsplit')<CR>", ["toggle-hidden-files"] = "<Cmd>lua require'qdir'[\"toggle-hidden-files\"]()<CR>", ["up-dir"] = "<Cmd>lua require'qdir'[\"up-dir\"]()<CR>", cd = "<Cmd>lua require'qdir'.cd()<CR>", copy = "<Cmd>lua require'qdir'.copy()<CR>", create = "<Cmd>lua require'qdir'.create()<CR>", delete = "<Cmd>lua require'qdir'.delete()<CR>", open = "<Cmd>lua require'qdir'.open()<CR>", quit = "<Cmd>lua require'qdir'.quit()<CR>", reload = "<Cmd>lua require'qdir'.reload()<CR>", rename = "<Cmd>lua require'qdir'.rename()<CR>"}
 local config
 local function _1_()
   return false
 end
-config = {["is-file-hidden"] = _1_, ["show-hidden-files"] = true, ["watch-fs"] = false, keymaps = {C = M.actions.cd, R = M.actions.reload, ["+"] = M.actions.create, ["-"] = M.actions["up-dir"], ["<CR>"] = M.actions.open, c = M.actions.copy, d = M.actions.delete, gh = M.actions["toggle-hidden-files"], h = M.actions["up-dir"], l = M.actions.open, m = M.actions.rename, q = M.actions.quit, r = M.actions.rename, s = M.actions["open-split"], t = M.actions["open-tab"], v = M.actions["open-vsplit"]}}
+config = {["is-file-hidden"] = _1_, ["show-hidden-files"] = true, ["watch-fs"] = false, keymaps = {C = M.keymap.cd, R = M.keymap.reload, ["+"] = M.keymap.create, ["-"] = M.keymap["up-dir"], ["<CR>"] = M.keymap.open, c = M.keymap.copy, d = M.keymap.delete, gh = M.keymap["toggle-hidden-files"], h = M.keymap["up-dir"], l = M.keymap.open, m = M.keymap.rename, q = M.keymap.quit, r = M.keymap.rename, s = M.keymap["open-split"], t = M.keymap["open-tab"], v = M.keymap["open-vsplit"]}}
 M.setup = function(cfg)
   local cfg0 = (cfg or {})
   if cfg0["auto-open"] then
@@ -160,9 +160,7 @@ end
 M.open = function(cmd)
   local state = store.get()
   local filename = u["get-line"]()
-  if (filename == "") then
-    return u.err("Empty filename")
-  elseif "else" then
+  if ("" ~= filename) then
     local path = u["join-path"](state.cwd, filename)
     local realpath = fs.canonicalize(path)
     if fs["is-dir?"](path) then
@@ -189,7 +187,7 @@ end
 M.delete = function()
   local state = store.get()
   local filename = u["get-line"]()
-  if (filename == "") then
+  if ("" == filename) then
     return u.err("Empty filename")
   elseif "else" then
     local path = u["join-path"](state.cwd, filename)
@@ -206,7 +204,7 @@ end
 local function copy_or_rename(operation, prompt)
   local state = store.get()
   local filename = u["get-line"]()
-  if (filename == "") then
+  if ("" == filename) then
     return u.err("Empty filename")
   elseif "else" then
     local path = u["join-path"](state.cwd, filename)
@@ -268,7 +266,7 @@ M.qdir = function()
   local cwd
   do
     local p = vim.fn.expand("%:p:h")
-    if (p ~= "") then
+    if ("" ~= p) then
       cwd = fs.canonicalize(p)
     else
       cwd = nil
@@ -277,7 +275,7 @@ M.qdir = function()
   local origin_filename
   do
     local p = vim.fn.expand("%")
-    if (p ~= "") then
+    if ("" ~= p) then
       origin_filename = fs.basename(fs.canonicalize(p))
     else
       origin_filename = nil

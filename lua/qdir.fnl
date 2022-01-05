@@ -10,7 +10,7 @@
 ;; CONFIGURATION
 ;; --------------------------------------
 
-(tset M :actions
+(tset M :keymap
       {:quit "<Cmd>lua require'qdir'.quit()<CR>"
        :up-dir "<Cmd>lua require'qdir'[\"up-dir\"]()<CR>"
        :open "<Cmd>lua require'qdir'.open()<CR>"
@@ -25,22 +25,22 @@
        :cd "<Cmd>lua require'qdir'.cd()<CR>"
        :toggle-hidden-files "<Cmd>lua require'qdir'[\"toggle-hidden-files\"]()<CR>"})
 
-(local config {:keymaps {:q M.actions.quit
-                         :h M.actions.up-dir
-                         :- M.actions.up-dir
-                         :l M.actions.open
-                         :<CR> M.actions.open
-                         :s M.actions.open-split
-                         :v M.actions.open-vsplit
-                         :t M.actions.open-tab
-                         :R M.actions.reload
-                         :d M.actions.delete
-                         :+ M.actions.create
-                         :r M.actions.rename
-                         :m M.actions.rename
-                         :c M.actions.copy
-                         :C M.actions.cd
-                         :gh M.actions.toggle-hidden-files}
+(local config {:keymaps {:q M.keymap.quit
+                         :h M.keymap.up-dir
+                         :- M.keymap.up-dir
+                         :l M.keymap.open
+                         :<CR> M.keymap.open
+                         :s M.keymap.open-split
+                         :v M.keymap.open-vsplit
+                         :t M.keymap.open-tab
+                         :R M.keymap.reload
+                         :d M.keymap.delete
+                         :+ M.keymap.create
+                         :r M.keymap.rename
+                         :m M.keymap.rename
+                         :c M.keymap.copy
+                         :C M.keymap.cd
+                         :gh M.keymap.toggle-hidden-files}
                :show-hidden-files true
                :is-file-hidden (fn []
                                  false)
@@ -153,7 +153,7 @@
 (fn M.open [cmd]
   (let [state (store.get)
         filename (u.get-line)]
-    (if (= filename "") (u.err "Empty filename") :else
+    (if (not= "" filename)
         (let [path (u.join-path state.cwd filename)
               realpath (fs.canonicalize path)]
           (if (fs.is-dir? path)
@@ -182,7 +182,7 @@
 (fn M.delete []
   (let [state (store.get)
         filename (u.get-line)]
-    (if (= filename "") (u.err "Empty filename") :else
+    (if (= "" filename) (u.err "Empty filename") :else
         (let [path (u.join-path state.cwd filename)
               _ (print (string.format "Are you sure you want to delete %q? (y/n)"
                                       path))
@@ -196,7 +196,7 @@
 (fn copy-or-rename [operation prompt]
   (let [state (store.get)
         filename (u.get-line)]
-    (if (= filename "") (u.err "Empty filename") :else
+    (if (= "" filename) (u.err "Empty filename") :else
         (let [path (u.join-path state.cwd filename)
               name (vim.fn.input prompt)]
           (when (not= name "")
@@ -245,9 +245,9 @@
         alt-buf (let [n (vim.fn.bufnr "#")]
                   (if (= n -1) nil n))
         cwd (let [p (vim.fn.expand "%:p:h")]
-              (if (not= p "") (fs.canonicalize p) nil))
+              (if (not= "" p) (fs.canonicalize p) nil))
         origin-filename (let [p (vim.fn.expand "%")]
-                          (if (not= p "") (fs.basename (fs.canonicalize p)) nil))
+                          (if (not= "" p) (fs.basename (fs.canonicalize p)) nil))
         win (vim.fn.win_getid)
         buf (assert (u.find-or-create-buf cwd win))
         ns (api.nvim_create_namespace (.. :qdir. buf))
