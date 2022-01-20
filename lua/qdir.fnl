@@ -43,8 +43,7 @@
                          :gh M.keymap.toggle-hidden-files}
                :show-hidden-files true
                :is-file-hidden (fn []
-                                 false)
-               :watch-fs false})
+                                 false)})
 
 (fn M.setup [cfg]
   (let [cfg (or cfg {})]
@@ -58,8 +57,6 @@
       (tset config :keymaps cfg.keymaps))
     (when (not= nil cfg.show-hidden-files)
       (tset config :show-hidden-files cfg.show-hidden-files))
-    (when (not= nil cfg.watch-fs)
-      (tset config :watch-fs cfg.watch-fs))
     (when cfg.is-file-hidden
       (tset config :is-file-hidden cfg.is-file-hidden))))
 
@@ -111,21 +108,10 @@
 
 (lambda cleanup [state]
   (api.nvim_buf_delete state.buf {:force true})
-  (if config.watch-fs (state.event:stop))
   (store.remove state.buf))
-
-;; This can cause an unavoidable cascading render when modifying a file from
-;; Qdir
-(fn on-fs-event [err filename _events]
-  (assert (not err))
-  (local state (store.get))
-  (render state))
 
 (lambda update-cwd [state path]
   (tset state :cwd path)
-  (when config.watch-fs
-    (assert (state.event:stop))
-    (assert (state.event:start path {} (vim.schedule_wrap on-fs-event))))
   nil)
 
 (fn M.quit []
@@ -252,21 +238,17 @@
         buf (assert (u.find-or-create-buf cwd win))
         ns (api.nvim_create_namespace (.. :qdir. buf))
         hovered-filenames {}
-        event (assert (uv.new_fs_event))
         state {: buf
                : win
                : origin-buf
                : alt-buf
                : cwd
                : ns
-               : hovered-filenames
-               : event}]
+               : hovered-filenames}]
     (setup-keymaps buf)
     (store.set! buf state)
     (render state)
-    (u.set-cursor-pos origin-filename)
-    ;; FIXME: This is sometimes causing an error on save
-    (if config.watch-fs (event:start cwd {} (vim.schedule_wrap on-fs-event)))))
+    (u.set-cursor-pos origin-filename)))
 
 M
 
