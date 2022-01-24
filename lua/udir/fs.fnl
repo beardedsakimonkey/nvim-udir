@@ -1,5 +1,5 @@
 (local uv vim.loop)
-(local u (require :qdir.util))
+(local u (require :udir.util))
 
 (local M {})
 

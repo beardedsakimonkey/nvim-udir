@@ -1,6 +1,6 @@
-(local fs (require :qdir.fs))
-(local store (require :qdir.store))
-(local u (require :qdir.util))
+(local fs (require :udir.fs))
+(local store (require :udir.store))
+(local u (require :udir.util))
 (local api vim.api)
 (local uv vim.loop)
 
@@ -11,19 +11,19 @@
 ;; --------------------------------------
 
 (tset M :keymap
-      {:quit "<Cmd>lua require'qdir'.quit()<CR>"
-       :up-dir "<Cmd>lua require'qdir'[\"up-dir\"]()<CR>"
-       :open "<Cmd>lua require'qdir'.open()<CR>"
-       :open-split "<Cmd>lua require'qdir'.open('split')<CR>"
-       :open-vsplit "<Cmd>lua require'qdir'.open('vsplit')<CR>"
-       :open-tab "<Cmd>lua require'qdir'.open('tabedit')<CR>"
-       :reload "<Cmd>lua require'qdir'.reload()<CR>"
-       :delete "<Cmd>lua require'qdir'.delete()<CR>"
-       :create "<Cmd>lua require'qdir'.create()<CR>"
-       :rename "<Cmd>lua require'qdir'.rename()<CR>"
-       :copy "<Cmd>lua require'qdir'.copy()<CR>"
-       :cd "<Cmd>lua require'qdir'.cd()<CR>"
-       :toggle-hidden-files "<Cmd>lua require'qdir'[\"toggle-hidden-files\"]()<CR>"})
+      {:quit "<Cmd>lua require'udir'.quit()<CR>"
+       :up-dir "<Cmd>lua require'udir'[\"up-dir\"]()<CR>"
+       :open "<Cmd>lua require'udir'.open()<CR>"
+       :open-split "<Cmd>lua require'udir'.open('split')<CR>"
+       :open-vsplit "<Cmd>lua require'udir'.open('vsplit')<CR>"
+       :open-tab "<Cmd>lua require'udir'.open('tabedit')<CR>"
+       :reload "<Cmd>lua require'udir'.reload()<CR>"
+       :delete "<Cmd>lua require'udir'.delete()<CR>"
+       :create "<Cmd>lua require'udir'.create()<CR>"
+       :rename "<Cmd>lua require'udir'.rename()<CR>"
+       :copy "<Cmd>lua require'udir'.copy()<CR>"
+       :cd "<Cmd>lua require'udir'.cd()<CR>"
+       :toggle-hidden-files "<Cmd>lua require'udir'[\"toggle-hidden-files\"]()<CR>"})
 
 (local config {:keymaps {:q M.keymap.quit
                          :h M.keymap.up-dir
@@ -47,11 +47,11 @@
 
 (fn M.setup [cfg]
   (let [cfg (or cfg {})]
-    ;; Whether to automatically open Qdir when editing a directory
+    ;; Whether to automatically open Udir when editing a directory
     (when cfg.auto-open
-      (vim.cmd "aug qdir")
+      (vim.cmd "aug udir")
       (vim.cmd :au!)
-      (vim.cmd "au BufEnter * if !empty(expand('%')) && isdirectory(expand('%')) && !get(b:, 'is_qdir') | Qdir | endif")
+      (vim.cmd "au BufEnter * if !empty(expand('%')) && isdirectory(expand('%')) && !get(b:, 'is_udir') | Udir | endif")
       (vim.cmd "aug END"))
     (when cfg.keymaps
       (tset config :keymaps cfg.keymaps))
@@ -225,8 +225,8 @@
 ;; INITIALIZATION
 ;; --------------------------------------
 
-;; This gets called by the `:Qdir` command
-(fn M.qdir []
+;; This gets called by the `:Udir` command
+(fn M.udir []
   (let [origin-buf (api.nvim_get_current_buf)
         alt-buf (let [n (vim.fn.bufnr "#")]
                   (if (= n -1) nil n))
@@ -236,7 +236,7 @@
                           (if (not= "" p) (fs.basename (fs.canonicalize p)) nil))
         win (vim.fn.win_getid)
         buf (assert (u.find-or-create-buf cwd win))
-        ns (api.nvim_create_namespace (.. :qdir. buf))
+        ns (api.nvim_create_namespace (.. :udir. buf))
         hovered-filenames {}
         state {: buf
                : win

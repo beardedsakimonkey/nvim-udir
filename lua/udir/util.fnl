@@ -25,17 +25,17 @@
           ;; Buffer doesn't exist yet, so create it
           (set buf (api.nvim_create_buf false true))
           (assert (not (= buf -1)))
-          (api.nvim_buf_set_name buf (.. "Qdir [" (get-buf-name-id) "]")))
+          (api.nvim_buf_set_name buf (.. "Udir [" (get-buf-name-id) "]")))
         :else
         (set buf existing-buf))
-    (api.nvim_buf_set_var buf :is_qdir true)
+    (api.nvim_buf_set_var buf :is_udir true)
     ;; Triggers BufEnter
     (api.nvim_set_current_buf buf)
     ;; Triggers ftplugin, so must get called after setting the current buffer
-    (api.nvim_buf_set_option buf :filetype :qdir)
+    (api.nvim_buf_set_option buf :filetype :udir)
     ;; We don't update the buffer name when changing the working directory
     ;; because that makes things a bit hairy. For instance, it introduces a bug
-    ;; when changing to an alt buffer that was an Qdir buffer, and the directory
+    ;; when changing to an alt buffer that was an Udir buffer, and the directory
     ;; listing was out of sync with our state. So we instead update the
     ;; statusline manually.
     (M.update-statusline cwd)
