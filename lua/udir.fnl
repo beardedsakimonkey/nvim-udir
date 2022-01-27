@@ -132,7 +132,7 @@
                                hovered-filename))
     (update-cwd state parent-dir)
     (render state)
-    (u.update-statusline state.cwd)
+    (api.nvim_buf_set_name state.buf state.cwd)
     (u.set-cursor-pos (fs.basename cwd) :or-top))
   nil)
 
@@ -149,8 +149,8 @@
                   (do
                     (update-cwd state realpath)
                     (render state)
+                    (api.nvim_buf_set_name state.buf state.cwd)
                     (local hovered-file (. state.hovered-filenames realpath))
-                    (u.update-statusline state.cwd)
                     (u.set-cursor-pos hovered-file :or-top)))
               :else
               ;; It's a file
