@@ -38,9 +38,13 @@ local function move(src, dest)
   return assert(uv.fs_rename(src, dest))
 end
 local function copy_file(src, dest)
+  assert((nil ~= dest), string.format("Missing argument %s on %s:%s", "dest", "lua/udir/fs.fnl", 42))
+  assert((nil ~= src), string.format("Missing argument %s on %s:%s", "src", "lua/udir/fs.fnl", 42))
   return assert(uv.fs_copyfile(src, dest))
 end
 local function copy_dir(src, dest)
+  assert((nil ~= dest), string.format("Missing argument %s on %s:%s", "dest", "lua/udir/fs.fnl", 45))
+  assert((nil ~= src), string.format("Missing argument %s on %s:%s", "src", "lua/udir/fs.fnl", 45))
   local stat = assert(uv.fs_stat(src))
   assert(uv.fs_mkdir(dest, stat.mode))
   local fs_2_auto = assert(uv.fs_scandir(src))

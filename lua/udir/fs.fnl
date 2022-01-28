@@ -39,10 +39,10 @@
 (lambda move [src dest]
   (assert (uv.fs_rename src dest)))
 
-(fn copy-file [src dest]
+(lambda copy-file [src dest]
   (assert (uv.fs_copyfile src dest)))
 
-(fn copy-dir [src dest]
+(lambda copy-dir [src dest]
   (local stat (assert (uv.fs_stat src)))
   (assert (uv.fs_mkdir dest stat.mode))
   (foreach-entry src [name type]

@@ -12,27 +12,27 @@
 
 (tset M :keymap
       {:quit "<Cmd>lua require'udir'.quit()<CR>"
-       :up-dir "<Cmd>lua require'udir'[\"up-dir\"]()<CR>"
+       :up_dir "<Cmd>lua require'udir'[\"up-dir\"]()<CR>"
        :open "<Cmd>lua require'udir'.open()<CR>"
-       :open-split "<Cmd>lua require'udir'.open('split')<CR>"
-       :open-vsplit "<Cmd>lua require'udir'.open('vsplit')<CR>"
-       :open-tab "<Cmd>lua require'udir'.open('tabedit')<CR>"
+       :open_split "<Cmd>lua require'udir'.open('split')<CR>"
+       :open_vsplit "<Cmd>lua require'udir'.open('vsplit')<CR>"
+       :open_tab "<Cmd>lua require'udir'.open('tabedit')<CR>"
        :reload "<Cmd>lua require'udir'.reload()<CR>"
        :delete "<Cmd>lua require'udir'.delete()<CR>"
        :create "<Cmd>lua require'udir'.create()<CR>"
        :move "<Cmd>lua require'udir'.move()<CR>"
        :copy "<Cmd>lua require'udir'.copy()<CR>"
        :cd "<Cmd>lua require'udir'.cd()<CR>"
-       :toggle-hidden-files "<Cmd>lua require'udir'[\"toggle-hidden-files\"]()<CR>"})
+       :toggle_hidden_files "<Cmd>lua require'udir'[\"toggle-hidden-files\"]()<CR>"})
 
 (local config {:keymaps {:q M.keymap.quit
-                         :h M.keymap.up-dir
-                         :- M.keymap.up-dir
+                         :h M.keymap.up_dir
+                         :- M.keymap.up_dir
                          :l M.keymap.open
                          :<CR> M.keymap.open
-                         :s M.keymap.open-split
-                         :v M.keymap.open-vsplit
-                         :t M.keymap.open-tab
+                         :s M.keymap.open_split
+                         :v M.keymap.open_vsplit
+                         :t M.keymap.open_tab
                          :R M.keymap.reload
                          :d M.keymap.delete
                          :+ M.keymap.create
@@ -40,10 +40,9 @@
                          :m M.keymap.move
                          :c M.keymap.copy
                          :C M.keymap.cd
-                         :gh M.keymap.toggle-hidden-files}
+                         :gh M.keymap.toggle_hidden_files}
                :show-hidden-files true
-               :is-file-hidden (fn []
-                                 false)})
+               :is-file-hidden #false})
 
 (fn M.setup [cfg]
   (let [cfg (or cfg {})]
