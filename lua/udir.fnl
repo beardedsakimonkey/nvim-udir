@@ -20,7 +20,7 @@
        :reload "<Cmd>lua require'udir'.reload()<CR>"
        :delete "<Cmd>lua require'udir'.delete()<CR>"
        :create "<Cmd>lua require'udir'.create()<CR>"
-       :rename "<Cmd>lua require'udir'.rename()<CR>"
+       :move "<Cmd>lua require'udir'.move()<CR>"
        :copy "<Cmd>lua require'udir'.copy()<CR>"
        :cd "<Cmd>lua require'udir'.cd()<CR>"
        :toggle-hidden-files "<Cmd>lua require'udir'[\"toggle-hidden-files\"]()<CR>"})
@@ -36,8 +36,8 @@
                          :R M.keymap.reload
                          :d M.keymap.delete
                          :+ M.keymap.create
-                         :r M.keymap.rename
-                         :m M.keymap.rename
+                         :r M.keymap.move
+                         :m M.keymap.move
                          :c M.keymap.copy
                          :C M.keymap.cd
                          :gh M.keymap.toggle-hidden-files}
@@ -142,6 +142,7 @@
     (if (not= "" filename)
         (let [path (u.join-path state.cwd filename)
               realpath (fs.canonicalize path)]
+          (fs.assert-readable path)
           (if (fs.is-dir? path)
               (if cmd
                   (vim.cmd (.. cmd " " (vim.fn.fnameescape realpath)))
@@ -179,24 +180,24 @@
             (render state))
           (u.clear-prompt)))))
 
-(fn copy-or-rename [operation prompt]
+(fn copy-or-move [move? prompt]
   (let [state (store.get)
         filename (u.get-line)]
     (if (= "" filename) (u.err "Empty filename") :else
-        (let [path (u.join-path state.cwd filename)
+        (let [src (u.join-path state.cwd filename)
               name (vim.fn.input prompt)]
-          (when (not= name "")
-            (let [newpath (u.join-path state.cwd name)]
-              (operation path newpath)
+          (when (not= "" name)
+            (let [dest (u.join-path state.cwd name)]
+              (fs.copy-or-move move? src dest)
               (render state)
               (u.clear-prompt)
-              (u.set-cursor-pos (fs.basename newpath))))))))
+              (u.set-cursor-pos (fs.basename dest))))))))
 
-(fn M.rename []
-  (copy-or-rename fs.rename "New name: "))
+(fn M.move []
+  (copy-or-move true "Move to: "))
 
 (fn M.copy []
-  (copy-or-rename fs.copy "Copy to: "))
+  (copy-or-move false "Copy to: "))
 
 (fn M.create []
   (let [state (store.get)

@@ -3,10 +3,6 @@
 
 (local M {})
 
-(lambda assert-readable [path]
-  (assert (uv.fs_access path :R))
-  nil)
-
 (lambda assert-doesnt-exist [path]
   (assert (not (uv.fs_access path :R)) (string.format "%q already exists" path))
   nil)
@@ -40,6 +36,9 @@
                      :else (delete-file (u.join-path path name))))
   (assert (uv.fs_rmdir path)))
 
+(lambda move [src dest]
+  (assert (uv.fs_rename src dest)))
+
 (fn copy-file [src dest]
   (assert (uv.fs_copyfile src dest)))
 
@@ -66,9 +65,8 @@
 
 ;; NOTE: Symlink dirs are considered directories
 (lambda M.is-dir? [path]
-  (assert-readable path)
   (let [file-info (uv.fs_stat path)]
-    (= file-info.type :directory)))
+    (if (not= nil file-info) (= :directory file-info.type) false)))
 
 (lambda M.list [path]
   "Returns a sequential table of {: name : type} items"
@@ -79,10 +77,14 @@
                    (table.insert ret {: name : type}))
     ret))
 
+(lambda M.assert-readable [path]
+  (assert (uv.fs_access path :R))
+  nil)
+
 (lambda M.get-parent-dir [dir]
   "Returns the absolute path of the parent directory"
   (let [parent-dir (M.canonicalize (.. dir u.sep ".."))]
-    (assert-readable parent-dir)
+    (M.assert-readable parent-dir)
     parent-dir))
 
 (lambda M.basename [path]
@@ -92,6 +94,7 @@
   (. split (length split)))
 
 (lambda M.delete [path]
+  (M.assert-readable path)
   (if (and (M.is-dir? path) (not (is-symlink? path))) (delete-dir path)
       :else (delete-file path))
   nil)
@@ -111,16 +114,21 @@
     (assert (uv.fs_close fd))
     nil))
 
-(lambda M.rename [path newpath]
-  (assert-doesnt-exist newpath)
-  (assert (uv.fs_rename path newpath))
-  (u.delete-buffer path)
-  nil)
-
-(lambda M.copy [src dest]
-  (assert-doesnt-exist dest)
-  (if (M.is-dir? src) (copy-dir src dest)
-      :else (copy-file src dest)))
+(lambda M.copy-or-move [move? src dest]
+  (assert (not= src dest))
+  (M.assert-readable src)
+  (if (M.is-dir? src)
+      (let [op (if move? move copy-dir)]
+        ;; Moving from a dir to a file should fail
+        (assert (M.is-dir? dest))
+        ;; Moving from a dir to a dir should move to a subdirectory
+        (op src (u.join-path dest (M.basename src))))
+      (let [op (if move? move copy-file)]
+        (if (M.is-dir? dest)
+            ;; Moving from a file to a dir should move it to a subdirectory
+            (op src (u.join-path dest (M.basename src)))
+            ;; Moving from a file to a file should overwrite the file
+            (op src dest)))))
 
 M
 

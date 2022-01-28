@@ -4,12 +4,12 @@ local u = require("udir.util")
 local api = vim.api
 local uv = vim.loop
 local M = {}
-M["keymap"] = {["open-split"] = "<Cmd>lua require'udir'.open('split')<CR>", ["open-tab"] = "<Cmd>lua require'udir'.open('tabedit')<CR>", ["open-vsplit"] = "<Cmd>lua require'udir'.open('vsplit')<CR>", ["toggle-hidden-files"] = "<Cmd>lua require'udir'[\"toggle-hidden-files\"]()<CR>", ["up-dir"] = "<Cmd>lua require'udir'[\"up-dir\"]()<CR>", cd = "<Cmd>lua require'udir'.cd()<CR>", copy = "<Cmd>lua require'udir'.copy()<CR>", create = "<Cmd>lua require'udir'.create()<CR>", delete = "<Cmd>lua require'udir'.delete()<CR>", open = "<Cmd>lua require'udir'.open()<CR>", quit = "<Cmd>lua require'udir'.quit()<CR>", reload = "<Cmd>lua require'udir'.reload()<CR>", rename = "<Cmd>lua require'udir'.rename()<CR>"}
+M["keymap"] = {["open-split"] = "<Cmd>lua require'udir'.open('split')<CR>", ["open-tab"] = "<Cmd>lua require'udir'.open('tabedit')<CR>", ["open-vsplit"] = "<Cmd>lua require'udir'.open('vsplit')<CR>", ["toggle-hidden-files"] = "<Cmd>lua require'udir'[\"toggle-hidden-files\"]()<CR>", ["up-dir"] = "<Cmd>lua require'udir'[\"up-dir\"]()<CR>", cd = "<Cmd>lua require'udir'.cd()<CR>", copy = "<Cmd>lua require'udir'.copy()<CR>", create = "<Cmd>lua require'udir'.create()<CR>", delete = "<Cmd>lua require'udir'.delete()<CR>", move = "<Cmd>lua require'udir'.move()<CR>", open = "<Cmd>lua require'udir'.open()<CR>", quit = "<Cmd>lua require'udir'.quit()<CR>", reload = "<Cmd>lua require'udir'.reload()<CR>"}
 local config
 local function _1_()
   return false
 end
-config = {["is-file-hidden"] = _1_, ["show-hidden-files"] = true, keymaps = {C = M.keymap.cd, R = M.keymap.reload, ["+"] = M.keymap.create, ["-"] = M.keymap["up-dir"], ["<CR>"] = M.keymap.open, c = M.keymap.copy, d = M.keymap.delete, gh = M.keymap["toggle-hidden-files"], h = M.keymap["up-dir"], l = M.keymap.open, m = M.keymap.rename, q = M.keymap.quit, r = M.keymap.rename, s = M.keymap["open-split"], t = M.keymap["open-tab"], v = M.keymap["open-vsplit"]}}
+config = {["is-file-hidden"] = _1_, ["show-hidden-files"] = true, keymaps = {C = M.keymap.cd, R = M.keymap.reload, ["+"] = M.keymap.create, ["-"] = M.keymap["up-dir"], ["<CR>"] = M.keymap.open, c = M.keymap.copy, d = M.keymap.delete, gh = M.keymap["toggle-hidden-files"], h = M.keymap["up-dir"], l = M.keymap.open, m = M.keymap.move, q = M.keymap.quit, r = M.keymap.move, s = M.keymap["open-split"], t = M.keymap["open-tab"], v = M.keymap["open-vsplit"]}}
 M.setup = function(cfg)
   local cfg0 = (cfg or {})
   if cfg0["auto-open"] then
@@ -148,6 +148,7 @@ M.open = function(cmd)
   if ("" ~= filename) then
     local path = u["join-path"](state.cwd, filename)
     local realpath = fs.canonicalize(path)
+    fs["assert-readable"](path)
     if fs["is-dir?"](path) then
       if cmd then
         return vim.cmd((cmd .. " " .. vim.fn.fnameescape(realpath)))
@@ -186,28 +187,28 @@ M.delete = function()
     return u["clear-prompt"]()
   end
 end
-local function copy_or_rename(operation, prompt)
+local function copy_or_move(move_3f, prompt)
   local state = store.get()
   local filename = u["get-line"]()
   if ("" == filename) then
     return u.err("Empty filename")
   elseif "else" then
-    local path = u["join-path"](state.cwd, filename)
+    local src = u["join-path"](state.cwd, filename)
     local name = vim.fn.input(prompt)
-    if (name ~= "") then
-      local newpath = u["join-path"](state.cwd, name)
-      operation(path, newpath)
+    if ("" ~= name) then
+      local dest = u["join-path"](state.cwd, name)
+      fs["copy-or-move"](move_3f, src, dest)
       render(state)
       u["clear-prompt"]()
-      return u["set-cursor-pos"](fs.basename(newpath))
+      return u["set-cursor-pos"](fs.basename(dest))
     end
   end
 end
-M.rename = function()
-  return copy_or_rename(fs.rename, "New name: ")
+M.move = function()
+  return copy_or_move(true, "Move to: ")
 end
 M.copy = function()
-  return copy_or_rename(fs.copy, "Copy to: ")
+  return copy_or_move(false, "Copy to: ")
 end
 M.create = function()
   local state = store.get()
