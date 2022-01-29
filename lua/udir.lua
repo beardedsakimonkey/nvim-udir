@@ -137,7 +137,7 @@ M["up-dir"] = function()
     end
     update_cwd(state, parent_dir)
     render(state)
-    api.nvim_buf_set_name(state.buf, state.cwd)
+    u["update-statusline"](state.cwd)
     u["set-cursor-pos"](fs.basename(cwd), "or-top")
   end
   return nil
@@ -155,8 +155,8 @@ M.open = function(cmd)
       elseif "else" then
         update_cwd(state, realpath)
         render(state)
-        api.nvim_buf_set_name(state.buf, state.cwd)
         local hovered_file = (state["hovered-filenames"])[realpath]
+        u["update-statusline"](state.cwd)
         return u["set-cursor-pos"](hovered_file, "or-top")
       end
     elseif "else" then
