@@ -2,17 +2,42 @@
 
 (local M {})
 
-;; In vim, buffer names must be unique. If we name buffers according to their
-;; working directory, and we have two windows open at the same directory, they
-;; would be sharing the same buffer. This is undesirable because all changes to
-;; one window happens in lockstep with the other. To avoid this, we append a
-;; unique ID to buffer names.
+;; Problem: We'd like udir buffers to be completely unique (udir instances in
+;; two different windows should be isolated), and also have a buffer name that
+;; we can `:cd %` to.
+;;
+;; If we use the absolute path as the buffer name, buffers won't be unique. That
+;; is, if we have two windows opened to the same path, they will share the
+;; same buffer, and so actions performed in one would affect the other.
+;;
+;; One idea to work around this is to suffix buffer names that would otherwise
+;; be unique with a number of repeated "/." in order to be unique. However,
+;; vim's implementation of buffer renaming tries to fully resolve the name if
+;; it's a path, so it will end up reusing the existing buffer.
+;;
+;; However, vim doesn't perform this resolution if the buffer name is a URI,
+;; such as "file:///Users/blah", so we could use the suffix trick with that.
+;; But, alas, `:cd`ing to a URI isn't supported.
+;;
+;; So, the best we can do is name a buffer by its path if it isn't currently
+;; active (loaded and visible), or otherwise name it by its path with an
+;; appended id, which makes it unique but not `:cd`able.
 (var buf-name-id 1)
 
 (fn get-buf-name-id []
   (local id buf-name-id)
   (set buf-name-id (+ buf-name-id 1))
   id)
+
+(fn M.update-buf-name [buf cwd]
+  (local active-bufs (->> (vim.fn.getbufinfo)
+                          (vim.tbl_filter #(and (= 1 $1.loaded) (= 0 $1.hidden)))
+                          (vim.tbl_map #$1.name)))
+  (print (vim.inspect active-bufs))
+  (local new-name (if (-> active-bufs (vim.tbl_contains cwd))
+                      (.. cwd " " (get-buf-name-id))
+                      cwd))
+  (api.nvim_buf_set_name buf new-name))
 
 (lambda M.update-statusline [cwd]
   (set vim.opt_local.statusline (.. " " cwd)))
@@ -25,7 +50,7 @@
           ;; Buffer doesn't exist yet, so create it
           (set buf (api.nvim_create_buf false true))
           (assert (not (= buf -1)))
-          (api.nvim_buf_set_name buf (.. "Udir [" (get-buf-name-id) "]")))
+          (M.update-buf-name buf cwd))
         :else
         (set buf existing-buf))
     (api.nvim_buf_set_var buf :is_udir true)
@@ -33,12 +58,6 @@
     (api.nvim_set_current_buf buf)
     ;; Triggers ftplugin, so must get called after setting the current buffer
     (api.nvim_buf_set_option buf :filetype :udir)
-    ;; We don't update the buffer name when changing the working directory
-    ;; because that makes things a bit hairy. For instance, it introduces a bug
-    ;; when changing to an alt buffer that was an Udir buffer, and the directory
-    ;; listing was out of sync with our state. So we instead update the
-    ;; statusline manually.
-    (M.update-statusline cwd)
     buf))
 
 (lambda M.set-current-buf [buf]
