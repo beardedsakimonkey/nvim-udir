@@ -180,19 +180,24 @@ M.delete = function()
     return u["clear-prompt"]()
   end
 end
-local function copy_or_move(move_3f, prompt)
-  assert((nil ~= prompt), string.format("Missing argument %s on %s:%s", "prompt", "lua/udir.fnl", 182))
-  assert((nil ~= move_3f), string.format("Missing argument %s on %s:%s", "move?", "lua/udir.fnl", 182))
+local function copy_or_move(should_move)
+  assert((nil ~= should_move), string.format("Missing argument %s on %s:%s", "should-move", "lua/udir.fnl", 180))
   local state = store.get()
   local filename = u["get-line"]()
   if ("" == filename) then
     return u.err("Empty filename")
   else
     local src = u["join-path"](state.cwd, filename)
+    local prompt
+    if should_move then
+      prompt = "Move to:"
+    else
+      prompt = "Copy to:"
+    end
     local name = vim.fn.input(prompt)
     if ("" ~= name) then
       local dest = u["join-path"](state.cwd, name)
-      fs["copy-or-move"](move_3f, src, dest)
+      fs["copy-or-move"](should_move, src, dest)
       render(state)
       u["clear-prompt"]()
       return u["set-cursor-pos"](fs.basename(dest))
@@ -200,10 +205,10 @@ local function copy_or_move(move_3f, prompt)
   end
 end
 M.move = function()
-  return copy_or_move(true, "Move to: ")
+  return copy_or_move(true)
 end
 M.copy = function()
-  return copy_or_move(false, "Copy to: ")
+  return copy_or_move(false)
 end
 M.create = function()
   local state = store.get()
@@ -225,11 +230,11 @@ M["toggle-hidden-files"] = function()
   local _3fhovered_file = u["get-line"]()
   config["show-hidden-files"] = not config["show-hidden-files"]
   render(state)
-  return u["set-cursor-pos"](fs.basename(_3fhovered_file))
+  return u["set-cursor-pos"](_3fhovered_file)
 end
 M.cd = function()
-  local _local_27_ = store.get()
-  local cwd = _local_27_["cwd"]
+  local _local_28_ = store.get()
+  local cwd = _local_28_["cwd"]
   vim.cmd(("cd " .. vim.fn.fnameescape(cwd)))
   return vim.cmd("pwd")
 end
@@ -253,7 +258,6 @@ M.udir = function()
       cwd = nil
     end
   end
-  local _ = print("cwd", cwd)
   local _3forigin_filename
   do
     local p = vim.fn.expand("%:p:t")

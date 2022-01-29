@@ -152,11 +152,9 @@
               (u.update-buf-name state.buf state.cwd)
               (local ?hovered-file (. state.hovered-files realpath))
               (u.set-cursor-pos ?hovered-file :or-top)))
-        ;; It's a file
         (do
           ;; Update the altfile
           (u.set-current-buf state.origin-buf)
-          ;; Open the file
           (vim.cmd (.. (or ?cmd :edit) " " (vim.fn.fnameescape realpath)))
           (cleanup state)))))
 
@@ -179,25 +177,26 @@
           (render state))
         (u.clear-prompt))))
 
-(lambda copy-or-move [move? prompt]
+(lambda copy-or-move [should-move]
   (local state (store.get))
   (local filename (u.get-line))
   (if (= "" filename)
       (u.err "Empty filename")
       (let [src (u.join-path state.cwd filename)
+            prompt (if should-move "Move to:" "Copy to:")
             name (vim.fn.input prompt)]
         (when (not= "" name)
           (let [dest (u.join-path state.cwd name)]
-            (fs.copy-or-move move? src dest)
+            (fs.copy-or-move should-move src dest)
             (render state)
             (u.clear-prompt)
             (u.set-cursor-pos (fs.basename dest)))))))
 
 (lambda M.move []
-  (copy-or-move true "Move to: "))
+  (copy-or-move true))
 
 (lambda M.copy []
-  (copy-or-move false "Copy to: "))
+  (copy-or-move false))
 
 (lambda M.create []
   (local state (store.get))
@@ -216,7 +215,7 @@
   (local ?hovered-file (u.get-line))
   (set config.show-hidden-files (not config.show-hidden-files))
   (render state)
-  (u.set-cursor-pos (fs.basename ?hovered-file)))
+  (u.set-cursor-pos ?hovered-file))
 
 (lambda M.cd []
   (local {: cwd} (store.get))
@@ -236,7 +235,6 @@
         ;; TODO: Fallback to pwd
         cwd (let [p (vim.fn.expand "%:p:h")]
               (if (not= "" p) (fs.canonicalize p) nil))
-        _ (print :cwd cwd)
         ?origin-filename (let [p (vim.fn.expand "%:p:t")]
                            (if (= "" p) nil p))
         buf (assert (u.find-or-create-buf cwd))
