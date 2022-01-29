@@ -23,7 +23,6 @@
                  ;; If the first return value is nil and the second
                  ;; return value is non-nil then there was an error.
                  (assert (not type)))
-               :else
                ,form))))))
 
 (lambda delete-file [path]
@@ -32,8 +31,9 @@
 
 (lambda delete-dir [path]
   (foreach-entry path [name type]
-                 (if (= type :directory) (delete-dir (u.join-path path name))
-                     :else (delete-file (u.join-path path name))))
+                 (if (= type :directory)
+                     (delete-dir (u.join-path path name))
+                     (delete-file (u.join-path path name))))
   (assert (uv.fs_rmdir path)))
 
 (lambda move [src dest]
@@ -48,8 +48,9 @@
   (foreach-entry src [name type]
                  (let [src2 (u.join-path src name)
                        dest2 (u.join-path dest name)]
-                   (if (= type :directory) (copy-dir src2 dest2)
-                       :else (copy-file src2 dest2)))))
+                   (if (= type :directory)
+                       (copy-dir src2 dest2)
+                       (copy-file src2 dest2)))))
 
 (lambda is-symlink? [path]
   (local link (uv.fs_readlink path))
@@ -95,8 +96,9 @@
 
 (lambda M.delete [path]
   (M.assert-readable path)
-  (if (and (M.is-dir? path) (not (is-symlink? path))) (delete-dir path)
-      :else (delete-file path))
+  (if (and (M.is-dir? path) (not (is-symlink? path)))
+      (delete-dir path)
+      (delete-file path))
   nil)
 
 (lambda M.create-dir [path]

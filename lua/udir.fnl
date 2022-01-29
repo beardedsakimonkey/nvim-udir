@@ -40,7 +40,7 @@
                          :m M.keymap.move
                          :c M.keymap.copy
                          :C M.keymap.cd
-                         :gh M.keymap.toggle_hidden_files}
+                         :. M.keymap.toggle_hidden_files}
                :show-hidden-files true
                :is-file-hidden #false})
 
@@ -64,8 +64,9 @@
 ;; --------------------------------------
 
 (lambda sort-in-place [files]
-  (table.sort files #(if (= $1.type $2.type) (< $1.name $2.name)
-                         :else (= $1.type :directory)))
+  (table.sort files #(if (= $1.type $2.type)
+                         (< $1.name $2.name)
+                         (= $1.type :directory)))
   nil)
 
 (lambda render-virttext [ns files]
@@ -85,7 +86,8 @@
 (lambda render [state]
   (let [{: buf : cwd} state
         files (fs.list cwd)
-        files (if config.show-hidden-files files :else
+        files (if config.show-hidden-files
+                  files
                   (vim.tbl_filter #(not (config.is-file-hidden $1 cwd)) files))
         _ (sort-in-place files)
         filenames (->> files
@@ -145,14 +147,12 @@
           (if (fs.is-dir? path)
               (if cmd
                   (vim.cmd (.. cmd " " (vim.fn.fnameescape realpath)))
-                  :else
                   (do
                     (update-cwd state realpath)
                     (render state)
                     (u.update-buf-name state.buf state.cwd)
                     (local hovered-file (. state.hovered-filenames realpath))
                     (u.set-cursor-pos hovered-file :or-top)))
-              :else
               ;; It's a file
               (do
                 ;; Update the altfile
@@ -168,7 +168,8 @@
 (fn M.delete []
   (let [state (store.get)
         filename (u.get-line)]
-    (if (= "" filename) (u.err "Empty filename") :else
+    (if (= "" filename)
+        (u.err "Empty filename")
         (let [path (u.join-path state.cwd filename)
               _ (print (string.format "Are you sure you want to delete %q? (y/n)"
                                       path))
@@ -182,7 +183,8 @@
 (fn copy-or-move [move? prompt]
   (let [state (store.get)
         filename (u.get-line)]
-    (if (= "" filename) (u.err "Empty filename") :else
+    (if (= "" filename)
+        (u.err "Empty filename")
         (let [src (u.join-path state.cwd filename)
               name (vim.fn.input prompt)]
           (when (not= "" name)
@@ -203,8 +205,9 @@
         name (vim.fn.input "New file: ")]
     (when (not= name "")
       (let [path (u.join-path state.cwd name)]
-        (if (vim.endswith name u.sep) (fs.create-dir path)
-            :else (fs.create-file path))
+        (if (vim.endswith name u.sep)
+            (fs.create-dir path)
+            (fs.create-file path))
         (render state)
         (u.clear-prompt)
         (u.set-cursor-pos (fs.basename path))))))
