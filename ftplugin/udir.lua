@@ -5,4 +5,6 @@ if not vim.b.did_ftplugin then
   vim.opt_local.modifiable = false
   vim.b.undo_ftplugin = "setl cursorline< buftype< modifiable<"
   return nil
+else
+  return nil
 end

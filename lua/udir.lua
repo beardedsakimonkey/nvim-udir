@@ -4,12 +4,12 @@ local u = require("udir.util")
 local api = vim.api
 local uv = vim.loop
 local M = {}
-M["keymap"] = {cd = "<Cmd>lua require'udir'.cd()<CR>", copy = "<Cmd>lua require'udir'.copy()<CR>", create = "<Cmd>lua require'udir'.create()<CR>", delete = "<Cmd>lua require'udir'.delete()<CR>", move = "<Cmd>lua require'udir'.move()<CR>", open = "<Cmd>lua require'udir'.open()<CR>", open_split = "<Cmd>lua require'udir'.open('split')<CR>", open_tab = "<Cmd>lua require'udir'.open('tabedit')<CR>", open_vsplit = "<Cmd>lua require'udir'.open('vsplit')<CR>", quit = "<Cmd>lua require'udir'.quit()<CR>", reload = "<Cmd>lua require'udir'.reload()<CR>", toggle_hidden_files = "<Cmd>lua require'udir'[\"toggle-hidden-files\"]()<CR>", up_dir = "<Cmd>lua require'udir'[\"up-dir\"]()<CR>"}
+M["keymap"] = {quit = "<Cmd>lua require'udir'.quit()<CR>", up_dir = "<Cmd>lua require'udir'[\"up-dir\"]()<CR>", open = "<Cmd>lua require'udir'.open()<CR>", open_split = "<Cmd>lua require'udir'.open('split')<CR>", open_vsplit = "<Cmd>lua require'udir'.open('vsplit')<CR>", open_tab = "<Cmd>lua require'udir'.open('tabedit')<CR>", reload = "<Cmd>lua require'udir'.reload()<CR>", delete = "<Cmd>lua require'udir'.delete()<CR>", create = "<Cmd>lua require'udir'.create()<CR>", move = "<Cmd>lua require'udir'.move()<CR>", copy = "<Cmd>lua require'udir'.copy()<CR>", cd = "<Cmd>lua require'udir'.cd()<CR>", toggle_hidden_files = "<Cmd>lua require'udir'[\"toggle-hidden-files\"]()<CR>"}
 local config
 local function _1_()
   return false
 end
-config = {["is-file-hidden"] = _1_, ["show-hidden-files"] = true, keymaps = {C = M.keymap.cd, R = M.keymap.reload, ["+"] = M.keymap.create, ["-"] = M.keymap.up_dir, ["."] = M.keymap.toggle_hidden_files, ["<CR>"] = M.keymap.open, c = M.keymap.copy, d = M.keymap.delete, h = M.keymap.up_dir, l = M.keymap.open, m = M.keymap.move, q = M.keymap.quit, r = M.keymap.move, s = M.keymap.open_split, t = M.keymap.open_tab, v = M.keymap.open_vsplit}}
+config = {keymaps = {q = M.keymap.quit, h = M.keymap.up_dir, ["-"] = M.keymap.up_dir, l = M.keymap.open, ["<CR>"] = M.keymap.open, s = M.keymap.open_split, v = M.keymap.open_vsplit, t = M.keymap.open_tab, R = M.keymap.reload, d = M.keymap.delete, ["+"] = M.keymap.create, r = M.keymap.move, m = M.keymap.move, c = M.keymap.copy, C = M.keymap.cd, ["."] = M.keymap.toggle_hidden_files}, ["show-hidden-files"] = true, ["is-file-hidden"] = _1_}
 M.setup = function(_3fcfg)
   local cfg = (_3fcfg or {})
   if cfg["auto-open"] then
@@ -17,20 +17,25 @@ M.setup = function(_3fcfg)
     vim.cmd("au!")
     vim.cmd("au BufEnter * if !empty(expand('%')) && isdirectory(expand('%')) && !get(b:, 'is_udir') | Udir | endif")
     vim.cmd("aug END")
+  else
   end
   if cfg.keymaps then
     config["keymaps"] = cfg.keymaps
+  else
   end
   if (nil ~= cfg["show-hidden-files"]) then
     config["show-hidden-files"] = cfg["show-hidden-files"]
+  else
   end
   if cfg["is-file-hidden"] then
     config["is-file-hidden"] = cfg["is-file-hidden"]
     return nil
+  else
+    return nil
   end
 end
 local function sort_21(files)
-  assert((nil ~= files), string.format("Missing argument %s on %s:%s", "files", "lua/udir.fnl", 66))
+  _G.assert((nil ~= files), "Missing argument files on lua/udir.fnl:66")
   local function _6_(_241, _242)
     if (_241.type == _242.type) then
       return (_241.name < _242.name)
@@ -42,8 +47,8 @@ local function sort_21(files)
   return files
 end
 local function render_virttext(ns, files)
-  assert((nil ~= files), string.format("Missing argument %s on %s:%s", "files", "lua/udir.fnl", 72))
-  assert((nil ~= ns), string.format("Missing argument %s on %s:%s", "ns", "lua/udir.fnl", 72))
+  _G.assert((nil ~= files), "Missing argument files on lua/udir.fnl:72")
+  _G.assert((nil ~= ns), "Missing argument ns on lua/udir.fnl:72")
   api.nvim_buf_clear_namespace(0, ns, 0, -1)
   for i, file in ipairs(files) do
     local virttext, hl = nil, nil
@@ -54,18 +59,19 @@ local function render_virttext(ns, files)
       elseif (_8_ == "link") then
         virttext, hl = "@", "Constant"
       else
-      virttext, hl = nil
+        virttext, hl = nil
       end
     end
     if virttext then
       api.nvim_buf_set_extmark(0, ns, (i - 1), #file.name, {virt_text = {{virttext, "Comment"}}, virt_text_pos = "overlay"})
       api.nvim_buf_set_extmark(0, ns, (i - 1), 0, {end_col = #file.name, hl_group = hl})
+    else
     end
   end
   return nil
 end
 local function render(state)
-  assert((nil ~= state), string.format("Missing argument %s on %s:%s", "state", "lua/udir.fnl", 86))
+  _G.assert((nil ~= state), "Missing argument state on lua/udir.fnl:86")
   local _local_11_ = state
   local buf = _local_11_["buf"]
   local cwd = _local_11_["cwd"]
@@ -87,27 +93,27 @@ local function render(state)
   return render_virttext(state.ns, files)
 end
 local function noremap(mode, buf, mappings)
-  assert((nil ~= mappings), string.format("Missing argument %s on %s:%s", "mappings", "lua/udir.fnl", 101))
-  assert((nil ~= buf), string.format("Missing argument %s on %s:%s", "buf", "lua/udir.fnl", 101))
-  assert((nil ~= mode), string.format("Missing argument %s on %s:%s", "mode", "lua/udir.fnl", 101))
+  _G.assert((nil ~= mappings), "Missing argument mappings on lua/udir.fnl:101")
+  _G.assert((nil ~= buf), "Missing argument buf on lua/udir.fnl:101")
+  _G.assert((nil ~= mode), "Missing argument mode on lua/udir.fnl:101")
   for lhs, rhs in pairs(mappings) do
-    api.nvim_buf_set_keymap(buf, mode, lhs, rhs, {noremap = true, nowait = true, silent = true})
+    api.nvim_buf_set_keymap(buf, mode, lhs, rhs, {nowait = true, noremap = true, silent = true})
   end
   return nil
 end
 local function setup_keymaps(buf)
-  assert((nil ~= buf), string.format("Missing argument %s on %s:%s", "buf", "lua/udir.fnl", 106))
+  _G.assert((nil ~= buf), "Missing argument buf on lua/udir.fnl:106")
   return noremap("n", buf, config.keymaps)
 end
 local function cleanup(state)
-  assert((nil ~= state), string.format("Missing argument %s on %s:%s", "state", "lua/udir.fnl", 109))
+  _G.assert((nil ~= state), "Missing argument state on lua/udir.fnl:109")
   api.nvim_buf_delete(state.buf, {force = true})
   store["remove!"](state.buf)
   return nil
 end
 local function update_cwd(state, path)
-  assert((nil ~= path), string.format("Missing argument %s on %s:%s", "path", "lua/udir.fnl", 114))
-  assert((nil ~= state), string.format("Missing argument %s on %s:%s", "state", "lua/udir.fnl", 114))
+  _G.assert((nil ~= path), "Missing argument path on lua/udir.fnl:114")
+  _G.assert((nil ~= state), "Missing argument state on lua/udir.fnl:114")
   do end (state)["cwd"] = path
   return nil
 end
@@ -118,6 +124,7 @@ M.quit = function()
   local origin_buf = _local_15_["origin-buf"]
   if _3falt_buf then
     u["set-current-buf"](_3falt_buf)
+  else
   end
   u["set-current-buf"](origin_buf)
   return cleanup(state)
@@ -129,6 +136,7 @@ M["up-dir"] = function()
   local _3fhovered_file = u["get-line"]()
   if _3fhovered_file then
     state["hovered-files"][state.cwd] = _3fhovered_file
+  else
   end
   update_cwd(state, parent_dir)
   render(state)
@@ -157,6 +165,8 @@ M.open = function(_3fcmd)
       vim.cmd(((_3fcmd or "edit") .. " " .. vim.fn.fnameescape(realpath)))
       return cleanup(state)
     end
+  else
+    return nil
   end
 end
 M.reload = function()
@@ -176,12 +186,13 @@ M.delete = function()
     if confirmed_3f then
       fs.delete(path)
       render(state)
+    else
     end
     return u["clear-prompt"]()
   end
 end
 local function copy_or_move(should_move)
-  assert((nil ~= should_move), string.format("Missing argument %s on %s:%s", "should-move", "lua/udir.fnl", 180))
+  _G.assert((nil ~= should_move), "Missing argument should-move on lua/udir.fnl:180")
   local state = store.get()
   local filename = u["get-line"]()
   if ("" == filename) then
@@ -201,6 +212,8 @@ local function copy_or_move(should_move)
       render(state)
       u["clear-prompt"]()
       return u["set-cursor-pos"](fs.basename(dest))
+    else
+      return nil
     end
   end
 end
@@ -223,6 +236,8 @@ M.create = function()
     render(state)
     u["clear-prompt"]()
     return u["set-cursor-pos"](fs.basename(path))
+  else
+    return nil
   end
 end
 M["toggle-hidden-files"] = function()
@@ -270,7 +285,7 @@ M.udir = function()
   local buf = assert(u["find-or-create-buf"](cwd))
   local ns = api.nvim_create_namespace(("udir." .. buf))
   local hovered_files = {}
-  local state = {["?alt-buf"] = _3falt_buf, ["hovered-files"] = hovered_files, ["origin-buf"] = origin_buf, buf = buf, cwd = cwd, ns = ns}
+  local state = {buf = buf, ["origin-buf"] = origin_buf, ["?alt-buf"] = _3falt_buf, cwd = cwd, ns = ns, ["hovered-files"] = hovered_files}
   setup_keymaps(buf)
   store["set!"](buf, state)
   render(state)
