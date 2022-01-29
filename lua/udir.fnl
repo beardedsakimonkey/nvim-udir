@@ -67,7 +67,7 @@
   (table.sort files #(if (= $1.type $2.type)
                          (< $1.name $2.name)
                          (= :directory $1.type)))
-  nil)
+  files)
 
 (lambda render-virttext [ns files]
   (api.nvim_buf_clear_namespace 0 ns 0 -1)
@@ -85,15 +85,12 @@
 
 (lambda render [state]
   (local {: buf : cwd} state)
-  ;; TODO: pipeline
-  (local files (fs.list cwd))
-  (local files
-         (if config.show-hidden-files
-             files
-             (vim.tbl_filter #(not (config.is-file-hidden $1 cwd)) files)))
-  (sort! files)
-  (local filenames (->> files
-                        (vim.tbl_map #$1.name)))
+  (local files (->> (fs.list cwd)
+                    (vim.tbl_filter #(if config.show-hidden-files
+                                         (not (config.is-file-hidden $1 cwd))
+                                         true))
+                    sort!))
+  (local filenames (->> files (vim.tbl_map #$1.name)))
   (u.set-lines buf 0 -1 false filenames)
   (render-virttext state.ns files))
 

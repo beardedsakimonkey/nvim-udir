@@ -39,7 +39,7 @@ local function sort_21(files)
     end
   end
   table.sort(files, _6_)
-  return nil
+  return files
 end
 local function render_virttext(ns, files)
   assert((nil ~= files), string.format("Missing argument %s on %s:%s", "files", "lua/udir.fnl", 72))
@@ -69,47 +69,45 @@ local function render(state)
   local _local_11_ = state
   local buf = _local_11_["buf"]
   local cwd = _local_11_["cwd"]
-  local files = fs.list(cwd)
-  local files0
-  if config["show-hidden-files"] then
-    files0 = files
-  else
-    local function _12_(_241)
+  local files
+  local function _12_(_241)
+    if config["show-hidden-files"] then
       return not config["is-file-hidden"](_241, cwd)
+    else
+      return true
     end
-    files0 = vim.tbl_filter(_12_, files)
   end
-  sort_21(files0)
+  files = sort_21(vim.tbl_filter(_12_, fs.list(cwd)))
   local filenames
   local function _14_(_241)
     return _241.name
   end
-  filenames = vim.tbl_map(_14_, files0)
+  filenames = vim.tbl_map(_14_, files)
   u["set-lines"](buf, 0, -1, false, filenames)
-  return render_virttext(state.ns, files0)
+  return render_virttext(state.ns, files)
 end
 local function noremap(mode, buf, mappings)
-  assert((nil ~= mappings), string.format("Missing argument %s on %s:%s", "mappings", "lua/udir.fnl", 104))
-  assert((nil ~= buf), string.format("Missing argument %s on %s:%s", "buf", "lua/udir.fnl", 104))
-  assert((nil ~= mode), string.format("Missing argument %s on %s:%s", "mode", "lua/udir.fnl", 104))
+  assert((nil ~= mappings), string.format("Missing argument %s on %s:%s", "mappings", "lua/udir.fnl", 101))
+  assert((nil ~= buf), string.format("Missing argument %s on %s:%s", "buf", "lua/udir.fnl", 101))
+  assert((nil ~= mode), string.format("Missing argument %s on %s:%s", "mode", "lua/udir.fnl", 101))
   for lhs, rhs in pairs(mappings) do
     api.nvim_buf_set_keymap(buf, mode, lhs, rhs, {noremap = true, nowait = true, silent = true})
   end
   return nil
 end
 local function setup_keymaps(buf)
-  assert((nil ~= buf), string.format("Missing argument %s on %s:%s", "buf", "lua/udir.fnl", 109))
+  assert((nil ~= buf), string.format("Missing argument %s on %s:%s", "buf", "lua/udir.fnl", 106))
   return noremap("n", buf, config.keymaps)
 end
 local function cleanup(state)
-  assert((nil ~= state), string.format("Missing argument %s on %s:%s", "state", "lua/udir.fnl", 112))
+  assert((nil ~= state), string.format("Missing argument %s on %s:%s", "state", "lua/udir.fnl", 109))
   api.nvim_buf_delete(state.buf, {force = true})
   store["remove!"](state.buf)
   return nil
 end
 local function update_cwd(state, path)
-  assert((nil ~= path), string.format("Missing argument %s on %s:%s", "path", "lua/udir.fnl", 117))
-  assert((nil ~= state), string.format("Missing argument %s on %s:%s", "state", "lua/udir.fnl", 117))
+  assert((nil ~= path), string.format("Missing argument %s on %s:%s", "path", "lua/udir.fnl", 114))
+  assert((nil ~= state), string.format("Missing argument %s on %s:%s", "state", "lua/udir.fnl", 114))
   do end (state)["cwd"] = path
   return nil
 end
@@ -183,8 +181,8 @@ M.delete = function()
   end
 end
 local function copy_or_move(move_3f, prompt)
-  assert((nil ~= prompt), string.format("Missing argument %s on %s:%s", "prompt", "lua/udir.fnl", 185))
-  assert((nil ~= move_3f), string.format("Missing argument %s on %s:%s", "move?", "lua/udir.fnl", 185))
+  assert((nil ~= prompt), string.format("Missing argument %s on %s:%s", "prompt", "lua/udir.fnl", 182))
+  assert((nil ~= move_3f), string.format("Missing argument %s on %s:%s", "move?", "lua/udir.fnl", 182))
   local state = store.get()
   local filename = u["get-line"]()
   if ("" == filename) then
