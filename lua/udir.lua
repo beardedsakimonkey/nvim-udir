@@ -10,32 +10,32 @@ local function _1_()
   return false
 end
 config = {["is-file-hidden"] = _1_, ["show-hidden-files"] = true, keymaps = {C = M.keymap.cd, R = M.keymap.reload, ["+"] = M.keymap.create, ["-"] = M.keymap.up_dir, ["."] = M.keymap.toggle_hidden_files, ["<CR>"] = M.keymap.open, c = M.keymap.copy, d = M.keymap.delete, h = M.keymap.up_dir, l = M.keymap.open, m = M.keymap.move, q = M.keymap.quit, r = M.keymap.move, s = M.keymap.open_split, t = M.keymap.open_tab, v = M.keymap.open_vsplit}}
-M.setup = function(cfg)
-  local cfg0 = (cfg or {})
-  if cfg0["auto-open"] then
+M.setup = function(_3fcfg)
+  local cfg = (_3fcfg or {})
+  if cfg["auto-open"] then
     vim.cmd("aug udir")
     vim.cmd("au!")
     vim.cmd("au BufEnter * if !empty(expand('%')) && isdirectory(expand('%')) && !get(b:, 'is_udir') | Udir | endif")
     vim.cmd("aug END")
   end
-  if cfg0.keymaps then
-    config["keymaps"] = cfg0.keymaps
+  if cfg.keymaps then
+    config["keymaps"] = cfg.keymaps
   end
-  if (nil ~= cfg0["show-hidden-files"]) then
-    config["show-hidden-files"] = cfg0["show-hidden-files"]
+  if (nil ~= cfg["show-hidden-files"]) then
+    config["show-hidden-files"] = cfg["show-hidden-files"]
   end
-  if cfg0["is-file-hidden"] then
-    config["is-file-hidden"] = cfg0["is-file-hidden"]
+  if cfg["is-file-hidden"] then
+    config["is-file-hidden"] = cfg["is-file-hidden"]
     return nil
   end
 end
-local function sort_in_place(files)
+local function sort_21(files)
   assert((nil ~= files), string.format("Missing argument %s on %s:%s", "files", "lua/udir.fnl", 66))
   local function _6_(_241, _242)
     if (_241.type == _242.type) then
       return (_241.name < _242.name)
     else
-      return (_241.type == "directory")
+      return ("directory" == _241.type)
     end
   end
   table.sort(files, _6_)
@@ -66,9 +66,9 @@ local function render_virttext(ns, files)
 end
 local function render(state)
   assert((nil ~= state), string.format("Missing argument %s on %s:%s", "state", "lua/udir.fnl", 86))
-  local _let_11_ = state
-  local buf = _let_11_["buf"]
-  local cwd = _let_11_["cwd"]
+  local _local_11_ = state
+  local buf = _local_11_["buf"]
+  local cwd = _local_11_["cwd"]
   local files = fs.list(cwd)
   local files0
   if config["show-hidden-files"] then
@@ -79,7 +79,7 @@ local function render(state)
     end
     files0 = vim.tbl_filter(_12_, files)
   end
-  local _ = sort_in_place(files0)
+  sort_21(files0)
   local filenames
   local function _14_(_241)
     return _241.name
@@ -89,77 +89,74 @@ local function render(state)
   return render_virttext(state.ns, files0)
 end
 local function noremap(mode, buf, mappings)
-  assert((nil ~= mappings), string.format("Missing argument %s on %s:%s", "mappings", "lua/udir.fnl", 102))
-  assert((nil ~= buf), string.format("Missing argument %s on %s:%s", "buf", "lua/udir.fnl", 102))
-  assert((nil ~= mode), string.format("Missing argument %s on %s:%s", "mode", "lua/udir.fnl", 102))
+  assert((nil ~= mappings), string.format("Missing argument %s on %s:%s", "mappings", "lua/udir.fnl", 104))
+  assert((nil ~= buf), string.format("Missing argument %s on %s:%s", "buf", "lua/udir.fnl", 104))
+  assert((nil ~= mode), string.format("Missing argument %s on %s:%s", "mode", "lua/udir.fnl", 104))
   for lhs, rhs in pairs(mappings) do
     api.nvim_buf_set_keymap(buf, mode, lhs, rhs, {noremap = true, nowait = true, silent = true})
   end
   return nil
 end
 local function setup_keymaps(buf)
-  assert((nil ~= buf), string.format("Missing argument %s on %s:%s", "buf", "lua/udir.fnl", 107))
+  assert((nil ~= buf), string.format("Missing argument %s on %s:%s", "buf", "lua/udir.fnl", 109))
   return noremap("n", buf, config.keymaps)
 end
 local function cleanup(state)
-  assert((nil ~= state), string.format("Missing argument %s on %s:%s", "state", "lua/udir.fnl", 110))
+  assert((nil ~= state), string.format("Missing argument %s on %s:%s", "state", "lua/udir.fnl", 112))
   api.nvim_buf_delete(state.buf, {force = true})
-  return store.remove(state.buf)
+  store["remove!"](state.buf)
+  return nil
 end
 local function update_cwd(state, path)
-  assert((nil ~= path), string.format("Missing argument %s on %s:%s", "path", "lua/udir.fnl", 114))
-  assert((nil ~= state), string.format("Missing argument %s on %s:%s", "state", "lua/udir.fnl", 114))
+  assert((nil ~= path), string.format("Missing argument %s on %s:%s", "path", "lua/udir.fnl", 117))
+  assert((nil ~= state), string.format("Missing argument %s on %s:%s", "state", "lua/udir.fnl", 117))
   do end (state)["cwd"] = path
   return nil
 end
 M.quit = function()
   local state = store.get()
-  local _let_15_ = state
-  local alt_buf = _let_15_["alt-buf"]
-  local origin_buf = _let_15_["origin-buf"]
-  if alt_buf then
-    u["set-current-buf"](alt_buf)
+  local _local_15_ = state
+  local _3falt_buf = _local_15_["?alt-buf"]
+  local origin_buf = _local_15_["origin-buf"]
+  if _3falt_buf then
+    u["set-current-buf"](_3falt_buf)
   end
   u["set-current-buf"](origin_buf)
-  cleanup(state)
-  return nil
+  return cleanup(state)
 end
 M["up-dir"] = function()
-  do
-    local state = store.get()
-    local cwd = state.cwd
-    local parent_dir = fs["get-parent-dir"](state.cwd)
-    local hovered_filename = u["get-line"]()
-    if hovered_filename then
-      state["hovered-filenames"][state.cwd] = hovered_filename
-    end
-    update_cwd(state, parent_dir)
-    render(state)
-    u["update-buf-name"](state.buf, state.cwd)
-    u["set-cursor-pos"](fs.basename(cwd), "or-top")
+  local state = store.get()
+  local cwd = state.cwd
+  local parent_dir = fs["get-parent-dir"](state.cwd)
+  local _3fhovered_file = u["get-line"]()
+  if _3fhovered_file then
+    state["hovered-files"][state.cwd] = _3fhovered_file
   end
-  return nil
+  update_cwd(state, parent_dir)
+  render(state)
+  u["update-buf-name"](state.buf, state.cwd)
+  return u["set-cursor-pos"](fs.basename(cwd), "or-top")
 end
-M.open = function(cmd)
+M.open = function(_3fcmd)
   local state = store.get()
   local filename = u["get-line"]()
   if ("" ~= filename) then
     local path = u["join-path"](state.cwd, filename)
     local realpath = fs.canonicalize(path)
     fs["assert-readable"](path)
-    if fs["is-dir?"](path) then
-      if cmd then
-        return vim.cmd((cmd .. " " .. vim.fn.fnameescape(realpath)))
+    if fs["dir?"](path) then
+      if _3fcmd then
+        return vim.cmd((_3fcmd .. " " .. vim.fn.fnameescape(realpath)))
       else
         update_cwd(state, realpath)
         render(state)
         u["update-buf-name"](state.buf, state.cwd)
-        local hovered_file = (state["hovered-filenames"])[realpath]
-        return u["set-cursor-pos"](hovered_file, "or-top")
+        local _3fhovered_file = (state["hovered-files"])[realpath]
+        return u["set-cursor-pos"](_3fhovered_file, "or-top")
       end
     else
       u["set-current-buf"](state["origin-buf"])
-      vim.cmd(((cmd or "edit") .. " " .. vim.fn.fnameescape(realpath)))
+      vim.cmd(((_3fcmd or "edit") .. " " .. vim.fn.fnameescape(realpath)))
       return cleanup(state)
     end
   end
@@ -177,7 +174,7 @@ M.delete = function()
     local path = u["join-path"](state.cwd, filename)
     local _ = print(string.format("Are you sure you want to delete %q? (y/n)", path))
     local input = vim.fn.getchar()
-    local confirmed_3f = (vim.fn.nr2char(input) == "y")
+    local confirmed_3f = ("y" == vim.fn.nr2char(input))
     if confirmed_3f then
       fs.delete(path)
       render(state)
@@ -186,6 +183,8 @@ M.delete = function()
   end
 end
 local function copy_or_move(move_3f, prompt)
+  assert((nil ~= prompt), string.format("Missing argument %s on %s:%s", "prompt", "lua/udir.fnl", 185))
+  assert((nil ~= move_3f), string.format("Missing argument %s on %s:%s", "move?", "lua/udir.fnl", 185))
   local state = store.get()
   local filename = u["get-line"]()
   if ("" == filename) then
@@ -225,26 +224,26 @@ M.create = function()
 end
 M["toggle-hidden-files"] = function()
   local state = store.get()
-  local hovered_filename = u["get-line"]()
+  local _3fhovered_file = u["get-line"]()
   config["show-hidden-files"] = not config["show-hidden-files"]
   render(state)
-  return u["set-cursor-pos"](fs.basename(hovered_filename))
+  return u["set-cursor-pos"](fs.basename(_3fhovered_file))
 end
 M.cd = function()
-  local _let_27_ = store.get()
-  local cwd = _let_27_["cwd"]
+  local _local_27_ = store.get()
+  local cwd = _local_27_["cwd"]
   vim.cmd(("cd " .. vim.fn.fnameescape(cwd)))
   return vim.cmd("pwd")
 end
 M.udir = function()
-  local origin_buf = api.nvim_get_current_buf()
-  local alt_buf
+  local origin_buf = assert(api.nvim_get_current_buf())
+  local _3falt_buf
   do
     local n = vim.fn.bufnr("#")
     if (n == -1) then
-      alt_buf = nil
+      _3falt_buf = nil
     else
-      alt_buf = n
+      _3falt_buf = n
     end
   end
   local cwd
@@ -256,23 +255,23 @@ M.udir = function()
       cwd = nil
     end
   end
-  local origin_filename
+  local _ = print("cwd", cwd)
+  local _3forigin_filename
   do
     local p = vim.fn.expand("%")
     if ("" ~= p) then
-      origin_filename = fs.basename(fs.canonicalize(p))
+      _3forigin_filename = fs.basename(fs.canonicalize(p))
     else
-      origin_filename = nil
+      _3forigin_filename = nil
     end
   end
-  local win = vim.fn.win_getid()
-  local buf = assert(u["find-or-create-buf"](cwd, win))
+  local buf = assert(u["find-or-create-buf"](cwd))
   local ns = api.nvim_create_namespace(("udir." .. buf))
-  local hovered_filenames = {}
-  local state = {["alt-buf"] = alt_buf, ["hovered-filenames"] = hovered_filenames, ["origin-buf"] = origin_buf, buf = buf, cwd = cwd, ns = ns, win = win}
+  local hovered_files = {}
+  local state = {["?alt-buf"] = _3falt_buf, ["hovered-files"] = hovered_files, ["origin-buf"] = origin_buf, buf = buf, cwd = cwd, ns = ns}
   setup_keymaps(buf)
   store["set!"](buf, state)
   render(state)
-  return u["set-cursor-pos"](origin_filename)
+  return u["set-cursor-pos"](_3forigin_filename)
 end
 return M

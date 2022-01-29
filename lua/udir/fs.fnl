@@ -1,6 +1,10 @@
 (local uv vim.loop)
 (local u (require :udir.util))
 
+;; TODO: `assert` should only be used when it's indicative of a bug, or
+;; something is unrecoverable, not when the user does something silly like
+;; rename a file to itself.
+
 (local M {})
 
 (lambda assert-doesnt-exist [path]
@@ -52,7 +56,7 @@
                        (copy-dir src2 dest2)
                        (copy-file src2 dest2)))))
 
-(lambda is-symlink? [path]
+(lambda symlink? [path]
   (local link (uv.fs_readlink path))
   (not= nil link))
 
@@ -60,23 +64,22 @@
 ;; PUBLIC
 ;; --------------------------------------
 
-(lambda M.canonicalize [path]
+(lambda M.canonicalize [?path]
   "Returns the absolute filename, with symlinks resolved, extra `/` removed, and `.` and `..` resolved."
-  (assert (uv.fs_realpath path)))
+  (assert (uv.fs_realpath ?path)))
 
 ;; NOTE: Symlink dirs are considered directories
-(lambda M.is-dir? [path]
-  (let [file-info (uv.fs_stat path)]
-    (if (not= nil file-info) (= :directory file-info.type) false)))
+(lambda M.dir? [path]
+  (local file-info (uv.fs_stat path))
+  (if (not= nil file-info) (= :directory file-info.type) false))
 
 (lambda M.list [path]
   "Returns a sequential table of {: name : type} items"
-  (let [ret []]
-    (foreach-entry path [name type]
-                   ;; `type` can be "file", "directory", "link"
-                   ;; `name` is the file's basename
-                   (table.insert ret {: name : type}))
-    ret))
+  (local ret [])
+  (foreach-entry path [name type] ;; `type` can be "file", "directory", "link".
+                 ;; `name` is the file's basename
+                 (table.insert ret {: name : type}))
+  ret)
 
 (lambda M.assert-readable [path]
   (assert (uv.fs_access path :R))
@@ -84,19 +87,19 @@
 
 (lambda M.get-parent-dir [dir]
   "Returns the absolute path of the parent directory"
-  (let [parent-dir (M.canonicalize (.. dir u.sep ".."))]
-    (M.assert-readable parent-dir)
-    parent-dir))
+  (local parent-dir (M.canonicalize (.. dir u.sep "..")))
+  (M.assert-readable parent-dir)
+  parent-dir)
 
-(lambda M.basename [path]
-  (local path-without-trailing-slash
-         (if (vim.endswith path u.sep) (path:sub 1 -2) path))
-  (local split (vim.split path-without-trailing-slash u.sep))
+(lambda M.basename [?path]
+  ;; Strip trailing slash
+  (local ?path (if (vim.endswith ?path u.sep) (?path:sub 1 -2) ?path))
+  (local split (vim.split ?path u.sep))
   (. split (length split)))
 
 (lambda M.delete [path]
   (M.assert-readable path)
-  (if (and (M.is-dir? path) (not (is-symlink? path)))
+  (if (and (M.dir? path) (not (symlink? path)))
       (delete-dir path)
       (delete-file path))
   nil)
@@ -111,22 +114,22 @@
 (lambda M.create-file [path]
   (assert-doesnt-exist path)
   ;; 644 = RW for owner, R for group/other
-  (let [mode (tonumber :644 8)
-        fd (assert (uv.fs_open path :w mode))]
-    (assert (uv.fs_close fd))
-    nil))
+  (local mode (tonumber :644 8))
+  (local fd (assert (uv.fs_open path :w mode)))
+  (assert (uv.fs_close fd))
+  nil)
 
-(lambda M.copy-or-move [move? src dest]
+(lambda M.copy-or-move [should-move src dest]
   (assert (not= src dest))
   (M.assert-readable src)
-  (if (M.is-dir? src)
-      (let [op (if move? move copy-dir)]
+  (if (M.dir? src)
+      (let [op (if should-move move copy-dir)]
         ;; Moving from a dir to a file should fail
-        (assert (M.is-dir? dest))
+        (assert (M.dir? dest))
         ;; Moving from a dir to a dir should move to a subdirectory
         (op src (u.join-path dest (M.basename src))))
-      (let [op (if move? move copy-file)]
-        (if (M.is-dir? dest)
+      (let [op (if should-move move copy-file)]
+        (if (M.dir? dest)
             ;; Moving from a file to a dir should move it to a subdirectory
             (op src (u.join-path dest (M.basename src)))
             ;; Moving from a file to a file should overwrite the file

@@ -2,17 +2,17 @@ local uv = vim.loop
 local u = require("udir.util")
 local M = {}
 local function assert_doesnt_exist(path)
-  assert((nil ~= path), string.format("Missing argument %s on %s:%s", "path", "lua/udir/fs.fnl", 6))
+  assert((nil ~= path), string.format("Missing argument %s on %s:%s", "path", "lua/udir/fs.fnl", 10))
   assert(not uv.fs_access(path, "R"), string.format("%q already exists", path))
   return nil
 end
 local function delete_file(path)
-  assert((nil ~= path), string.format("Missing argument %s on %s:%s", "path", "lua/udir/fs.fnl", 28))
+  assert((nil ~= path), string.format("Missing argument %s on %s:%s", "path", "lua/udir/fs.fnl", 32))
   assert(uv.fs_unlink(path))
   return u["delete-buffer"](path)
 end
 local function delete_dir(path)
-  assert((nil ~= path), string.format("Missing argument %s on %s:%s", "path", "lua/udir/fs.fnl", 32))
+  assert((nil ~= path), string.format("Missing argument %s on %s:%s", "path", "lua/udir/fs.fnl", 36))
   do
     local fs_2_auto = assert(uv.fs_scandir(path))
     local done_3f_3_auto = false
@@ -33,18 +33,18 @@ local function delete_dir(path)
   return assert(uv.fs_rmdir(path))
 end
 local function move(src, dest)
-  assert((nil ~= dest), string.format("Missing argument %s on %s:%s", "dest", "lua/udir/fs.fnl", 39))
-  assert((nil ~= src), string.format("Missing argument %s on %s:%s", "src", "lua/udir/fs.fnl", 39))
+  assert((nil ~= dest), string.format("Missing argument %s on %s:%s", "dest", "lua/udir/fs.fnl", 43))
+  assert((nil ~= src), string.format("Missing argument %s on %s:%s", "src", "lua/udir/fs.fnl", 43))
   return assert(uv.fs_rename(src, dest))
 end
 local function copy_file(src, dest)
-  assert((nil ~= dest), string.format("Missing argument %s on %s:%s", "dest", "lua/udir/fs.fnl", 42))
-  assert((nil ~= src), string.format("Missing argument %s on %s:%s", "src", "lua/udir/fs.fnl", 42))
+  assert((nil ~= dest), string.format("Missing argument %s on %s:%s", "dest", "lua/udir/fs.fnl", 46))
+  assert((nil ~= src), string.format("Missing argument %s on %s:%s", "src", "lua/udir/fs.fnl", 46))
   return assert(uv.fs_copyfile(src, dest))
 end
 local function copy_dir(src, dest)
-  assert((nil ~= dest), string.format("Missing argument %s on %s:%s", "dest", "lua/udir/fs.fnl", 45))
-  assert((nil ~= src), string.format("Missing argument %s on %s:%s", "src", "lua/udir/fs.fnl", 45))
+  assert((nil ~= dest), string.format("Missing argument %s on %s:%s", "dest", "lua/udir/fs.fnl", 49))
+  assert((nil ~= src), string.format("Missing argument %s on %s:%s", "src", "lua/udir/fs.fnl", 49))
   local stat = assert(uv.fs_stat(src))
   assert(uv.fs_mkdir(dest, stat.mode))
   local fs_2_auto = assert(uv.fs_scandir(src))
@@ -66,17 +66,16 @@ local function copy_dir(src, dest)
   end
   return nil
 end
-local function is_symlink_3f(path)
-  assert((nil ~= path), string.format("Missing argument %s on %s:%s", "path", "lua/udir/fs.fnl", 55))
+local function symlink_3f(path)
+  assert((nil ~= path), string.format("Missing argument %s on %s:%s", "path", "lua/udir/fs.fnl", 59))
   local link = uv.fs_readlink(path)
   return (nil ~= link)
 end
-M.canonicalize = function(path)
-  assert((nil ~= path), string.format("Missing argument %s on %s:%s", "path", "lua/udir/fs.fnl", 63))
-  return assert(uv.fs_realpath(path))
+M.canonicalize = function(_3fpath)
+  return assert(uv.fs_realpath(_3fpath))
 end
-M["is-dir?"] = function(path)
-  assert((nil ~= path), string.format("Missing argument %s on %s:%s", "path", "lua/udir/fs.fnl", 68))
+M["dir?"] = function(path)
+  assert((nil ~= path), string.format("Missing argument %s on %s:%s", "path", "lua/udir/fs.fnl", 72))
   local file_info = uv.fs_stat(path)
   if (nil ~= file_info) then
     return ("directory" == file_info.type)
@@ -85,7 +84,7 @@ M["is-dir?"] = function(path)
   end
 end
 M.list = function(path)
-  assert((nil ~= path), string.format("Missing argument %s on %s:%s", "path", "lua/udir/fs.fnl", 72))
+  assert((nil ~= path), string.format("Missing argument %s on %s:%s", "path", "lua/udir/fs.fnl", 76))
   local ret = {}
   do
     local fs_2_auto = assert(uv.fs_scandir(path))
@@ -103,31 +102,30 @@ M.list = function(path)
   return ret
 end
 M["assert-readable"] = function(path)
-  assert((nil ~= path), string.format("Missing argument %s on %s:%s", "path", "lua/udir/fs.fnl", 81))
+  assert((nil ~= path), string.format("Missing argument %s on %s:%s", "path", "lua/udir/fs.fnl", 84))
   assert(uv.fs_access(path, "R"))
   return nil
 end
 M["get-parent-dir"] = function(dir)
-  assert((nil ~= dir), string.format("Missing argument %s on %s:%s", "dir", "lua/udir/fs.fnl", 85))
+  assert((nil ~= dir), string.format("Missing argument %s on %s:%s", "dir", "lua/udir/fs.fnl", 88))
   local parent_dir = M.canonicalize((dir .. u.sep .. ".."))
   M["assert-readable"](parent_dir)
   return parent_dir
 end
-M.basename = function(path)
-  assert((nil ~= path), string.format("Missing argument %s on %s:%s", "path", "lua/udir/fs.fnl", 91))
-  local path_without_trailing_slash
-  if vim.endswith(path, u.sep) then
-    path_without_trailing_slash = path:sub(1, -2)
+M.basename = function(_3fpath)
+  local _3fpath0
+  if vim.endswith(_3fpath, u.sep) then
+    _3fpath0 = _3fpath:sub(1, -2)
   else
-    path_without_trailing_slash = path
+    _3fpath0 = _3fpath
   end
-  local split = vim.split(path_without_trailing_slash, u.sep)
+  local split = vim.split(_3fpath0, u.sep)
   return split[#split]
 end
 M.delete = function(path)
-  assert((nil ~= path), string.format("Missing argument %s on %s:%s", "path", "lua/udir/fs.fnl", 97))
+  assert((nil ~= path), string.format("Missing argument %s on %s:%s", "path", "lua/udir/fs.fnl", 100))
   M["assert-readable"](path)
-  if (M["is-dir?"](path) and not is_symlink_3f(path)) then
+  if (M["dir?"](path) and not symlink_3f(path)) then
     delete_dir(path)
   else
     delete_file(path)
@@ -135,43 +133,43 @@ M.delete = function(path)
   return nil
 end
 M["create-dir"] = function(path)
-  assert((nil ~= path), string.format("Missing argument %s on %s:%s", "path", "lua/udir/fs.fnl", 104))
+  assert((nil ~= path), string.format("Missing argument %s on %s:%s", "path", "lua/udir/fs.fnl", 107))
   assert_doesnt_exist(path)
   local mode = tonumber("755", 8)
   assert(uv.fs_mkdir(path, mode))
   return nil
 end
 M["create-file"] = function(path)
-  assert((nil ~= path), string.format("Missing argument %s on %s:%s", "path", "lua/udir/fs.fnl", 111))
+  assert((nil ~= path), string.format("Missing argument %s on %s:%s", "path", "lua/udir/fs.fnl", 114))
   assert_doesnt_exist(path)
   local mode = tonumber("644", 8)
   local fd = assert(uv.fs_open(path, "w", mode))
   assert(uv.fs_close(fd))
   return nil
 end
-M["copy-or-move"] = function(move_3f, src, dest)
-  assert((nil ~= dest), string.format("Missing argument %s on %s:%s", "dest", "lua/udir/fs.fnl", 119))
-  assert((nil ~= src), string.format("Missing argument %s on %s:%s", "src", "lua/udir/fs.fnl", 119))
-  assert((nil ~= move_3f), string.format("Missing argument %s on %s:%s", "move?", "lua/udir/fs.fnl", 119))
+M["copy-or-move"] = function(should_move, src, dest)
+  assert((nil ~= dest), string.format("Missing argument %s on %s:%s", "dest", "lua/udir/fs.fnl", 122))
+  assert((nil ~= src), string.format("Missing argument %s on %s:%s", "src", "lua/udir/fs.fnl", 122))
+  assert((nil ~= should_move), string.format("Missing argument %s on %s:%s", "should-move", "lua/udir/fs.fnl", 122))
   assert((src ~= dest))
   M["assert-readable"](src)
-  if M["is-dir?"](src) then
+  if M["dir?"](src) then
     local op
-    if move_3f then
+    if should_move then
       op = move
     else
       op = copy_dir
     end
-    assert(M["is-dir?"](dest))
+    assert(M["dir?"](dest))
     return op(src, u["join-path"](dest, M.basename(src)))
   else
     local op
-    if move_3f then
+    if should_move then
       op = move
     else
       op = copy_file
     end
-    if M["is-dir?"](dest) then
+    if M["dir?"](dest) then
       return op(src, u["join-path"](dest, M.basename(src)))
     else
       return op(src, dest)
