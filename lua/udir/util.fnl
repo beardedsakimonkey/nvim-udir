@@ -33,7 +33,6 @@
   (local active-bufs (->> (vim.fn.getbufinfo)
                           (vim.tbl_filter #(and (= 1 $1.loaded) (= 0 $1.hidden)))
                           (vim.tbl_map #$1.name)))
-  (print (vim.inspect active-bufs))
   (local new-name (if (-> active-bufs (vim.tbl_contains cwd))
                       (.. cwd " " (get-buf-name-id))
                       cwd))
