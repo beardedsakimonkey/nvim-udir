@@ -258,11 +258,11 @@ M.udir = function()
   local _ = print("cwd", cwd)
   local _3forigin_filename
   do
-    local p = vim.fn.expand("%")
-    if ("" ~= p) then
-      _3forigin_filename = fs.basename(fs.canonicalize(p))
-    else
+    local p = vim.fn.expand("%:p:t")
+    if ("" == p) then
       _3forigin_filename = nil
+    else
+      _3forigin_filename = p
     end
   end
   local buf = assert(u["find-or-create-buf"](cwd))

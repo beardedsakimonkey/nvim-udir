@@ -240,9 +240,8 @@
         cwd (let [p (vim.fn.expand "%:p:h")]
               (if (not= "" p) (fs.canonicalize p) nil))
         _ (print :cwd cwd)
-        ?origin-filename (let [p (vim.fn.expand "%")]
-                           (if (not= "" p) (fs.basename (fs.canonicalize p))
-                               nil))
+        ?origin-filename (let [p (vim.fn.expand "%:p:t")]
+                           (if (= "" p) nil p))
         buf (assert (u.find-or-create-buf cwd))
         ns (api.nvim_create_namespace (.. :udir. buf))
         hovered-files {} ;; map<realpath, filename>
