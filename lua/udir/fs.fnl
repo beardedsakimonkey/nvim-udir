@@ -76,7 +76,7 @@
 (lambda M.list [path]
   "Returns a sequential table of {: name : type} items"
   (local ret [])
-  (foreach-entry path [name type] ;; `type` can be "file", "directory", "link".
+  (foreach-entry path [name type] ;; `type` can be "file", "directory", "link",
                  ;; `name` is the file's basename
                  (table.insert ret {: name : type}))
   ret)

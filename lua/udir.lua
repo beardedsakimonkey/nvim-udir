@@ -108,12 +108,11 @@ end
 local function cleanup(state)
   _G.assert((nil ~= state), "Missing argument state on lua/udir.fnl:109")
   api.nvim_buf_delete(state.buf, {force = true})
-  store["remove!"](state.buf)
-  return nil
+  return store["remove!"](state.buf)
 end
 local function update_cwd(state, path)
-  _G.assert((nil ~= path), "Missing argument path on lua/udir.fnl:114")
-  _G.assert((nil ~= state), "Missing argument state on lua/udir.fnl:114")
+  _G.assert((nil ~= path), "Missing argument path on lua/udir.fnl:113")
+  _G.assert((nil ~= state), "Missing argument state on lua/udir.fnl:113")
   do end (state)["cwd"] = path
   return nil
 end
@@ -192,7 +191,7 @@ M.delete = function()
   end
 end
 local function copy_or_move(should_move)
-  _G.assert((nil ~= should_move), "Missing argument should-move on lua/udir.fnl:180")
+  _G.assert((nil ~= should_move), "Missing argument should-move on lua/udir.fnl:176")
   local state = store.get()
   local filename = u["get-line"]()
   if ("" == filename) then
@@ -270,7 +269,7 @@ M.udir = function()
     if ("" ~= p) then
       cwd = fs.canonicalize(p)
     else
-      cwd = nil
+      cwd = assert(vim.loop.cwd())
     end
   end
   local _3forigin_filename

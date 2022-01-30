@@ -108,12 +108,10 @@
 
 (lambda cleanup [state]
   (api.nvim_buf_delete state.buf {:force true})
-  (store.remove! state.buf)
-  nil)
+  (store.remove! state.buf))
 
 (lambda update-cwd [state path]
-  (tset state :cwd path)
-  nil)
+  (tset state :cwd path))
 
 (lambda M.quit []
   (local state (store.get))
@@ -127,7 +125,6 @@
   (local state (store.get))
   (local cwd state.cwd)
   (local parent-dir (fs.get-parent-dir state.cwd))
-  ;; Cache hovered filename
   (local ?hovered-file (u.get-line))
   (when ?hovered-file
     (tset state.hovered-files state.cwd ?hovered-file))
@@ -153,8 +150,7 @@
               (local ?hovered-file (. state.hovered-files realpath))
               (u.set-cursor-pos ?hovered-file :or-top)))
         (do
-          ;; Update the altfile
-          (u.set-current-buf state.origin-buf)
+          (u.set-current-buf state.origin-buf) ; Update the altfile
           (vim.cmd (.. (or ?cmd :edit) " " (vim.fn.fnameescape realpath)))
           (cleanup state)))))
 
@@ -231,15 +227,15 @@
   (let [origin-buf (assert (api.nvim_get_current_buf))
         ?alt-buf (let [n (vim.fn.bufnr "#")]
                    (if (= n -1) nil n))
-        ;; Can be nil if in an unnamed buffer (e.g. :enew)
-        ;; TODO: Fallback to pwd
+        ;; `expand('%')` can be empty if in an unnamed buffer, like `:enew`, so
+        ;; fallback to the cwd.
         cwd (let [p (vim.fn.expand "%:p:h")]
-              (if (not= "" p) (fs.canonicalize p) nil))
+              (if (not= "" p) (fs.canonicalize p) (assert (vim.loop.cwd))))
         ?origin-filename (let [p (vim.fn.expand "%:p:t")]
                            (if (= "" p) nil p))
         buf (assert (u.find-or-create-buf cwd))
         ns (api.nvim_create_namespace (.. :udir. buf))
-        hovered-files {} ;; map<realpath, filename>
+        hovered-files {} ; map<realpath, filename>
         state {: buf : origin-buf : ?alt-buf : cwd : ns : hovered-files}]
     (setup-keymaps buf)
     (store.set! buf state)
