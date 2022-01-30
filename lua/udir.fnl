@@ -86,9 +86,8 @@
 (lambda render [state]
   (local {: buf : cwd} state)
   (local files (->> (fs.list cwd)
-                    (vim.tbl_filter #(if config.show-hidden-files
-                                         (not (config.is-file-hidden $1 cwd))
-                                         true))
+                    (vim.tbl_filter #(if config.show-hidden-files true
+                                         (not (config.is-file-hidden $1 cwd))))
                     sort!))
   (local filenames (->> files (vim.tbl_map #$1.name)))
   (u.set-lines buf 0 -1 false filenames)

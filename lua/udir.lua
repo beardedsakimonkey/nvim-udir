@@ -78,9 +78,9 @@ local function render(state)
   local files
   local function _12_(_241)
     if config["show-hidden-files"] then
-      return not config["is-file-hidden"](_241, cwd)
-    else
       return true
+    else
+      return not config["is-file-hidden"](_241, cwd)
     end
   end
   files = sort_21(vim.tbl_filter(_12_, fs.list(cwd)))
@@ -93,26 +93,26 @@ local function render(state)
   return render_virttext(state.ns, files)
 end
 local function noremap(mode, buf, mappings)
-  _G.assert((nil ~= mappings), "Missing argument mappings on lua/udir.fnl:101")
-  _G.assert((nil ~= buf), "Missing argument buf on lua/udir.fnl:101")
-  _G.assert((nil ~= mode), "Missing argument mode on lua/udir.fnl:101")
+  _G.assert((nil ~= mappings), "Missing argument mappings on lua/udir.fnl:100")
+  _G.assert((nil ~= buf), "Missing argument buf on lua/udir.fnl:100")
+  _G.assert((nil ~= mode), "Missing argument mode on lua/udir.fnl:100")
   for lhs, rhs in pairs(mappings) do
     api.nvim_buf_set_keymap(buf, mode, lhs, rhs, {nowait = true, noremap = true, silent = true})
   end
   return nil
 end
 local function setup_keymaps(buf)
-  _G.assert((nil ~= buf), "Missing argument buf on lua/udir.fnl:106")
+  _G.assert((nil ~= buf), "Missing argument buf on lua/udir.fnl:105")
   return noremap("n", buf, config.keymaps)
 end
 local function cleanup(state)
-  _G.assert((nil ~= state), "Missing argument state on lua/udir.fnl:109")
+  _G.assert((nil ~= state), "Missing argument state on lua/udir.fnl:108")
   api.nvim_buf_delete(state.buf, {force = true})
   return store["remove!"](state.buf)
 end
 local function update_cwd(state, path)
-  _G.assert((nil ~= path), "Missing argument path on lua/udir.fnl:113")
-  _G.assert((nil ~= state), "Missing argument state on lua/udir.fnl:113")
+  _G.assert((nil ~= path), "Missing argument path on lua/udir.fnl:112")
+  _G.assert((nil ~= state), "Missing argument state on lua/udir.fnl:112")
   do end (state)["cwd"] = path
   return nil
 end
@@ -191,7 +191,7 @@ M.delete = function()
   end
 end
 local function copy_or_move(should_move)
-  _G.assert((nil ~= should_move), "Missing argument should-move on lua/udir.fnl:176")
+  _G.assert((nil ~= should_move), "Missing argument should-move on lua/udir.fnl:175")
   local state = store.get()
   local filename = u["get-line"]()
   if ("" == filename) then
