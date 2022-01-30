@@ -12,7 +12,7 @@ end
 config = {keymaps = {q = M.keymap.quit, h = M.keymap.up_dir, ["-"] = M.keymap.up_dir, l = M.keymap.open, ["<CR>"] = M.keymap.open, s = M.keymap.open_split, v = M.keymap.open_vsplit, t = M.keymap.open_tab, R = M.keymap.reload, d = M.keymap.delete, ["+"] = M.keymap.create, r = M.keymap.move, m = M.keymap.move, c = M.keymap.copy, C = M.keymap.cd, ["."] = M.keymap.toggle_hidden_files}, ["show-hidden-files"] = true, ["is-file-hidden"] = _1_}
 M.setup = function(_3fcfg)
   local cfg = (_3fcfg or {})
-  if cfg["auto-open"] then
+  if cfg.auto_open then
     vim.cmd("aug udir")
     vim.cmd("au!")
     vim.cmd("au BufEnter * if !empty(expand('%')) && isdirectory(expand('%')) && !get(b:, 'is_udir') | Udir | endif")
@@ -23,12 +23,12 @@ M.setup = function(_3fcfg)
     config["keymaps"] = cfg.keymaps
   else
   end
-  if (nil ~= cfg["show-hidden-files"]) then
-    config["show-hidden-files"] = cfg["show-hidden-files"]
+  if (nil ~= cfg.show_hidden_files) then
+    config["show-hidden-files"] = cfg.show_hidden_files
   else
   end
-  if cfg["is-file-hidden"] then
-    config["is-file-hidden"] = cfg["is-file-hidden"]
+  if cfg.is_file_hidden then
+    config["is-file-hidden"] = cfg.is_file_hidden
     return nil
   else
     return nil
@@ -200,9 +200,9 @@ local function copy_or_move(should_move)
     local src = u["join-path"](state.cwd, filename)
     local prompt
     if should_move then
-      prompt = "Move to:"
+      prompt = "Move to: "
     else
-      prompt = "Copy to:"
+      prompt = "Copy to: "
     end
     local name = vim.fn.input(prompt)
     if ("" ~= name) then

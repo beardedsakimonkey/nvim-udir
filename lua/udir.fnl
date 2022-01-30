@@ -47,17 +47,17 @@
 (lambda M.setup [?cfg]
   (local cfg (or ?cfg {}))
   ;; Whether to automatically open Udir when editing a directory
-  (when cfg.auto-open
+  (when cfg.auto_open
     (vim.cmd "aug udir")
     (vim.cmd :au!)
     (vim.cmd "au BufEnter * if !empty(expand('%')) && isdirectory(expand('%')) && !get(b:, 'is_udir') | Udir | endif")
     (vim.cmd "aug END"))
   (when cfg.keymaps
     (tset config :keymaps cfg.keymaps))
-  (when (not= nil cfg.show-hidden-files)
-    (tset config :show-hidden-files cfg.show-hidden-files))
-  (when cfg.is-file-hidden
-    (tset config :is-file-hidden cfg.is-file-hidden)))
+  (when (not= nil cfg.show_hidden_files)
+    (tset config :show-hidden-files cfg.show_hidden_files))
+  (when cfg.is_file_hidden
+    (tset config :is-file-hidden cfg.is_file_hidden)))
 
 ;; --------------------------------------
 ;; RENDER
@@ -178,7 +178,7 @@
   (if (= "" filename)
       (u.err "Empty filename")
       (let [src (u.join-path state.cwd filename)
-            prompt (if should-move "Move to:" "Copy to:")
+            prompt (if should-move "Move to: " "Copy to: ")
             name (vim.fn.input prompt)]
         (when (not= "" name)
           (let [dest (u.join-path state.cwd name)]
