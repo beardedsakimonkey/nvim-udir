@@ -76,9 +76,9 @@ M.canonicalize = function(_3fpath)
 end
 M["dir?"] = function(path)
   _G.assert((nil ~= path), "Missing argument path on lua/udir/fs.fnl:72")
-  local file_info = uv.fs_stat(path)
-  if (nil ~= file_info) then
-    return ("directory" == file_info.type)
+  local _3ffile_info = uv.fs_stat(path)
+  if (nil ~= _3ffile_info) then
+    return ("directory" == _3ffile_info.type)
   else
     return false
   end

@@ -77,21 +77,23 @@ M["get-line"] = function()
   local line = _local_7_[1]
   return line
 end
-local function find_index(list, predicate)
-  _G.assert((nil ~= predicate), "Missing argument predicate on lua/udir/util.fnl:86")
+local function find_index(list, predicate_3f)
+  _G.assert((nil ~= predicate_3f), "Missing argument predicate? on lua/udir/util.fnl:86")
   _G.assert((nil ~= list), "Missing argument list on lua/udir/util.fnl:86")
+  local _3fret = nil
   for i, item in ipairs(list) do
-    if predicate(item) then
-      return i
+    if (nil ~= _3fret) then break end
+    if predicate_3f(item) then
+      _3fret = i
     else
     end
   end
-  return nil
+  return _3fret
 end
-M["find-line"] = function(predicate)
-  _G.assert((nil ~= predicate), "Missing argument predicate on lua/udir/util.fnl:93")
+M["find-line"] = function(predicate_3f)
+  _G.assert((nil ~= predicate_3f), "Missing argument predicate? on lua/udir/util.fnl:93")
   local lines = api.nvim_buf_get_lines(0, 0, -1, false)
-  return find_index(lines, predicate)
+  return find_index(lines, predicate_3f)
 end
 M["delete-buffer"] = function(name)
   _G.assert((nil ~= name), "Missing argument name on lua/udir/util.fnl:98")
@@ -114,26 +116,26 @@ M["join-path"] = function(fst, snd)
   return (fst .. M.sep .. snd)
 end
 M["set-cursor-pos"] = function(_3ffilename, _3for_top)
-  local line
+  local _3fline
   if _3for_top then
-    line = 1
+    _3fline = 1
   else
-    line = nil
+    _3fline = nil
   end
   if _3ffilename then
-    local found
+    local _3ffound
     local function _11_(_241)
       return (_241 == _3ffilename)
     end
-    found = M["find-line"](_11_)
-    if (found ~= nil) then
-      line = found
+    _3ffound = M["find-line"](_11_)
+    if (nil ~= _3ffound) then
+      _3fline = _3ffound
     else
     end
   else
   end
-  if (nil ~= line) then
-    return api.nvim_win_set_cursor(0, {line, 0})
+  if (nil ~= _3fline) then
+    return api.nvim_win_set_cursor(0, {_3fline, 0})
   else
     return nil
   end

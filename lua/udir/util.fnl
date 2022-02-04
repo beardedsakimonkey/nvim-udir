@@ -83,17 +83,17 @@
   (local [line] (api.nvim_buf_get_lines 0 (- row 1) row true))
   line)
 
-(lambda find-index [list predicate]
-  (each [i item (ipairs list)]
-    (when (predicate item)
-      ;; TODO: fennel-ify
-      (lua "return i")))
-  nil)
+(lambda find-index [list predicate?]
+  (var ?ret nil)
+  (each [i item (ipairs list) :until (not= nil ?ret)]
+    (when (predicate? item)
+      (set ?ret i)))
+  ?ret)
 
-(lambda M.find-line [predicate]
+(lambda M.find-line [predicate?]
   "Returns the first line number that matches the predicate, otherwise nil"
   (local lines (api.nvim_buf_get_lines 0 0 -1 false))
-  (find-index lines predicate))
+  (find-index lines predicate?))
 
 (lambda M.delete-buffer [name]
   (local bufs (vim.fn.getbufinfo))
@@ -110,11 +110,11 @@
   (.. fst M.sep snd))
 
 (lambda M.set-cursor-pos [?filename ?or-top]
-  (var line (if ?or-top 1 nil))
+  (var ?line (if ?or-top 1 nil))
   (if ?filename
-      (let [found (M.find-line #(= $1 ?filename))]
-        (if (not= found nil) (set line found))))
-  (if (not= nil line) (api.nvim_win_set_cursor 0 [line 0])))
+      (let [?found (M.find-line #(= $1 ?filename))]
+        (if (not= nil ?found) (set ?line ?found))))
+  (if (not= nil ?line) (api.nvim_win_set_cursor 0 [?line 0])))
 
 (lambda M.err [msg]
   (api.nvim_err_writeln msg))

@@ -70,8 +70,8 @@
 
 ;; NOTE: Symlink dirs are considered directories
 (lambda M.dir? [path]
-  (local file-info (uv.fs_stat path))
-  (if (not= nil file-info) (= :directory file-info.type) false))
+  (local ?file-info (uv.fs_stat path))
+  (if (not= nil ?file-info) (= :directory ?file-info.type) false))
 
 (lambda M.list [path]
   "Returns a sequential table of {: name : type} items"
