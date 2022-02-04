@@ -9,6 +9,7 @@ end
 M["update-buf-name"] = function(buf, cwd)
   _G.assert((nil ~= cwd), "Missing argument cwd on lua/udir/util.fnl:32")
   _G.assert((nil ~= buf), "Missing argument buf on lua/udir/util.fnl:32")
+  local old_name = vim.fn.bufname()
   local active_bufs
   local function _1_(_241)
     return _241.name
@@ -23,21 +24,22 @@ M["update-buf-name"] = function(buf, cwd)
   else
     new_name = cwd
   end
-  return api.nvim_buf_set_name(buf, new_name)
+  vim.cmd(("sil keepalt file " .. vim.fn.fnameescape(new_name)))
+  return M["delete-buffer"](old_name)
 end
 M["update-statusline"] = function(cwd)
-  _G.assert((nil ~= cwd), "Missing argument cwd on lua/udir/util.fnl:41")
+  _G.assert((nil ~= cwd), "Missing argument cwd on lua/udir/util.fnl:45")
   vim.opt_local.statusline = (" " .. cwd)
   return nil
 end
 M["find-or-create-buf"] = function(cwd)
-  _G.assert((nil ~= cwd), "Missing argument cwd on lua/udir/util.fnl:44")
+  _G.assert((nil ~= cwd), "Missing argument cwd on lua/udir/util.fnl:48")
   local existing_buf = vim.fn.bufnr(("^" .. cwd .. "$"))
   local buf = nil
   if (existing_buf == -1) then
     buf = api.nvim_create_buf(false, true)
     assert(not (buf == -1))
-    M["update-buf-name"](buf, cwd)
+    api.nvim_buf_set_name(buf, cwd)
   elseif "else" then
     buf = existing_buf
   else
@@ -48,7 +50,7 @@ M["find-or-create-buf"] = function(cwd)
   return buf
 end
 M["set-current-buf"] = function(buf)
-  _G.assert((nil ~= buf), "Missing argument buf on lua/udir/util.fnl:62")
+  _G.assert((nil ~= buf), "Missing argument buf on lua/udir/util.fnl:69")
   if vim.fn.bufexists(buf) then
     pcall(api.nvim_set_current_buf, buf)
     return nil
@@ -57,11 +59,11 @@ M["set-current-buf"] = function(buf)
   end
 end
 M["set-lines"] = function(buf, start, _end, strict_indexing, replacement)
-  _G.assert((nil ~= replacement), "Missing argument replacement on lua/udir/util.fnl:68")
-  _G.assert((nil ~= strict_indexing), "Missing argument strict-indexing on lua/udir/util.fnl:68")
-  _G.assert((nil ~= _end), "Missing argument end on lua/udir/util.fnl:68")
-  _G.assert((nil ~= start), "Missing argument start on lua/udir/util.fnl:68")
-  _G.assert((nil ~= buf), "Missing argument buf on lua/udir/util.fnl:68")
+  _G.assert((nil ~= replacement), "Missing argument replacement on lua/udir/util.fnl:75")
+  _G.assert((nil ~= strict_indexing), "Missing argument strict-indexing on lua/udir/util.fnl:75")
+  _G.assert((nil ~= _end), "Missing argument end on lua/udir/util.fnl:75")
+  _G.assert((nil ~= start), "Missing argument start on lua/udir/util.fnl:75")
+  _G.assert((nil ~= buf), "Missing argument buf on lua/udir/util.fnl:75")
   vim.opt_local.modifiable = true
   api.nvim_buf_set_lines(buf, start, _end, strict_indexing, replacement)
   vim.opt_local.modifiable = false
@@ -76,8 +78,8 @@ M["get-line"] = function()
   return line
 end
 local function find_index(list, predicate)
-  _G.assert((nil ~= predicate), "Missing argument predicate on lua/udir/util.fnl:79")
-  _G.assert((nil ~= list), "Missing argument list on lua/udir/util.fnl:79")
+  _G.assert((nil ~= predicate), "Missing argument predicate on lua/udir/util.fnl:86")
+  _G.assert((nil ~= list), "Missing argument list on lua/udir/util.fnl:86")
   for i, item in ipairs(list) do
     if predicate(item) then
       return i
@@ -87,13 +89,13 @@ local function find_index(list, predicate)
   return nil
 end
 M["find-line"] = function(predicate)
-  _G.assert((nil ~= predicate), "Missing argument predicate on lua/udir/util.fnl:86")
+  _G.assert((nil ~= predicate), "Missing argument predicate on lua/udir/util.fnl:93")
   local lines = api.nvim_buf_get_lines(0, 0, -1, false)
   return find_index(lines, predicate)
 end
 M["delete-buffer"] = function(name)
-  _G.assert((nil ~= name), "Missing argument name on lua/udir/util.fnl:91")
-  local bufs = vim.fn.getbufinfo({bufloaded = 1, buflisted = 1})
+  _G.assert((nil ~= name), "Missing argument name on lua/udir/util.fnl:98")
+  local bufs = vim.fn.getbufinfo()
   for _, buf in pairs(bufs) do
     if (buf.name == name) then
       api.nvim_buf_delete(buf.bufnr, {})
@@ -107,8 +109,8 @@ M["clear-prompt"] = function()
 end
 M["sep"] = (package.config):sub(1, 1)
 M["join-path"] = function(fst, snd)
-  _G.assert((nil ~= snd), "Missing argument snd on lua/udir/util.fnl:102")
-  _G.assert((nil ~= fst), "Missing argument fst on lua/udir/util.fnl:102")
+  _G.assert((nil ~= snd), "Missing argument snd on lua/udir/util.fnl:109")
+  _G.assert((nil ~= fst), "Missing argument fst on lua/udir/util.fnl:109")
   return (fst .. M.sep .. snd)
 end
 M["set-cursor-pos"] = function(_3ffilename, _3for_top)
@@ -137,7 +139,7 @@ M["set-cursor-pos"] = function(_3ffilename, _3for_top)
   end
 end
 M.err = function(msg)
-  _G.assert((nil ~= msg), "Missing argument msg on lua/udir/util.fnl:112")
+  _G.assert((nil ~= msg), "Missing argument msg on lua/udir/util.fnl:119")
   return api.nvim_err_writeln(msg)
 end
 return M

@@ -30,18 +30,24 @@
   id)
 
 (lambda M.update-buf-name [buf cwd]
+  (local old-name (vim.fn.bufname))
   (local active-bufs (->> (vim.fn.getbufinfo)
                           (vim.tbl_filter #(and (= 1 $1.loaded) (= 0 $1.hidden)))
                           (vim.tbl_map #$1.name)))
   (local new-name (if (-> active-bufs (vim.tbl_contains cwd))
                       (.. cwd " " (get-buf-name-id))
                       cwd))
-  (api.nvim_buf_set_name buf new-name))
+  ;; `file` is equivalent to nvim_buf_set_name, but allows us to use `keepalt`
+  (vim.cmd (.. "sil keepalt file " (vim.fn.fnameescape new-name)))
+  ;; Renaming a buffer creates a new buffer with the old name. Delete it.
+  (M.delete-buffer old-name))
 
 (lambda M.update-statusline [cwd]
   (set vim.opt_local.statusline (.. " " cwd)))
 
 (lambda M.find-or-create-buf [cwd]
+  ;; TODO: If you open udir from a file in dir X, and in another window, open udir
+  ;; from another file in dir X, we want to create a brand new udir instance.
   (local existing-buf (vim.fn.bufnr (.. "^" cwd "$")))
   (var buf nil)
   (if (= existing-buf -1)
@@ -49,7 +55,8 @@
         ;; Buffer doesn't exist yet, so create it
         (set buf (api.nvim_create_buf false true))
         (assert (not (= buf -1)))
-        (M.update-buf-name buf cwd))
+        ;; Don't use update-buf-name since it does stuff we don't need here
+        (api.nvim_buf_set_name buf cwd))
       :else
       (set buf existing-buf))
   (api.nvim_buf_set_var buf :is_udir true)
@@ -89,7 +96,7 @@
   (find-index lines predicate))
 
 (lambda M.delete-buffer [name]
-  (local bufs (vim.fn.getbufinfo {:bufloaded 1 :buflisted 1}))
+  (local bufs (vim.fn.getbufinfo))
   (each [_ buf (pairs bufs)]
     (when (= buf.name name)
       (api.nvim_buf_delete buf.bufnr {}))))
