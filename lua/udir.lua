@@ -75,44 +75,46 @@ local function render(state)
   local _local_11_ = state
   local buf = _local_11_["buf"]
   local cwd = _local_11_["cwd"]
-  local files
+  local files = fs.list(cwd)
+  local files_filtered
   local function _12_(_241)
     if config["show-hidden-files"] then
       return true
     else
-      return not config["is-file-hidden"](_241, cwd)
+      return not config["is-file-hidden"](_241, files, cwd)
     end
   end
-  files = sort_21(vim.tbl_filter(_12_, fs.list(cwd)))
+  files_filtered = vim.tbl_filter(_12_, files)
+  sort_21(files_filtered)
   local filenames
   local function _14_(_241)
     return _241.name
   end
-  filenames = vim.tbl_map(_14_, files)
+  filenames = vim.tbl_map(_14_, files_filtered)
   u["set-lines"](buf, 0, -1, false, filenames)
-  return render_virttext(state.ns, files)
+  return render_virttext(state.ns, files_filtered)
 end
 local function noremap(mode, buf, mappings)
-  _G.assert((nil ~= mappings), "Missing argument mappings on lua/udir.fnl:100")
-  _G.assert((nil ~= buf), "Missing argument buf on lua/udir.fnl:100")
-  _G.assert((nil ~= mode), "Missing argument mode on lua/udir.fnl:100")
+  _G.assert((nil ~= mappings), "Missing argument mappings on lua/udir.fnl:103")
+  _G.assert((nil ~= buf), "Missing argument buf on lua/udir.fnl:103")
+  _G.assert((nil ~= mode), "Missing argument mode on lua/udir.fnl:103")
   for lhs, rhs in pairs(mappings) do
     api.nvim_buf_set_keymap(buf, mode, lhs, rhs, {nowait = true, noremap = true, silent = true})
   end
   return nil
 end
 local function setup_keymaps(buf)
-  _G.assert((nil ~= buf), "Missing argument buf on lua/udir.fnl:105")
+  _G.assert((nil ~= buf), "Missing argument buf on lua/udir.fnl:108")
   return noremap("n", buf, config.keymaps)
 end
 local function cleanup(state)
-  _G.assert((nil ~= state), "Missing argument state on lua/udir.fnl:108")
+  _G.assert((nil ~= state), "Missing argument state on lua/udir.fnl:111")
   api.nvim_buf_delete(state.buf, {force = true})
   return store["remove!"](state.buf)
 end
 local function update_cwd(state, path)
-  _G.assert((nil ~= path), "Missing argument path on lua/udir.fnl:112")
-  _G.assert((nil ~= state), "Missing argument state on lua/udir.fnl:112")
+  _G.assert((nil ~= path), "Missing argument path on lua/udir.fnl:115")
+  _G.assert((nil ~= state), "Missing argument state on lua/udir.fnl:115")
   do end (state)["cwd"] = path
   return nil
 end
@@ -191,7 +193,7 @@ M.delete = function()
   end
 end
 local function copy_or_move(should_move)
-  _G.assert((nil ~= should_move), "Missing argument should-move on lua/udir.fnl:175")
+  _G.assert((nil ~= should_move), "Missing argument should-move on lua/udir.fnl:178")
   local state = store.get()
   local filename = u["get-line"]()
   if ("" == filename) then
