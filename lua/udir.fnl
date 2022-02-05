@@ -10,7 +10,7 @@
 ;; CONFIGURATION
 ;; --------------------------------------
 
-(tset M :keymap
+(tset M :map
       {:quit "<Cmd>lua require'udir'.quit()<CR>"
        :up_dir "<Cmd>lua require'udir'[\"up-dir\"]()<CR>"
        :open "<Cmd>lua require'udir'.open()<CR>"
@@ -22,25 +22,22 @@
        :create "<Cmd>lua require'udir'.create()<CR>"
        :move "<Cmd>lua require'udir'.move()<CR>"
        :copy "<Cmd>lua require'udir'.copy()<CR>"
-       :cd "<Cmd>lua require'udir'.cd()<CR>"
        :toggle_hidden_files "<Cmd>lua require'udir'[\"toggle-hidden-files\"]()<CR>"})
 
-(local config {:keymaps {:q M.keymap.quit
-                         :h M.keymap.up_dir
-                         :- M.keymap.up_dir
-                         :l M.keymap.open
-                         :<CR> M.keymap.open
-                         :s M.keymap.open_split
-                         :v M.keymap.open_vsplit
-                         :t M.keymap.open_tab
-                         :R M.keymap.reload
-                         :d M.keymap.delete
-                         :+ M.keymap.create
-                         :r M.keymap.move
-                         :m M.keymap.move
-                         :c M.keymap.copy
-                         :C M.keymap.cd
-                         :. M.keymap.toggle_hidden_files}
+(local config {:keymaps {:q M.map.quit
+                         :h M.map.up_dir
+                         :- M.map.up_dir
+                         :l M.map.open
+                         :<CR> M.map.open
+                         :s M.map.open_split
+                         :v M.map.open_vsplit
+                         :t M.map.open_tab
+                         :R M.map.reload
+                         :d M.map.delete
+                         :+ M.map.create
+                         :m M.map.move
+                         :c M.map.copy
+                         :. M.map.toggle_hidden_files}
                :show-hidden-files true
                :is-file-hidden #false})
 
@@ -214,11 +211,6 @@
   (set config.show-hidden-files (not config.show-hidden-files))
   (render state)
   (u.set-cursor-pos ?hovered-file))
-
-(lambda M.cd []
-  (local {: cwd} (store.get))
-  (vim.cmd (.. "cd " (vim.fn.fnameescape cwd)))
-  (vim.cmd :pwd))
 
 ;; --------------------------------------
 ;; INITIALIZATION
