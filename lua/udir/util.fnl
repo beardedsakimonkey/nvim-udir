@@ -20,8 +20,8 @@
 ;; But, alas, `:cd`ing to a URI isn't supported.
 ;;
 ;; So, the best we can do is name a buffer by its path if it isn't currently
-;; active (loaded and visible), or otherwise name it by its path with an
-;; appended id, which makes it unique but not `:cd`able.
+;; loaded, or otherwise name it by its path with an appended id, which makes it
+;; unique but not `:cd`able.
 (var buf-name-id 1)
 
 (lambda get-buf-name-id []
@@ -31,10 +31,12 @@
 
 (lambda M.update-buf-name [buf cwd]
   (local old-name (vim.fn.bufname))
-  (local active-bufs (->> (vim.fn.getbufinfo)
-                          (vim.tbl_filter #(and (= 1 $1.loaded) (= 0 $1.hidden)))
+  (local loaded-bufs (->> (vim.fn.getbufinfo)
+                          ;; Don't filter out hidden buffers; that leads to
+                          ;; occasional errors.
+                          (vim.tbl_filter #(= 1 $1.loaded))
                           (vim.tbl_map #$1.name)))
-  (local new-name (if (-> active-bufs (vim.tbl_contains cwd))
+  (local new-name (if (-> loaded-bufs (vim.tbl_contains cwd))
                       (.. cwd " " (get-buf-name-id))
                       cwd))
   ;; `file` is equivalent to nvim_buf_set_name, but allows us to use `keepalt`

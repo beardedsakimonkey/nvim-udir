@@ -26,7 +26,7 @@
                  (set done?# true)
                  ;; If the first return value is nil and the second
                  ;; return value is non-nil then there was an error.
-                 (assert (not type)))
+                 (assert (not ,type-sym)))
                ,form))))))
 
 (lambda delete-file [path]
