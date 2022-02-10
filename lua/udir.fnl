@@ -66,19 +66,22 @@
                          (= :directory $1.type)))
   files)
 
-(lambda render-virttext [ns files]
+(lambda render-virttext [cwd ns files]
   (api.nvim_buf_clear_namespace 0 ns 0 -1)
   ;; Add virtual text to each directory/symlink
   (each [i file (ipairs files)]
-    (let [(virttext hl) (match file.type
-                          :directory (values u.sep :Directory)
-                          :link (values "@" :Constant))]
-      (when virttext
+    (let [(?virttext ?hl) (match file.type
+                            :directory (values u.sep :UdirDirectory)
+                            :link (values "@" :UdirSymlink)
+                            (where :file
+                                   (fs.executable? (u.join-path cwd file.name)))
+                            (values "*" :UdirExecutable))]
+      (when ?virttext
         (api.nvim_buf_set_extmark 0 ns (- i 1) (length file.name)
-                                  {:virt_text [[virttext :Comment]]
+                                  {:virt_text [[?virttext :UdirVirtText]]
                                    :virt_text_pos :overlay})
         (api.nvim_buf_set_extmark 0 ns (- i 1) 0
-                                  {:end_col (length file.name) :hl_group hl})))))
+                                  {:end_col (length file.name) :hl_group ?hl})))))
 
 (lambda render [state]
   (local {: buf : cwd} state)
@@ -92,7 +95,7 @@
   (sort! files-filtered)
   (local filenames (vim.tbl_map #$1.name files-filtered))
   (u.set-lines buf 0 -1 false filenames)
-  (render-virttext state.ns files-filtered))
+  (render-virttext cwd state.ns files-filtered))
 
 ;; --------------------------------------
 ;; KEYMAPS

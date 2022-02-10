@@ -14,9 +14,6 @@
 (macro foreach-entry [path syms form]
   (let [name-sym (. syms 1)
         type-sym (. syms 2)]
-    (assert (sym? name-sym))
-    (assert (sym? type-sym))
-    (assert (not= nil form))
     `(let [fs# (assert (uv.fs_scandir ,path))]
        (var done?# false)
        (while (not done?#)
@@ -72,6 +69,10 @@
 (lambda M.dir? [path]
   (local ?file-info (uv.fs_stat path))
   (if (not= nil ?file-info) (= :directory ?file-info.type) false))
+
+(lambda M.executable? [path]
+  (local ret (uv.fs_access path :X))
+  ret)
 
 (lambda M.list [path]
   "Returns a sequential table of {: name : type} items"
