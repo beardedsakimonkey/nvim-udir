@@ -70,12 +70,14 @@
   (api.nvim_buf_clear_namespace 0 ns 0 -1)
   ;; Add virtual text to each directory/symlink
   (each [i file (ipairs files)]
-    (let [(?virttext ?hl) (match file.type
+    (let [path (u.join-path cwd file.name)
+          (?virttext ?hl) (match file.type
                             :directory (values u.sep :UdirDirectory)
-                            :link (values "@" :UdirSymlink)
-                            (where :file
-                                   (fs.executable? (u.join-path cwd file.name)))
-                            (values "*" :UdirExecutable))]
+                            :link (values (.. "@ -> "
+                                              (assert (uv.fs_readlink path)))
+                                          :UdirSymlink)
+                            (where :file (fs.executable? path)) (values "*"
+                                                                        :UdirExecutable))]
       (when ?virttext
         (api.nvim_buf_set_extmark 0 ns (- i 1) (length file.name)
                                   {:virt_text [[?virttext :UdirVirtText]]
