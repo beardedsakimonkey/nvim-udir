@@ -34,12 +34,18 @@
 ;; So, the best we can do is name a buffer by its path if it isn't currently
 ;; loaded, or otherwise name it by its path with an appended id, which makes it
 ;; unique but not `:cd`able.
-(var buf-name-id 1)
-
-(λ get-buf-name-id []
-  (local id buf-name-id)
-  (set buf-name-id (+ buf-name-id 1))
-  id)
+(λ create-buf-name [cwd]
+  (local loaded-bufs (->> (vim.fn.getbufinfo)
+                          ;; Don't filter out hidden buffers; that leads to
+                          ;; occasional errors.
+                          (vim.tbl_filter #(= 1 $1.loaded))
+                          (vim.tbl_map #$1.name)))
+  (var new-name cwd)
+  (var i 1)
+  (while (-> loaded-bufs (vim.tbl_contains new-name))
+    (set i (+ 1 i))
+    (set new-name (.. cwd " [" i "]")))
+  new-name)
 
 ;; --------------------------------------
 ;; PUBLIC
@@ -47,14 +53,7 @@
 
 (λ M.update-buf-name [buf cwd]
   (local old-name (vim.fn.bufname))
-  (local loaded-bufs (->> (vim.fn.getbufinfo)
-                          ;; Don't filter out hidden buffers; that leads to
-                          ;; occasional errors.
-                          (vim.tbl_filter #(= 1 $1.loaded))
-                          (vim.tbl_map #$1.name)))
-  (local new-name (if (-> loaded-bufs (vim.tbl_contains cwd))
-                      (.. cwd " " (get-buf-name-id))
-                      cwd))
+  (local new-name (create-buf-name cwd))
   ;; `file` is equivalent to nvim_buf_set_name, but allows us to use `keepalt`
   (vim.cmd (.. "sil keepalt file " (vim.fn.fnameescape new-name)))
   ;; Renaming a buffer creates a new buffer with the old name. Delete it.
