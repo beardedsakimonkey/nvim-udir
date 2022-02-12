@@ -45,8 +45,7 @@
   (local cfg (or ?cfg {}))
   ;; Whether to automatically open Udir when editing a directory
   (when cfg.auto_open
-    (vim.cmd "aug udir")
-    (vim.cmd :au!)
+    (vim.cmd "aug udir | au!")
     (vim.cmd "au BufEnter * if !empty(expand('%')) && isdirectory(expand('%')) && !get(b:, 'is_udir') | Udir | endif")
     (vim.cmd "aug END"))
   (when cfg.keymaps
@@ -143,21 +142,20 @@
   (local state (store.get))
   (local filename (u.get-line))
   (when (not= "" filename)
-    (local path (u.join-path state.cwd filename))
-    (local realpath (fs.realpath path))
+    (local path (fs.realpath (u.join-path state.cwd filename)))
     (fs.assert-readable path)
     (if (fs.dir? path)
         (if ?cmd
-            (vim.cmd (.. ?cmd " " (vim.fn.fnameescape realpath)))
+            (vim.cmd (.. ?cmd " " (vim.fn.fnameescape path)))
             (do
-              (update-cwd state realpath)
+              (update-cwd state path)
               (render state)
               (u.update-buf-name state.buf state.cwd)
-              (local ?hovered-file (. state.hovered-files realpath))
+              (local ?hovered-file (. state.hovered-files path))
               (u.set-cursor-pos ?hovered-file :or-top)))
         (do
           (u.set-current-buf state.origin-buf) ; Update the altfile
-          (vim.cmd (.. (or ?cmd :edit) " " (vim.fn.fnameescape realpath)))
+          (vim.cmd (.. (or ?cmd :edit) " " (vim.fn.fnameescape path)))
           (cleanup state)))))
 
 (λ M.reload []
