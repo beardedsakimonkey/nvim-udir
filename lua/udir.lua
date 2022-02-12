@@ -253,7 +253,8 @@ M["toggle-hidden-files"] = function()
   render(state)
   return u["set-cursor-pos"](_3fhovered_file)
 end
-M.udir = function()
+M.udir = function(dir)
+  _G.assert((nil ~= dir), "Missing argument dir on lua/udir.fnl:225")
   local origin_buf = assert(api.nvim_get_current_buf())
   local _3falt_buf
   do
@@ -265,7 +266,9 @@ M.udir = function()
     end
   end
   local cwd
-  do
+  if ("" ~= dir) then
+    cwd = fs.realpath(vim.fn.expand(dir))
+  else
     local p = vim.fn.expand("%:p:h")
     if ("" ~= p) then
       cwd = fs.realpath(p)

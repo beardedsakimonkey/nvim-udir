@@ -62,7 +62,7 @@ udir.setup({
 })
 ```
 
-You can use the `:Udir` command to open udir, or create your own mapping:
+You can use the `:Udir [dir]` command to open udir, or create your own mapping:
 
 ``` lua
 vim.api.nvim_set_keymap("n", "-", "<Cmd>Udir<CR>", {noremap = true})

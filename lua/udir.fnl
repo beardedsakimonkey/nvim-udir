@@ -222,14 +222,15 @@
 ;; --------------------------------------
 
 ;; This gets called by the `:Udir` command
-(λ M.udir []
+(λ M.udir [dir]
   (let [origin-buf (assert (api.nvim_get_current_buf))
         ?alt-buf (let [n (vim.fn.bufnr "#")]
                    (if (= n -1) nil n))
-        ;; `expand('%')` can be empty if in an unnamed buffer, like `:enew`, so
-        ;; fallback to the cwd.
-        cwd (let [p (vim.fn.expand "%:p:h")]
-              (if (not= "" p) (fs.realpath p) (assert (vim.loop.cwd))))
+        cwd (if (not= "" dir) (fs.realpath (vim.fn.expand dir))
+                ;; `expand('%')` can be empty if in an unnamed buffer, like `:enew`, so
+                ;; fallback to the cwd.
+                (let [p (vim.fn.expand "%:p:h")]
+                  (if (not= "" p) (fs.realpath p) (assert (vim.loop.cwd)))))
         ?origin-filename (let [p (vim.fn.expand "%:p:t")]
                            (if (= "" p) nil p))
         buf (u.create-buf cwd)
