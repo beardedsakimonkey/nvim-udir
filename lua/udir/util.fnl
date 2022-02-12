@@ -2,6 +2,18 @@
 
 (local M {})
 
+(λ find-index [list predicate?]
+  (var ?ret nil)
+  (each [i item (ipairs list) :until (not= nil ?ret)]
+    (when (predicate? item)
+      (set ?ret i)))
+  ?ret)
+
+(λ find-line [predicate?]
+  "Returns the first line number that matches the predicate, otherwise nil"
+  (local lines (api.nvim_buf_get_lines 0 0 -1 false))
+  (find-index lines predicate?))
+
 ;; Problem: We'd like udir buffers to be completely unique (udir instances in
 ;; two different windows should be isolated), and also have a buffer name that
 ;; we can `:cd %` to.
@@ -28,6 +40,10 @@
   (local id buf-name-id)
   (set buf-name-id (+ buf-name-id 1))
   id)
+
+;; --------------------------------------
+;; PUBLIC
+;; --------------------------------------
 
 (λ M.update-buf-name [buf cwd]
   (local old-name (vim.fn.bufname))
@@ -82,18 +98,6 @@
   (local [line] (api.nvim_buf_get_lines 0 (- row 1) row true))
   line)
 
-(λ find-index [list predicate?]
-  (var ?ret nil)
-  (each [i item (ipairs list) :until (not= nil ?ret)]
-    (when (predicate? item)
-      (set ?ret i)))
-  ?ret)
-
-(λ M.find-line [predicate?]
-  "Returns the first line number that matches the predicate, otherwise nil"
-  (local lines (api.nvim_buf_get_lines 0 0 -1 false))
-  (find-index lines predicate?))
-
 (λ M.delete-buffer [name]
   (local bufs (vim.fn.getbufinfo))
   (each [_ buf (pairs bufs)]
@@ -110,10 +114,12 @@
 
 (λ M.set-cursor-pos [?filename ?or-top]
   (var ?line (if ?or-top 1 nil))
-  (if ?filename
-      (let [?found (M.find-line #(= $1 ?filename))]
-        (if (not= nil ?found) (set ?line ?found))))
-  (if (not= nil ?line) (api.nvim_win_set_cursor 0 [?line 0])))
+  (when ?filename
+    (local ?found (find-line #(= $1 ?filename)))
+    (when (not= nil ?found)
+      (set ?line ?found)))
+  (when (not= nil ?line)
+    (api.nvim_win_set_cursor 0 [?line 0])))
 
 (λ M.err [msg]
   (api.nvim_err_writeln msg))
