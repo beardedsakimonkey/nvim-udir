@@ -74,7 +74,10 @@
             (api.nvim_buf_set_name buf (create-buf-name cwd)))
           ;; If buffer exists and it's not a udir buffer, reuse it. This can
           ;; happen when launching nvim with a directory arg.
-          (set buf existing-buf))
+          (do
+            (set buf existing-buf)
+            ;; Canonicalize the buffer name
+            (vim.cmd (.. "sil file " (vim.fn.fnameescape cwd)))))
       ;; Buffer doesn't exist yet, so create it
       (do
         (set buf (api.nvim_create_buf false true))
@@ -90,8 +93,7 @@
 
 (λ M.set-current-buf [buf]
   (when (vim.fn.bufexists buf)
-    ;; Fail silently. It can happen if we've deleted (unloaded) the origin-buf
-    (pcall api.nvim_set_current_buf buf)
+    (vim.cmd (.. "sil keepj buffer " buf))
     nil))
 
 (λ M.set-lines [buf start end strict-indexing replacement]
