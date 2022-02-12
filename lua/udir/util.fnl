@@ -41,11 +41,15 @@
                           (vim.tbl_filter #(= 1 $1.loaded))
                           (vim.tbl_map #$1.name)))
   (var new-name cwd)
-  (var i 1)
+  (var i 0)
   (while (-> loaded-bufs (vim.tbl_contains new-name))
     (set i (+ 1 i))
     (set new-name (.. cwd " [" i "]")))
   new-name)
+
+(λ buf-has-var [buf var-name]
+  (local (success ret) (pcall api.nvim_buf_get_var buf var-name))
+  (if success ret false))
 
 ;; --------------------------------------
 ;; PUBLIC
@@ -59,20 +63,24 @@
   ;; Renaming a buffer creates a new buffer with the old name. Delete it.
   (M.delete-buffer old-name))
 
-(λ M.find-or-create-buf [cwd]
-  ;; TODO: If you open udir from a file in dir X, and in another window, open udir
-  ;; from another file in dir X, we want to create a brand new udir instance.
+(λ M.create-buf [cwd]
   (local existing-buf (vim.fn.bufnr (.. "^" cwd "$")))
   (var buf nil)
-  (if (= existing-buf -1)
+  (if (not= -1 existing-buf)
+      (if (buf-has-var existing-buf :is_udir)
+          ;; If buffer exists and it's a udir buffer, create a new buffer
+          (do
+            (set buf (api.nvim_create_buf false true))
+            (api.nvim_buf_set_name buf (create-buf-name cwd)))
+          ;; If buffer exists and it's not a udir buffer, reuse it. This can
+          ;; happen when launching nvim with a directory arg.
+          (set buf existing-buf))
+      ;; Buffer doesn't exist yet, so create it
       (do
-        ;; Buffer doesn't exist yet, so create it
         (set buf (api.nvim_create_buf false true))
-        (assert (not (= buf -1)))
-        ;; Don't use update-buf-name since it does stuff we don't need here
-        (api.nvim_buf_set_name buf cwd))
-      :else
-      (set buf existing-buf))
+        (api.nvim_buf_set_name buf cwd)))
+  (assert (not= 0 buf))
+  ;; Don't use update-buf-name since it does stuff we don't need here
   (api.nvim_buf_set_var buf :is_udir true)
   ;; Triggers BufEnter
   (api.nvim_set_current_buf buf)

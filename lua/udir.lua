@@ -282,7 +282,7 @@ M.udir = function()
       _3forigin_filename = p
     end
   end
-  local buf = assert(u["find-or-create-buf"](cwd))
+  local buf = u["create-buf"](cwd)
   local ns = api.nvim_create_namespace(("udir." .. buf))
   local hovered_files = {}
   local state = {buf = buf, ["origin-buf"] = origin_buf, ["?alt-buf"] = _3falt_buf, cwd = cwd, ns = ns, ["hovered-files"] = hovered_files}

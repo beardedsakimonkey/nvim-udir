@@ -232,7 +232,7 @@
               (if (not= "" p) (fs.realpath p) (assert (vim.loop.cwd))))
         ?origin-filename (let [p (vim.fn.expand "%:p:t")]
                            (if (= "" p) nil p))
-        buf (assert (u.find-or-create-buf cwd))
+        buf (u.create-buf cwd)
         ns (api.nvim_create_namespace (.. :udir. buf))
         hovered-files {} ; map<realpath, filename>
         state {: buf : origin-buf : ?alt-buf : cwd : ns : hovered-files}]
