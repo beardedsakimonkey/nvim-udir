@@ -12,7 +12,7 @@ end
 config = {keymaps = {q = M.map.quit, h = M.map.up_dir, ["-"] = M.map.up_dir, l = M.map.open, ["<CR>"] = M.map.open, s = M.map.open_split, v = M.map.open_vsplit, t = M.map.open_tab, R = M.map.reload, d = M.map.delete, ["+"] = M.map.create, m = M.map.move, c = M.map.copy, ["."] = M.map.toggle_hidden_files}, ["show-hidden-files"] = true, ["is-file-hidden"] = _1_}
 M.setup = function(_3fcfg)
   local cfg = (_3fcfg or {})
-  if cfg.auto_open then
+  if (false ~= cfg.auto_open) then
     vim.cmd("aug udir | au!")
     vim.cmd("au BufEnter * if !empty(expand('%')) && isdirectory(expand('%')) && !get(b:, 'is_udir') | Udir | endif")
     vim.cmd("aug END")

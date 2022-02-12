@@ -44,7 +44,7 @@
 (λ M.setup [?cfg]
   (local cfg (or ?cfg {}))
   ;; Whether to automatically open Udir when editing a directory
-  (when cfg.auto_open
+  (when (not= false cfg.auto_open)
     (vim.cmd "aug udir | au!")
     (vim.cmd "au BufEnter * if !empty(expand('%')) && isdirectory(expand('%')) && !get(b:, 'is_udir') | Udir | endif")
     (vim.cmd "aug END"))
