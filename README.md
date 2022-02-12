@@ -32,6 +32,7 @@ require'udir'.setup()
 
 `setup()` optionally takes a config table. The defaults are listed below:
 ```lua
+local udir = require'udir'
 local map = udir.map
 
 udir.setup({
@@ -91,3 +92,21 @@ UdirSymlink
 UdirExecutable
 UdirVirtText
 ```
+
+## Roadmap
+
+Udir is intended to be a small, simple plugin. Future changes are unlikely to
+include major feature additions and will probably be limited to bugfixes and
+small, quality of life improvements. However, if you have a suggestion for
+something, feel free to file an issue.
+
+## Acknowledgements
+
+Some minor bits of code were adapted from vim-dirvish and nvim-tree.
+
+## Similar plugins
+
+- [vim-vinegar](https://github.com/tpope/vim-vinegar)
+- [vim-filebeagle](https://github.com/jeetsukumaran/vim-filebeagle)
+- [vim-dirvish](https://github.com/justinmk/vim-dirvish)
+- [lir.nvim](https://github.com/tamago324/lir.nvim)
