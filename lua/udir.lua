@@ -14,7 +14,7 @@ M.setup = function(_3fcfg)
   local cfg = (_3fcfg or {})
   if (false ~= cfg.auto_open) then
     vim.cmd("aug udir | au!")
-    vim.cmd("au BufEnter * if !empty(expand('%')) && isdirectory(expand('%')) && !get(b:, 'is_udir') | Udir | endif")
+    vim.cmd("au BufEnter * if !empty(expand('%')) && isdirectory(expand('%')) && !get(b:, 'is_udir') | call luaeval(\"require'udir'.udir('', true)\") | endif")
     vim.cmd("aug END")
   else
   end
@@ -253,17 +253,20 @@ M["toggle-hidden-files"] = function()
   render(state)
   return u["set-cursor-pos"](_3fhovered_file)
 end
-M.udir = function(dir)
+M.udir = function(dir, _3ffrom_au)
   _G.assert((nil ~= dir), "Missing argument dir on lua/udir.fnl:225")
-  local origin_buf = assert(api.nvim_get_current_buf())
+  local has_altbuf = (0 ~= vim.fn.bufexists(0))
+  local origin_buf
+  if (_3ffrom_au and has_altbuf) then
+    origin_buf = vim.fn.bufnr("#")
+  else
+    origin_buf = api.nvim_get_current_buf()
+  end
   local _3falt_buf
-  do
-    local n = vim.fn.bufnr("#")
-    if (n == -1) then
-      _3falt_buf = nil
-    else
-      _3falt_buf = n
-    end
+  if (_3ffrom_au or not has_altbuf) then
+    _3falt_buf = nil
+  else
+    _3falt_buf = vim.fn.bufnr("#")
   end
   local cwd
   if ("" ~= dir) then

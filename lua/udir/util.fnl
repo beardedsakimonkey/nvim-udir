@@ -9,8 +9,8 @@
       (set ?ret i)))
   ?ret)
 
+;; Returns the first line number that matches the predicate, otherwise nil
 (λ find-line [predicate?]
-  "Returns the first line number that matches the predicate, otherwise nil"
   (local lines (api.nvim_buf_get_lines 0 0 -1 false))
   (find-index lines predicate?))
 

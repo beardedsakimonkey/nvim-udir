@@ -14,7 +14,7 @@ local function find_index(list, predicate_3f)
   return _3fret
 end
 local function find_line(predicate_3f)
-  _G.assert((nil ~= predicate_3f), "Missing argument predicate? on lua/udir/util.fnl:12")
+  _G.assert((nil ~= predicate_3f), "Missing argument predicate? on lua/udir/util.fnl:13")
   local lines = api.nvim_buf_get_lines(0, 0, -1, false)
   return find_index(lines, predicate_3f)
 end

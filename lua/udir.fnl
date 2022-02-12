@@ -46,7 +46,7 @@
   ;; Whether to automatically open Udir when editing a directory
   (when (not= false cfg.auto_open)
     (vim.cmd "aug udir | au!")
-    (vim.cmd "au BufEnter * if !empty(expand('%')) && isdirectory(expand('%')) && !get(b:, 'is_udir') | Udir | endif")
+    (vim.cmd "au BufEnter * if !empty(expand('%')) && isdirectory(expand('%')) && !get(b:, 'is_udir') | call luaeval(\"require'udir'.udir('', true)\") | endif")
     (vim.cmd "aug END"))
   (when cfg.keymaps
     (tset config :keymaps cfg.keymaps))
@@ -222,10 +222,14 @@
 ;; --------------------------------------
 
 ;; This gets called by the `:Udir` command
-(λ M.udir [dir]
-  (let [origin-buf (assert (api.nvim_get_current_buf))
-        ?alt-buf (let [n (vim.fn.bufnr "#")]
-                   (if (= n -1) nil n))
+(λ M.udir [dir ?from-au]
+  ;; If we're executing from the BufEnter autocmd, the current buffer has
+  ;; already changed, so the origin-buf is actually the altbuf, and we don't
+  ;; know what the origin-buf's altbuf is.
+  (let [has-altbuf (not= 0 (vim.fn.bufexists 0))
+        origin-buf (if (and ?from-au has-altbuf) (vim.fn.bufnr "#")
+                       (api.nvim_get_current_buf))
+        ?alt-buf (if (or ?from-au (not has-altbuf)) nil (vim.fn.bufnr "#"))
         cwd (if (not= "" dir) (fs.realpath (vim.fn.expand dir))
                 ;; `expand('%')` can be empty if in an unnamed buffer, like `:enew`, so
                 ;; fallback to the cwd.
