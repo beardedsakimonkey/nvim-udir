@@ -90,15 +90,15 @@ local function render(state)
       return not config["is-file-hidden"](file, files, cwd)
     end
   end
-  local files_filtered = vim.tbl_filter(not_hidden_3f, files)
-  sort_21(files_filtered)
+  local visible_files = vim.tbl_filter(not_hidden_3f, files)
+  sort_21(visible_files)
   local filenames
   local function _14_(_241)
     return _241.name
   end
-  filenames = vim.tbl_map(_14_, files_filtered)
+  filenames = vim.tbl_map(_14_, visible_files)
   u["set-lines"](buf, 0, -1, false, filenames)
-  return render_virttext(cwd, state.ns, files_filtered)
+  return render_virttext(cwd, state.ns, visible_files)
 end
 local function noremap(mode, buf, mappings)
   _G.assert((nil ~= mappings), "Missing argument mappings on lua/udir.fnl:106")

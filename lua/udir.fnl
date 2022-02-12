@@ -93,11 +93,11 @@
     (if config.show-hidden-files true
         (not (config.is-file-hidden file files cwd))))
 
-  (local files-filtered (vim.tbl_filter not-hidden? files))
-  (sort! files-filtered)
-  (local filenames (vim.tbl_map #$1.name files-filtered))
+  (local visible-files (vim.tbl_filter not-hidden? files))
+  (sort! visible-files)
+  (local filenames (vim.tbl_map #$1.name visible-files))
   (u.set-lines buf 0 -1 false filenames)
-  (render-virttext cwd state.ns files-filtered))
+  (render-virttext cwd state.ns visible-files))
 
 ;; --------------------------------------
 ;; KEYMAPS
