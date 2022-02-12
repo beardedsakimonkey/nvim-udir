@@ -60,15 +60,14 @@ local function render_virttext(cwd, ns, files)
         _3fvirttext, _3fhl = u.sep, "UdirDirectory"
       elseif (_8_ == "link") then
         _3fvirttext, _3fhl = ("@ -> " .. assert(uv.fs_readlink(path))), "UdirSymlink"
-      else
-        local function _9_()
-          return fs["executable?"](path)
-        end
-        if ((_8_ == "file") and _9_()) then
+      elseif (_8_ == "file") then
+        if fs["executable?"](path) then
           _3fvirttext, _3fhl = "*", "UdirExecutable"
         else
-          _3fvirttext, _3fhl = nil
+          _3fvirttext, _3fhl = nil, "UdirFile"
         end
+      else
+        _3fvirttext, _3fhl = nil
       end
     end
     if _3fvirttext then
@@ -80,7 +79,7 @@ local function render_virttext(cwd, ns, files)
   return nil
 end
 local function render(state)
-  _G.assert((nil ~= state), "Missing argument state on lua/udir.fnl:88")
+  _G.assert((nil ~= state), "Missing argument state on lua/udir.fnl:89")
   local _local_12_ = state
   local buf = _local_12_["buf"]
   local cwd = _local_12_["cwd"]
@@ -103,26 +102,26 @@ local function render(state)
   return render_virttext(cwd, state.ns, files_filtered)
 end
 local function noremap(mode, buf, mappings)
-  _G.assert((nil ~= mappings), "Missing argument mappings on lua/udir.fnl:106")
-  _G.assert((nil ~= buf), "Missing argument buf on lua/udir.fnl:106")
-  _G.assert((nil ~= mode), "Missing argument mode on lua/udir.fnl:106")
+  _G.assert((nil ~= mappings), "Missing argument mappings on lua/udir.fnl:107")
+  _G.assert((nil ~= buf), "Missing argument buf on lua/udir.fnl:107")
+  _G.assert((nil ~= mode), "Missing argument mode on lua/udir.fnl:107")
   for lhs, rhs in pairs(mappings) do
     api.nvim_buf_set_keymap(buf, mode, lhs, rhs, {nowait = true, noremap = true, silent = true})
   end
   return nil
 end
 local function setup_keymaps(buf)
-  _G.assert((nil ~= buf), "Missing argument buf on lua/udir.fnl:111")
+  _G.assert((nil ~= buf), "Missing argument buf on lua/udir.fnl:112")
   return noremap("n", buf, config.keymaps)
 end
 local function cleanup(state)
-  _G.assert((nil ~= state), "Missing argument state on lua/udir.fnl:114")
+  _G.assert((nil ~= state), "Missing argument state on lua/udir.fnl:115")
   api.nvim_buf_delete(state.buf, {force = true})
   return store["remove!"](state.buf)
 end
 local function update_cwd(state, path)
-  _G.assert((nil ~= path), "Missing argument path on lua/udir.fnl:118")
-  _G.assert((nil ~= state), "Missing argument state on lua/udir.fnl:118")
+  _G.assert((nil ~= path), "Missing argument path on lua/udir.fnl:119")
+  _G.assert((nil ~= state), "Missing argument state on lua/udir.fnl:119")
   do end (state)["cwd"] = path
   return nil
 end
@@ -201,7 +200,7 @@ M.delete = function()
   end
 end
 local function copy_or_move(should_move)
-  _G.assert((nil ~= should_move), "Missing argument should-move on lua/udir.fnl:181")
+  _G.assert((nil ~= should_move), "Missing argument should-move on lua/udir.fnl:182")
   local state = store.get()
   local filename = u["get-line"]()
   if ("" == filename) then

@@ -76,8 +76,9 @@
                             :link (values (.. "@ -> "
                                               (assert (uv.fs_readlink path)))
                                           :UdirSymlink)
-                            (where :file (fs.executable? path)) (values "*"
-                                                                        :UdirExecutable))]
+                            :file (if (fs.executable? path)
+                                      (values "*" :UdirExecutable)
+                                      (values nil :UdirFile)))]
       (when ?virttext
         (api.nvim_buf_set_extmark 0 ns (- i 1) (length file.name)
                                   {:virt_text [[?virttext :UdirVirtText]]
