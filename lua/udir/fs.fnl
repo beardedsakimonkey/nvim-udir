@@ -7,9 +7,9 @@
 
 (local M {})
 
-(lambda assert-doesnt-exist [path]
+(λ assert-doesnt-exist [path]
   (assert (not (uv.fs_access path :R)) (string.format "%q already exists" path))
-  nil)
+  path)
 
 (macro foreach-entry [path syms form]
   (let [name-sym (. syms 1)
@@ -26,24 +26,24 @@
                  (assert (not ,type-sym)))
                ,form))))))
 
-(lambda delete-file [path]
+(λ delete-file [path]
   (assert (uv.fs_unlink path))
   (u.delete-buffer path))
 
-(lambda delete-dir [path]
+(λ delete-dir [path]
   (foreach-entry path [name type]
                  (if (= type :directory)
                      (delete-dir (u.join-path path name))
                      (delete-file (u.join-path path name))))
   (assert (uv.fs_rmdir path)))
 
-(lambda move [src dest]
+(λ move [src dest]
   (assert (uv.fs_rename src dest)))
 
-(lambda copy-file [src dest]
+(λ copy-file [src dest]
   (assert (uv.fs_copyfile src dest)))
 
-(lambda copy-dir [src dest]
+(λ copy-dir [src dest]
   (local stat (assert (uv.fs_stat src)))
   (assert (uv.fs_mkdir dest stat.mode))
   (foreach-entry src [name type]
@@ -53,7 +53,7 @@
                        (copy-dir src2 dest2)
                        (copy-file src2 dest2)))))
 
-(lambda symlink? [path]
+(λ symlink? [path]
   (local link (uv.fs_readlink path))
   (not= nil link))
 
@@ -61,58 +61,53 @@
 ;; PUBLIC
 ;; --------------------------------------
 
-(lambda M.canonicalize [?path]
-  "Returns the absolute filename, with symlinks resolved, extra `/` removed, and `.` and `..` resolved."
+(λ M.realpath [?path]
   (assert (uv.fs_realpath ?path)))
 
 ;; NOTE: Symlink dirs are considered directories
-(lambda M.dir? [path]
+(λ M.dir? [path]
   (local ?file-info (uv.fs_stat path))
   (if (not= nil ?file-info) (= :directory ?file-info.type) false))
 
-(lambda M.executable? [path]
+(λ M.executable? [path]
   (local ret (uv.fs_access path :X))
   ret)
 
-(lambda M.list [path]
-  "Returns a sequential table of {: name : type} items"
+(λ M.list [path]
   (local ret [])
   (foreach-entry path [name type] ;; `type` can be "file", "directory", "link",
                  ;; `name` is the file's basename
                  (table.insert ret {: name : type}))
   ret)
 
-(lambda M.assert-readable [path]
+(λ M.assert-readable [path]
   (assert (uv.fs_access path :R))
-  nil)
+  path)
 
-(lambda M.get-parent-dir [dir]
-  "Returns the absolute path of the parent directory"
-  (local parent-dir (M.canonicalize (.. dir u.sep "..")))
-  (M.assert-readable parent-dir)
-  parent-dir)
+(λ M.get-parent-dir [dir]
+  (M.assert-readable (M.realpath (.. dir u.sep ".."))))
 
-(lambda M.basename [?path]
+(λ M.basename [?path]
   ;; Strip trailing slash
   (local ?path (if (vim.endswith ?path u.sep) (?path:sub 1 -2) ?path))
   (local split (vim.split ?path u.sep))
   (. split (length split)))
 
-(lambda M.delete [path]
+(λ M.delete [path]
   (M.assert-readable path)
   (if (and (M.dir? path) (not (symlink? path)))
       (delete-dir path)
       (delete-file path))
   nil)
 
-(lambda M.create-dir [path]
+(λ M.create-dir [path]
   (assert-doesnt-exist path)
   ;; 755 = RWX for owner, RX for group/other
   (local mode (tonumber :755 8))
   (assert (uv.fs_mkdir path mode))
   nil)
 
-(lambda M.create-file [path]
+(λ M.create-file [path]
   (assert-doesnt-exist path)
   ;; 644 = RW for owner, R for group/other
   (local mode (tonumber :644 8))
@@ -120,7 +115,7 @@
   (assert (uv.fs_close fd))
   nil)
 
-(lambda M.copy-or-move [should-move src dest]
+(λ M.copy-or-move [should-move src dest]
   (assert (not= src dest))
   (M.assert-readable src)
   (if (M.dir? src)

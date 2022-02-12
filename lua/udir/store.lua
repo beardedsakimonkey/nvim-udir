@@ -14,7 +14,7 @@ M["remove!"] = function(buf)
 end
 M.get = function()
   local buf = api.nvim_get_current_buf()
-  assert(not (buf == -1))
+  assert(not (-1 == buf))
   local state = buf_states[tostring(buf)]
   return assert(state)
 end

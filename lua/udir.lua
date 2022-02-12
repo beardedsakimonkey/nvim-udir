@@ -157,7 +157,7 @@ M.open = function(_3fcmd)
   local filename = u["get-line"]()
   if ("" ~= filename) then
     local path = u["join-path"](state.cwd, filename)
-    local realpath = fs.canonicalize(path)
+    local realpath = fs.realpath(path)
     fs["assert-readable"](path)
     if fs["dir?"](path) then
       if _3fcmd then
@@ -271,7 +271,7 @@ M.udir = function()
   do
     local p = vim.fn.expand("%:p:h")
     if ("" ~= p) then
-      cwd = fs.canonicalize(p)
+      cwd = fs.realpath(p)
     else
       cwd = assert(vim.loop.cwd())
     end

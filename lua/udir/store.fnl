@@ -4,17 +4,17 @@
 
 (local buf-states {})
 
-(lambda M.set! [buf state]
+(λ M.set! [buf state]
   (tset buf-states (tostring buf) state)
   nil)
 
-(lambda M.remove! [buf]
+(λ M.remove! [buf]
   (table.remove buf-states (tostring buf))
   nil)
 
-(lambda M.get []
+(λ M.get []
   (let [buf (api.nvim_get_current_buf)]
-    (assert (not (= buf -1)))
+    (assert (not (= -1 buf)))
     (let [state (. buf-states (tostring buf))]
       (assert state))))
 
