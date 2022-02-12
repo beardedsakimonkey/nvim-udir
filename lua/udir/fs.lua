@@ -9,7 +9,7 @@ end
 local function delete_file(path)
   _G.assert((nil ~= path), "Missing argument path on lua/udir/fs.fnl:29")
   assert(uv.fs_unlink(path))
-  return u["delete-buffer"](path)
+  return u["delete-buffers"](path)
 end
 local function delete_dir(path)
   _G.assert((nil ~= path), "Missing argument path on lua/udir/fs.fnl:33")
@@ -35,16 +35,21 @@ end
 local function move(src, dest)
   _G.assert((nil ~= dest), "Missing argument dest on lua/udir/fs.fnl:40")
   _G.assert((nil ~= src), "Missing argument src on lua/udir/fs.fnl:40")
-  return assert(uv.fs_rename(src, dest))
+  assert(uv.fs_rename(src, dest))
+  if not M["dir?"](src) then
+    return u["rename-buffers"](src, dest)
+  else
+    return nil
+  end
 end
 local function copy_file(src, dest)
-  _G.assert((nil ~= dest), "Missing argument dest on lua/udir/fs.fnl:43")
-  _G.assert((nil ~= src), "Missing argument src on lua/udir/fs.fnl:43")
+  _G.assert((nil ~= dest), "Missing argument dest on lua/udir/fs.fnl:45")
+  _G.assert((nil ~= src), "Missing argument src on lua/udir/fs.fnl:45")
   return assert(uv.fs_copyfile(src, dest))
 end
 local function copy_dir(src, dest)
-  _G.assert((nil ~= dest), "Missing argument dest on lua/udir/fs.fnl:46")
-  _G.assert((nil ~= src), "Missing argument src on lua/udir/fs.fnl:46")
+  _G.assert((nil ~= dest), "Missing argument dest on lua/udir/fs.fnl:48")
+  _G.assert((nil ~= src), "Missing argument src on lua/udir/fs.fnl:48")
   local stat = assert(uv.fs_stat(src))
   assert(uv.fs_mkdir(dest, stat.mode))
   local fs_2_auto = assert(uv.fs_scandir(src))
@@ -67,7 +72,7 @@ local function copy_dir(src, dest)
   return nil
 end
 local function symlink_3f(path)
-  _G.assert((nil ~= path), "Missing argument path on lua/udir/fs.fnl:56")
+  _G.assert((nil ~= path), "Missing argument path on lua/udir/fs.fnl:58")
   local link = uv.fs_readlink(path)
   return (nil ~= link)
 end
@@ -75,7 +80,7 @@ M.realpath = function(_3fpath)
   return assert(uv.fs_realpath(_3fpath))
 end
 M["dir?"] = function(path)
-  _G.assert((nil ~= path), "Missing argument path on lua/udir/fs.fnl:68")
+  _G.assert((nil ~= path), "Missing argument path on lua/udir/fs.fnl:70")
   local _3ffile_info = uv.fs_stat(path)
   if (nil ~= _3ffile_info) then
     return ("directory" == _3ffile_info.type)
@@ -84,12 +89,12 @@ M["dir?"] = function(path)
   end
 end
 M["executable?"] = function(path)
-  _G.assert((nil ~= path), "Missing argument path on lua/udir/fs.fnl:72")
+  _G.assert((nil ~= path), "Missing argument path on lua/udir/fs.fnl:74")
   local ret = uv.fs_access(path, "X")
   return ret
 end
 M.list = function(path)
-  _G.assert((nil ~= path), "Missing argument path on lua/udir/fs.fnl:76")
+  _G.assert((nil ~= path), "Missing argument path on lua/udir/fs.fnl:78")
   local ret = {}
   do
     local fs_2_auto = assert(uv.fs_scandir(path))
@@ -107,12 +112,12 @@ M.list = function(path)
   return ret
 end
 M["assert-readable"] = function(path)
-  _G.assert((nil ~= path), "Missing argument path on lua/udir/fs.fnl:83")
+  _G.assert((nil ~= path), "Missing argument path on lua/udir/fs.fnl:85")
   assert(uv.fs_access(path, "R"))
   return path
 end
 M["get-parent-dir"] = function(dir)
-  _G.assert((nil ~= dir), "Missing argument dir on lua/udir/fs.fnl:87")
+  _G.assert((nil ~= dir), "Missing argument dir on lua/udir/fs.fnl:89")
   return M["assert-readable"](M.realpath((dir .. u.sep .. "..")))
 end
 M.basename = function(_3fpath)
@@ -126,7 +131,7 @@ M.basename = function(_3fpath)
   return split[#split]
 end
 M.delete = function(path)
-  _G.assert((nil ~= path), "Missing argument path on lua/udir/fs.fnl:96")
+  _G.assert((nil ~= path), "Missing argument path on lua/udir/fs.fnl:98")
   M["assert-readable"](path)
   if (M["dir?"](path) and not symlink_3f(path)) then
     delete_dir(path)
@@ -136,14 +141,14 @@ M.delete = function(path)
   return nil
 end
 M["create-dir"] = function(path)
-  _G.assert((nil ~= path), "Missing argument path on lua/udir/fs.fnl:103")
+  _G.assert((nil ~= path), "Missing argument path on lua/udir/fs.fnl:105")
   assert_doesnt_exist(path)
   local mode = tonumber("755", 8)
   assert(uv.fs_mkdir(path, mode))
   return nil
 end
 M["create-file"] = function(path)
-  _G.assert((nil ~= path), "Missing argument path on lua/udir/fs.fnl:110")
+  _G.assert((nil ~= path), "Missing argument path on lua/udir/fs.fnl:112")
   assert_doesnt_exist(path)
   local mode = tonumber("644", 8)
   local fd = assert(uv.fs_open(path, "w", mode))
@@ -151,9 +156,9 @@ M["create-file"] = function(path)
   return nil
 end
 M["copy-or-move"] = function(should_move, src, dest)
-  _G.assert((nil ~= dest), "Missing argument dest on lua/udir/fs.fnl:118")
-  _G.assert((nil ~= src), "Missing argument src on lua/udir/fs.fnl:118")
-  _G.assert((nil ~= should_move), "Missing argument should-move on lua/udir/fs.fnl:118")
+  _G.assert((nil ~= dest), "Missing argument dest on lua/udir/fs.fnl:120")
+  _G.assert((nil ~= src), "Missing argument src on lua/udir/fs.fnl:120")
+  _G.assert((nil ~= should_move), "Missing argument should-move on lua/udir/fs.fnl:120")
   assert((src ~= dest))
   M["assert-readable"](src)
   if M["dir?"](src) then

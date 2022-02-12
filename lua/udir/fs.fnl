@@ -28,7 +28,7 @@
 
 (λ delete-file [path]
   (assert (uv.fs_unlink path))
-  (u.delete-buffer path))
+  (u.delete-buffers path))
 
 (λ delete-dir [path]
   (foreach-entry path [name type]
@@ -38,7 +38,9 @@
   (assert (uv.fs_rmdir path)))
 
 (λ move [src dest]
-  (assert (uv.fs_rename src dest)))
+  (assert (uv.fs_rename src dest))
+  (when (not (M.dir? src))
+    (u.rename-buffers src dest)))
 
 (λ copy-file [src dest]
   (assert (uv.fs_copyfile src dest)))

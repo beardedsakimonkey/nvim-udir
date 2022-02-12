@@ -61,7 +61,7 @@
   ;; `file` is equivalent to nvim_buf_set_name, but allows us to use `keepalt`
   (vim.cmd (.. "sil keepalt file " (vim.fn.fnameescape new-name)))
   ;; Renaming a buffer creates a new buffer with the old name. Delete it.
-  (M.delete-buffer old-name))
+  (M.delete-buffers old-name))
 
 (λ M.create-buf [cwd]
   (local existing-buf (vim.fn.bufnr (.. "^" cwd "$")))
@@ -105,11 +105,16 @@
   (local [line] (api.nvim_buf_get_lines 0 (- row 1) row true))
   line)
 
-(λ M.delete-buffer [name]
-  (local bufs (vim.fn.getbufinfo))
-  (each [_ buf (pairs bufs)]
+(λ M.delete-buffers [name]
+  (each [_ buf (pairs (vim.fn.getbufinfo))]
     (when (= buf.name name)
       (api.nvim_buf_delete buf.bufnr {}))))
+
+(λ M.rename-buffers [old-name new-name]
+  (each [_ buf (pairs (vim.fn.getbufinfo))]
+    (when (= buf.name old-name)
+      (api.nvim_buf_set_name buf.bufnr new-name)
+      (api.nvim_buf_call buf.bufnr #(vim.cmd "silent! w!")))))
 
 (λ M.clear-prompt []
   (vim.cmd "norm! :"))
