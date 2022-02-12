@@ -22,6 +22,9 @@ correspond to the same file.
 However, this approach avoids surprising and inconvenient behavior that occurs
 when windows share the same buffer.
 
+## Screenshot
+<img width="676" alt="Screen Shot 2022-02-12 at 1 19 51 PM" src="https://user-images.githubusercontent.com/54521218/153728813-bcad4cb8-3494-482f-be05-7032f35fed81.png">
+
 ## Configuration
 
 Udir does not require any configuration besides calling `setup()` one time:
