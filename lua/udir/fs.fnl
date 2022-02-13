@@ -92,8 +92,8 @@
 (λ M.basename [?path]
   ;; Strip trailing slash
   (local ?path (if (vim.endswith ?path u.sep) (?path:sub 1 -2) ?path))
-  (local split (vim.split ?path u.sep))
-  (. split (length split)))
+  (local parts (vim.split ?path u.sep))
+  (. parts (length parts)))
 
 (λ M.delete [path]
   (M.assert-readable path)

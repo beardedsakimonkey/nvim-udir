@@ -95,8 +95,7 @@
 
   (local visible-files (vim.tbl_filter not-hidden? files))
   (sort! visible-files)
-  (local filenames (vim.tbl_map #$1.name visible-files))
-  (u.set-lines buf 0 -1 false filenames)
+  (u.set-lines buf 0 -1 false (vim.tbl_map #$1.name visible-files))
   (render-virttext cwd state.ns visible-files))
 
 ;; --------------------------------------
@@ -119,8 +118,7 @@
   (tset state :cwd path))
 
 (λ M.quit []
-  (local state (store.get))
-  (local {: ?alt-buf : origin-buf} state)
+  (local {: ?alt-buf : origin-buf &as state} (store.get))
   (when ?alt-buf
     (u.set-current-buf ?alt-buf))
   (u.set-current-buf origin-buf)

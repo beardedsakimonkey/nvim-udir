@@ -92,43 +92,41 @@ local function render(state)
   end
   local visible_files = vim.tbl_filter(not_hidden_3f, files)
   sort_21(visible_files)
-  local filenames
   local function _14_(_241)
     return _241.name
   end
-  filenames = vim.tbl_map(_14_, visible_files)
-  u["set-lines"](buf, 0, -1, false, filenames)
+  u["set-lines"](buf, 0, -1, false, vim.tbl_map(_14_, visible_files))
   return render_virttext(cwd, state.ns, visible_files)
 end
 local function noremap(mode, buf, mappings)
-  _G.assert((nil ~= mappings), "Missing argument mappings on lua/udir.fnl:106")
-  _G.assert((nil ~= buf), "Missing argument buf on lua/udir.fnl:106")
-  _G.assert((nil ~= mode), "Missing argument mode on lua/udir.fnl:106")
+  _G.assert((nil ~= mappings), "Missing argument mappings on lua/udir.fnl:105")
+  _G.assert((nil ~= buf), "Missing argument buf on lua/udir.fnl:105")
+  _G.assert((nil ~= mode), "Missing argument mode on lua/udir.fnl:105")
   for lhs, rhs in pairs(mappings) do
     api.nvim_buf_set_keymap(buf, mode, lhs, rhs, {nowait = true, noremap = true, silent = true})
   end
   return nil
 end
 local function setup_keymaps(buf)
-  _G.assert((nil ~= buf), "Missing argument buf on lua/udir.fnl:111")
+  _G.assert((nil ~= buf), "Missing argument buf on lua/udir.fnl:110")
   return noremap("n", buf, config.keymaps)
 end
 local function cleanup(state)
-  _G.assert((nil ~= state), "Missing argument state on lua/udir.fnl:114")
+  _G.assert((nil ~= state), "Missing argument state on lua/udir.fnl:113")
   api.nvim_buf_delete(state.buf, {force = true})
   return store["remove!"](state.buf)
 end
 local function update_cwd(state, path)
-  _G.assert((nil ~= path), "Missing argument path on lua/udir.fnl:118")
-  _G.assert((nil ~= state), "Missing argument state on lua/udir.fnl:118")
+  _G.assert((nil ~= path), "Missing argument path on lua/udir.fnl:117")
+  _G.assert((nil ~= state), "Missing argument state on lua/udir.fnl:117")
   do end (state)["cwd"] = path
   return nil
 end
 M.quit = function()
-  local state = store.get()
-  local _local_15_ = state
+  local _local_15_ = store.get()
   local _3falt_buf = _local_15_["?alt-buf"]
   local origin_buf = _local_15_["origin-buf"]
+  local state = _local_15_
   if _3falt_buf then
     u["set-current-buf"](_3falt_buf)
   else
@@ -198,7 +196,7 @@ M.delete = function()
   end
 end
 local function copy_or_move(should_move)
-  _G.assert((nil ~= should_move), "Missing argument should-move on lua/udir.fnl:180")
+  _G.assert((nil ~= should_move), "Missing argument should-move on lua/udir.fnl:178")
   local state = store.get()
   local filename = u["get-line"]()
   if ("" == filename) then
@@ -254,7 +252,7 @@ M["toggle-hidden-files"] = function()
   return u["set-cursor-pos"](_3fhovered_file)
 end
 M.udir = function(dir, _3ffrom_au)
-  _G.assert((nil ~= dir), "Missing argument dir on lua/udir.fnl:225")
+  _G.assert((nil ~= dir), "Missing argument dir on lua/udir.fnl:223")
   local has_altbuf = (0 ~= vim.fn.bufexists(0))
   local origin_buf
   if (_3ffrom_au and has_altbuf) then

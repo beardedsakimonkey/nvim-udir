@@ -127,8 +127,8 @@ M.basename = function(_3fpath)
   else
     _3fpath0 = _3fpath
   end
-  local split = vim.split(_3fpath0, u.sep)
-  return split[#split]
+  local parts = vim.split(_3fpath0, u.sep)
+  return parts[#parts]
 end
 M.delete = function(path)
   _G.assert((nil ~= path), "Missing argument path on lua/udir/fs.fnl:98")

@@ -58,7 +58,6 @@
 (λ M.update-buf-name [buf cwd]
   (local old-name (vim.fn.bufname))
   (local new-name (create-buf-name cwd))
-  ;; `file` is equivalent to nvim_buf_set_name, but allows us to use `keepalt`
   (vim.cmd (.. "sil keepalt file " (vim.fn.fnameescape new-name)))
   ;; Renaming a buffer creates a new buffer with the old name. Delete it.
   (M.delete-buffers old-name))
@@ -93,7 +92,7 @@
 
 (λ M.set-current-buf [buf]
   (when (vim.fn.bufexists buf)
-    (vim.cmd (.. "sil keepj buffer " buf))
+    (vim.cmd (.. "sil! keepj buffer " buf))
     nil))
 
 (λ M.set-lines [buf start end strict-indexing replacement]
