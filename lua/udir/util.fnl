@@ -75,8 +75,10 @@
           ;; happen when launching nvim with a directory arg.
           (do
             (set buf existing-buf)
-            ;; Canonicalize the buffer name
-            (vim.cmd (.. "sil file " (vim.fn.fnameescape cwd)))))
+            ;; Canonicalize the buffer name when launching nvim with a directory
+            ;; arg.
+            (when (= (vim.api.nvim_get_current_buf) existing-buf)
+              (vim.cmd (.. "sil file " (vim.fn.fnameescape cwd))))))
       ;; Buffer doesn't exist yet, so create it
       (do
         (set buf (api.nvim_create_buf false true))
