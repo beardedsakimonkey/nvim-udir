@@ -58,7 +58,7 @@ local function render_virttext(cwd, ns, files)
       if (_8_ == "directory") then
         _3fvirttext, _3fhl = u.sep, "UdirDirectory"
       elseif (_8_ == "link") then
-        _3fvirttext, _3fhl = ("@ -> " .. assert(uv.fs_readlink(path))), "UdirSymlink"
+        _3fvirttext, _3fhl = ("@ \226\134\146 " .. assert(uv.fs_readlink(path))), "UdirSymlink"
       elseif (_8_ == "file") then
         if fs["executable?"](path) then
           _3fvirttext, _3fhl = "*", "UdirExecutable"

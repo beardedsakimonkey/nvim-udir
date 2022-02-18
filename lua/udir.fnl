@@ -72,7 +72,7 @@
     (let [path (u.join-path cwd file.name)
           (?virttext ?hl) (match file.type
                             :directory (values u.sep :UdirDirectory)
-                            :link (values (.. "@ -> "
+                            :link (values (.. "@ → "
                                               (assert (uv.fs_readlink path)))
                                           :UdirSymlink)
                             :file (if (fs.executable? path)
