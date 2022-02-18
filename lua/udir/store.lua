@@ -9,7 +9,7 @@ M["set!"] = function(buf, state)
 end
 M["remove!"] = function(buf)
   _G.assert((nil ~= buf), "Missing argument buf on lua/udir/store.fnl:11")
-  table.remove(buf_states, tostring(buf))
+  do end (buf_states)[tostring(buf)] = nil
   return nil
 end
 M.get = function()

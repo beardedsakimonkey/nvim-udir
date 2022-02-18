@@ -9,7 +9,7 @@
   nil)
 
 (λ M.remove! [buf]
-  (table.remove buf-states (tostring buf))
+  (tset buf-states (tostring buf) nil)
   nil)
 
 (λ M.get []
