@@ -176,19 +176,23 @@
         (u.clear-prompt))))
 
 (λ copy-or-move [should-move]
-  (local state (store.get))
-  (local filename (u.get-line))
-  (if (= "" filename)
-      (u.err "Empty filename")
-      (let [src (u.join-path state.cwd filename)
-            prompt (if should-move "Move to: " "Copy to: ")
-            name (vim.fn.input prompt)]
-        (when (not= "" name)
-          (let [dest (u.join-path state.cwd name)]
-            (fs.copy-or-move should-move src dest)
-            (render state)
-            (u.clear-prompt)
-            (u.set-cursor-pos (fs.basename dest)))))))
+  (match (u.get-line)
+    "" (u.err "Empty filename")
+    filename (do
+               (local state (store.get))
+               (local path-saved vim.opt_local.path)
+               (set vim.opt_local.path state.cwd)
+               (vim.ui.input {:prompt (if should-move "Move to: " "Copy to: ")
+                              :completion :file_in_path}
+                             (fn [name]
+                               (set vim.opt_local.path path-saved)
+                               (when name
+                                 (local src (u.join-path state.cwd filename))
+                                 (local dest (u.join-path state.cwd name))
+                                 (fs.copy-or-move should-move src dest)
+                                 (render state)
+                                 (u.clear-prompt)
+                                 (u.set-cursor-pos (fs.basename dest))))))))
 
 (λ M.move []
   (copy-or-move true))
@@ -198,15 +202,19 @@
 
 (λ M.create []
   (local state (store.get))
-  (local name (vim.fn.input "New file: "))
-  (when (not= name "")
-    (local path (u.join-path state.cwd name))
-    (if (vim.endswith name u.sep)
-        (fs.create-dir path)
-        (fs.create-file path))
-    (render state)
-    (u.clear-prompt)
-    (u.set-cursor-pos (fs.basename path))))
+  (local path-saved vim.opt_local.path)
+  (set vim.opt_local.path state.cwd)
+  (vim.ui.input {:prompt "New file: " :completion :file_in_path}
+                (fn [name]
+                  (set vim.opt_local.path path-saved)
+                  (when name
+                    (local path (u.join-path state.cwd name))
+                    (if (vim.endswith name u.sep)
+                        (fs.create-dir path)
+                        (fs.create-file path))
+                    (render state)
+                    (u.clear-prompt)
+                    (u.set-cursor-pos (fs.basename path))))))
 
 (λ M.toggle-hidden-files []
   (local state (store.get))

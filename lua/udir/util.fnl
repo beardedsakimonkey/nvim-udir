@@ -84,7 +84,6 @@
         (set buf (api.nvim_create_buf false true))
         (api.nvim_buf_set_name buf cwd)))
   (assert (not= 0 buf))
-  ;; Don't use update-buf-name since it does stuff we don't need here
   (api.nvim_buf_set_var buf :is_udir true)
   ;; Triggers BufEnter
   (api.nvim_set_current_buf buf)

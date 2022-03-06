@@ -197,28 +197,36 @@ M.delete = function()
 end
 local function copy_or_move(should_move)
   _G.assert((nil ~= should_move), "Missing argument should-move on lua/udir.fnl:178")
-  local state = store.get()
-  local filename = u["get-line"]()
-  if ("" == filename) then
+  local _23_ = u["get-line"]()
+  if (_23_ == "") then
     return u.err("Empty filename")
-  else
-    local src = u["join-path"](state.cwd, filename)
-    local prompt
+  elseif (nil ~= _23_) then
+    local filename = _23_
+    local state = store.get()
+    local path_saved = vim.opt_local.path
+    vim.opt_local.path = state.cwd
+    local _24_
     if should_move then
-      prompt = "Move to: "
+      _24_ = "Move to: "
     else
-      prompt = "Copy to: "
+      _24_ = "Copy to: "
     end
-    local name = vim.fn.input(prompt)
-    if ("" ~= name) then
-      local dest = u["join-path"](state.cwd, name)
-      fs["copy-or-move"](should_move, src, dest)
-      render(state)
-      u["clear-prompt"]()
-      return u["set-cursor-pos"](fs.basename(dest))
-    else
-      return nil
+    local function _26_(name)
+      vim.opt_local.path = path_saved
+      if name then
+        local src = u["join-path"](state.cwd, filename)
+        local dest = u["join-path"](state.cwd, name)
+        fs["copy-or-move"](should_move, src, dest)
+        render(state)
+        u["clear-prompt"]()
+        return u["set-cursor-pos"](fs.basename(dest))
+      else
+        return nil
+      end
     end
+    return vim.ui.input({prompt = _24_, completion = "file_in_path"}, _26_)
+  else
+    return nil
   end
 end
 M.move = function()
@@ -229,20 +237,25 @@ M.copy = function()
 end
 M.create = function()
   local state = store.get()
-  local name = vim.fn.input("New file: ")
-  if (name ~= "") then
-    local path = u["join-path"](state.cwd, name)
-    if vim.endswith(name, u.sep) then
-      fs["create-dir"](path)
+  local path_saved = vim.opt_local.path
+  vim.opt_local.path = state.cwd
+  local function _29_(name)
+    vim.opt_local.path = path_saved
+    if name then
+      local path = u["join-path"](state.cwd, name)
+      if vim.endswith(name, u.sep) then
+        fs["create-dir"](path)
+      else
+        fs["create-file"](path)
+      end
+      render(state)
+      u["clear-prompt"]()
+      return u["set-cursor-pos"](fs.basename(path))
     else
-      fs["create-file"](path)
+      return nil
     end
-    render(state)
-    u["clear-prompt"]()
-    return u["set-cursor-pos"](fs.basename(path))
-  else
-    return nil
   end
+  return vim.ui.input({prompt = "New file: ", completion = "file_in_path"}, _29_)
 end
 M["toggle-hidden-files"] = function()
   local state = store.get()
@@ -252,7 +265,7 @@ M["toggle-hidden-files"] = function()
   return u["set-cursor-pos"](_3fhovered_file)
 end
 M.udir = function(dir, _3ffrom_au)
-  _G.assert((nil ~= dir), "Missing argument dir on lua/udir.fnl:223")
+  _G.assert((nil ~= dir), "Missing argument dir on lua/udir.fnl:231")
   local has_altbuf = (0 ~= vim.fn.bufexists(0))
   local origin_buf
   if (_3ffrom_au and has_altbuf) then
