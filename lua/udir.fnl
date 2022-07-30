@@ -104,8 +104,11 @@
 
 (λ noremap [mode buf mappings]
   (each [lhs rhs (pairs mappings)]
-    (api.nvim_buf_set_keymap buf mode lhs rhs
-                             {:nowait true :noremap true :silent true})))
+    (if (?. vim :keymap :set)
+        ;; this one supports lua functions
+        (vim.keymap.set mode lhs rhs {:nowait true :silent true :buffer buf})
+        (api.nvim_buf_set_keymap buf mode lhs rhs
+                                 {:nowait true :noremap true :silent true}))))
 
 (λ setup-keymaps [buf]
   (noremap :n buf config.keymaps))
@@ -227,7 +230,6 @@
 ;; INITIALIZATION
 ;; --------------------------------------
 
-;; This gets called by the `:Udir` command
 (λ M.udir [dir ?from-au]
   ;; If we're executing from the BufEnter autocmd, the current buffer has
   ;; already changed, so the origin-buf is actually the altbuf, and we don't
