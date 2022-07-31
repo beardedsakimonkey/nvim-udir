@@ -111,7 +111,7 @@ M["delete-buffers"] = function(name)
   _G.assert((nil ~= name), "Missing argument name on lua/udir/util.fnl:110")
   for _, buf in pairs(vim.fn.getbufinfo()) do
     if (buf.name == name) then
-      api.nvim_buf_delete(buf.bufnr, {})
+      pcall(api.nvim_buf_delete(buf.bufnr, {}))
     else
     end
   end
