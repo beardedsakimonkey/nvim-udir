@@ -110,7 +110,7 @@
 (λ M.delete-buffers [name]
   (each [_ buf (pairs (vim.fn.getbufinfo))]
     (when (= buf.name name)
-      (pcall (api.nvim_buf_delete buf.bufnr {})))))
+      (pcall api.nvim_buf_delete buf.bufnr {}))))
 
 (λ M.rename-buffers [old-name new-name]
   (each [_ buf (pairs (vim.fn.getbufinfo))]
