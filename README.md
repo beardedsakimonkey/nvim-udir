@@ -1,26 +1,27 @@
 # Udir
 
 Udir is a small (~400 sloc) directory viewer for neovim (>= 0.6). Similar to
-vim-dirvish, udir opens within the current window and is not meant to be used as
-a project drawer as found in IDEs.
+[vim-dirvish](https://github.com/justinmk/vim-dirvish), udir opens within the
+current window and is not meant to be used as a project drawer as found in IDEs.
 
 However, udir differs from vim-dirvish in a few key ways.
 
 1) **Udir does not use modifiable buffers.** I found myself seldom using this
-   feature and I'd prefer the extra keymap availability from not having modifiable
+   feature and I prefer the extra keymap availability from not having modifiable
    buffers.
 
-2) **Udir buffers dont populate the jumplist.**  Hitting `<C-o>` will never take
-   you to a udir buffer.
+2) **Udir buffers don't populate the jumplist.**  Hitting `<C-o>` will never take
+   you to a udir buffer. This is partly a matter of personal preference, and dirvish
+   opts [against it](https://github.com/justinmk/vim-dirvish/issues/110).
 
 3) **Udir ensures that each instance is isolated.** This means that if you open
    udir to the same directory in two different windows, those buffers are distinct,
    and as such, opening a file or navigating in one won't affect the other.
    
-   To achieve isolation, udir gives each buffer a unique name. However, whenever
-   possible, udir will use the directory name as the buffer name so that it can be
-   used in commands like `:cd %`. Otherwise, it will append an id like "[2]" to the
-   buffer name.
+   To achieve isolation, udir gives each buffer a unique name. Usually, this is
+   the directory path, such that commands like `:cd %` work. However, if you have
+   multiple loaded udir buffers on the same directory, the buffer names will be made
+   unique by appending an id like "[2]" to the name.
    
    Admittedly, this is a hack; vim buffers are intended to have a 1-to-1 mapping
    with files. When naming a buffer with something that looks like a path, vim
@@ -79,7 +80,7 @@ udir.setup({
 ```
 
 The `is_file_hidden()` function has the following API:
-```tyepscript
+```typescript
 type file = {
 	name: string, // The file name
 	type: "file" | "directory" | "link" // The file type
