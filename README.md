@@ -21,7 +21,7 @@ However, udir differs from vim-dirvish in a few key ways.
    To achieve isolation, udir must give each buffer a unique name. Usually, this is
    the directory path, such that commands like `:cd %` work. However, if you have
    multiple loaded udir buffers on the same directory, the buffer names will be made
-   unique by appending an id like "[2]" to the name.
+   unique by appending an id like "[2]" to the name (in which case `cd %` won't work).
    
    Admittedly, this is a hack; vim buffers are intended to have a 1-to-1 mapping
    with files. When naming a buffer with something that looks like a path, vim
