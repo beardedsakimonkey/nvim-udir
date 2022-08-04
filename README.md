@@ -18,7 +18,7 @@ However, udir differs from vim-dirvish in a few key ways.
    udir to the same directory in two different windows, those buffers are distinct,
    and as such, opening a file or navigating in one won't affect the other.
    
-   To achieve isolation, udir gives each buffer a unique name. Usually, this is
+   To achieve isolation, udir must give each buffer a unique name. Usually, this is
    the directory path, such that commands like `:cd %` work. However, if you have
    multiple loaded udir buffers on the same directory, the buffer names will be made
    unique by appending an id like "[2]" to the name.
@@ -26,10 +26,8 @@ However, udir differs from vim-dirvish in a few key ways.
    Admittedly, this is a hack; vim buffers are intended to have a 1-to-1 mapping
    with files. When naming a buffer with something that looks like a path, vim
    internally canonicalizes the name in order to avoid having multiple buffers
-   correspond to the same file.
-   
-   However, this approach avoids surprising and inconvenient behavior that occurs
-   when windows share the same buffer.
+   correspond to the same file. However, this approach avoids surprising and
+   inconvenient behavior that occurs when windows share the same buffer.
 
 ## Screenshot
 <img width="676" alt="Screen Shot 2022-02-12 at 1 19 51 PM" src="https://user-images.githubusercontent.com/54521218/153728813-bcad4cb8-3494-482f-be05-7032f35fed81.png">
