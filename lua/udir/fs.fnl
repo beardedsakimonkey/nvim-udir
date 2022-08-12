@@ -96,7 +96,6 @@
   (. parts (length parts)))
 
 (λ M.delete [path]
-  (M.assert-readable path)
   (if (and (M.dir? path) (not (symlink? path)))
       (delete-dir path)
       (delete-file path))
