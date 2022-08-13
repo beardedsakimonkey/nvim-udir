@@ -6,11 +6,6 @@
 
 (local M {})
 
-;; Automatically open Udir when editing a directory
-(vim.cmd "aug udir | au!")
-(vim.cmd "au BufEnter * if !empty(expand('%')) && isdirectory(expand('%')) && !get(b:, 'is_udir') | call luaeval(\"require'udir'.udir('', true)\") | endif")
-(vim.cmd "aug END")
-
 ;; --------------------------------------
 ;; RENDER
 ;; --------------------------------------
