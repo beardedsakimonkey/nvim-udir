@@ -120,13 +120,17 @@ end
 M["rename-buffers"] = function(old_name, new_name)
   _G.assert((nil ~= new_name), "Missing argument new-name on lua/udir/util.fnl:115")
   _G.assert((nil ~= old_name), "Missing argument old-name on lua/udir/util.fnl:115")
+  if vim.fn.bufexists(new_name) then
+    M["delete-buffers"](new_name)
+  else
+  end
   for _, buf in pairs(vim.fn.getbufinfo()) do
     if (buf.name == old_name) then
       api.nvim_buf_set_name(buf.bufnr, new_name)
-      local function _12_()
+      local function _13_()
         return vim.cmd("silent! w!")
       end
-      api.nvim_buf_call(buf.bufnr, _12_)
+      api.nvim_buf_call(buf.bufnr, _13_)
     else
     end
   end
@@ -137,8 +141,8 @@ M["clear-prompt"] = function()
 end
 M["sep"] = (package.config):sub(1, 1)
 M["join-path"] = function(fst, snd)
-  _G.assert((nil ~= snd), "Missing argument snd on lua/udir/util.fnl:126")
-  _G.assert((nil ~= fst), "Missing argument fst on lua/udir/util.fnl:126")
+  _G.assert((nil ~= snd), "Missing argument snd on lua/udir/util.fnl:130")
+  _G.assert((nil ~= fst), "Missing argument fst on lua/udir/util.fnl:130")
   return (fst .. M.sep .. snd)
 end
 M["set-cursor-pos"] = function(_3ffilename, _3for_top)
@@ -150,10 +154,10 @@ M["set-cursor-pos"] = function(_3ffilename, _3for_top)
   end
   if _3ffilename then
     local _3ffound
-    local function _15_(_241)
+    local function _16_(_241)
       return (_241 == _3ffilename)
     end
-    _3ffound = find_line(_15_)
+    _3ffound = find_line(_16_)
     if (nil ~= _3ffound) then
       _3fline = _3ffound
     else
@@ -167,7 +171,7 @@ M["set-cursor-pos"] = function(_3ffilename, _3for_top)
   end
 end
 M.err = function(msg)
-  _G.assert((nil ~= msg), "Missing argument msg on lua/udir/util.fnl:138")
+  _G.assert((nil ~= msg), "Missing argument msg on lua/udir/util.fnl:142")
   return api.nvim_err_writeln(msg)
 end
 return M

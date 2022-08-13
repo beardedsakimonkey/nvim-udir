@@ -113,6 +113,10 @@
       (pcall api.nvim_buf_delete buf.bufnr {}))))
 
 (λ M.rename-buffers [old-name new-name]
+  ;; If we're clobbering an existing file for which we have a buffer, delete
+  ;; the buffer first
+  (when (vim.fn.bufexists new-name)
+    (M.delete-buffers new-name))
   (each [_ buf (pairs (vim.fn.getbufinfo))]
     (when (= buf.name old-name)
       (api.nvim_buf_set_name buf.bufnr new-name)
