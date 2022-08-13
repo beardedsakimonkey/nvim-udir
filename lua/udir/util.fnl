@@ -89,6 +89,10 @@
   (api.nvim_set_current_buf buf)
   ;; Triggers ftplugin, so must get called after setting the current buffer
   (api.nvim_buf_set_option buf :filetype :udir)
+  ;; (vim.api.nvim_create_autocmd :BufHidden
+  ;;                              {:group :udir
+  ;;                               :buffer buf
+  ;;                               :callback #(api.nvim_buf_delete buf {})})
   buf)
 
 (λ M.set-current-buf [buf]

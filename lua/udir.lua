@@ -4,22 +4,22 @@ local u = require("udir.util")
 local api = vim.api
 local uv = vim.loop
 local M = {}
-local function sort_name(files)
+local function sort_by_name(files)
   _G.assert((nil ~= files), "Missing argument files on lua/udir.fnl:13")
-  local function _1_(_241, _242)
-    if (_241.type == _242.type) then
-      return (_241.name < _242.name)
+  local function _1_(a, b)
+    if (("directory" == a.type) == ("directory" == b.type)) then
+      return (a.name < b.name)
     else
-      return ("directory" == _241.type)
+      return ("directory" == a.type)
     end
   end
   table.sort(files, _1_)
   return files
 end
 local function add_hl_and_virttext(cwd, ns, files)
-  _G.assert((nil ~= files), "Missing argument files on lua/udir.fnl:19")
-  _G.assert((nil ~= ns), "Missing argument ns on lua/udir.fnl:19")
-  _G.assert((nil ~= cwd), "Missing argument cwd on lua/udir.fnl:19")
+  _G.assert((nil ~= files), "Missing argument files on lua/udir.fnl:20")
+  _G.assert((nil ~= ns), "Missing argument ns on lua/udir.fnl:20")
+  _G.assert((nil ~= cwd), "Missing argument cwd on lua/udir.fnl:20")
   api.nvim_buf_clear_namespace(0, ns, 0, -1)
   for i, file in ipairs(files) do
     local path = u["join-path"](cwd, file.name)
@@ -49,7 +49,7 @@ local function add_hl_and_virttext(cwd, ns, files)
   return nil
 end
 local function render(state)
-  _G.assert((nil ~= state), "Missing argument state on lua/udir.fnl:38")
+  _G.assert((nil ~= state), "Missing argument state on lua/udir.fnl:39")
   local _local_7_ = state
   local buf = _local_7_["buf"]
   local cwd = _local_7_["cwd"]
@@ -62,7 +62,7 @@ local function render(state)
     end
   end
   local visible_files = vim.tbl_filter(not_hidden_3f, files)
-  do end (M.config.sort or sort_name)(visible_files)
+  do end (M.config.sort or sort_by_name)(visible_files)
   local function _9_(_241)
     return _241.name
   end
@@ -70,9 +70,9 @@ local function render(state)
   return add_hl_and_virttext(cwd, state.ns, visible_files)
 end
 local function noremap(mode, buf, mappings)
-  _G.assert((nil ~= mappings), "Missing argument mappings on lua/udir.fnl:55")
-  _G.assert((nil ~= buf), "Missing argument buf on lua/udir.fnl:55")
-  _G.assert((nil ~= mode), "Missing argument mode on lua/udir.fnl:55")
+  _G.assert((nil ~= mappings), "Missing argument mappings on lua/udir.fnl:56")
+  _G.assert((nil ~= buf), "Missing argument buf on lua/udir.fnl:56")
+  _G.assert((nil ~= mode), "Missing argument mode on lua/udir.fnl:56")
   for lhs, rhs in pairs(mappings) do
     local _11_
     do
@@ -96,17 +96,17 @@ local function noremap(mode, buf, mappings)
   return nil
 end
 local function setup_keymaps(buf)
-  _G.assert((nil ~= buf), "Missing argument buf on lua/udir.fnl:63")
+  _G.assert((nil ~= buf), "Missing argument buf on lua/udir.fnl:64")
   return noremap("n", buf, M.config.keymaps)
 end
 local function cleanup(state)
-  _G.assert((nil ~= state), "Missing argument state on lua/udir.fnl:66")
+  _G.assert((nil ~= state), "Missing argument state on lua/udir.fnl:67")
   api.nvim_buf_delete(state.buf, {force = true})
   return store["remove!"](state.buf)
 end
 local function update_cwd(state, path)
-  _G.assert((nil ~= path), "Missing argument path on lua/udir.fnl:70")
-  _G.assert((nil ~= state), "Missing argument state on lua/udir.fnl:70")
+  _G.assert((nil ~= path), "Missing argument path on lua/udir.fnl:71")
+  _G.assert((nil ~= state), "Missing argument state on lua/udir.fnl:71")
   do end (state)["cwd"] = path
   return nil
 end
@@ -184,7 +184,7 @@ M.delete = function()
   end
 end
 local function copy_or_move(should_move)
-  _G.assert((nil ~= should_move), "Missing argument should-move on lua/udir.fnl:131")
+  _G.assert((nil ~= should_move), "Missing argument should-move on lua/udir.fnl:132")
   local _23_ = u["get-line"]()
   if (_23_ == "") then
     return u.err("Empty filename")
@@ -264,9 +264,9 @@ end
 local function _35_()
   return false
 end
-M["config"] = {keymaps = {q = M.quit, h = M.up_dir, ["-"] = M.up_dir, l = M.open, ["<CR>"] = M.open, s = _32_, v = _33_, t = _34_, R = M.reload, d = M.delete, ["+"] = M.create, m = M.move, c = M.copy, ["."] = M.toggle_hidden_files}, show_hidden_files = true, is_file_hidden = _35_, sort = sort_name}
+M["config"] = {keymaps = {q = M.quit, h = M.up_dir, ["-"] = M.up_dir, l = M.open, ["<CR>"] = M.open, s = _32_, v = _33_, t = _34_, R = M.reload, d = M.delete, ["+"] = M.create, m = M.move, c = M.copy, ["."] = M.toggle_hidden_files}, show_hidden_files = true, is_file_hidden = _35_, sort = sort_by_name}
 M.udir = function(dir, _3ffrom_au)
-  _G.assert((nil ~= dir), "Missing argument dir on lua/udir.fnl:205")
+  _G.assert((nil ~= dir), "Missing argument dir on lua/udir.fnl:206")
   local has_altbuf = (0 ~= vim.fn.bufexists(0))
   local origin_buf
   if (_3ffrom_au and has_altbuf) then
