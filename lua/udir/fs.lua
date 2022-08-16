@@ -118,7 +118,10 @@ M["assert-readable"] = function(path)
 end
 M["get-parent-dir"] = function(dir)
   _G.assert((nil ~= dir), "Missing argument dir on lua/udir/fs.fnl:89")
-  return M["assert-readable"](M.realpath((dir .. u.sep .. "..")))
+  local parts = vim.split(dir, u.sep)
+  table.remove(parts)
+  local parent = table.concat(parts, u.sep)
+  return M["assert-readable"](parent)
 end
 M.basename = function(_3fpath)
   local _3fpath0
@@ -131,7 +134,7 @@ M.basename = function(_3fpath)
   return parts[#parts]
 end
 M.delete = function(path)
-  _G.assert((nil ~= path), "Missing argument path on lua/udir/fs.fnl:98")
+  _G.assert((nil ~= path), "Missing argument path on lua/udir/fs.fnl:101")
   if (M["dir?"](path) and not symlink_3f(path)) then
     delete_dir(path)
   else
@@ -140,14 +143,14 @@ M.delete = function(path)
   return nil
 end
 M["create-dir"] = function(path)
-  _G.assert((nil ~= path), "Missing argument path on lua/udir/fs.fnl:104")
+  _G.assert((nil ~= path), "Missing argument path on lua/udir/fs.fnl:107")
   assert_doesnt_exist(path)
   local mode = tonumber("755", 8)
   assert(uv.fs_mkdir(path, mode))
   return nil
 end
 M["create-file"] = function(path)
-  _G.assert((nil ~= path), "Missing argument path on lua/udir/fs.fnl:111")
+  _G.assert((nil ~= path), "Missing argument path on lua/udir/fs.fnl:114")
   assert_doesnt_exist(path)
   local mode = tonumber("644", 8)
   local fd = assert(uv.fs_open(path, "w", mode))
@@ -155,9 +158,9 @@ M["create-file"] = function(path)
   return nil
 end
 M["copy-or-move"] = function(should_move, src, dest)
-  _G.assert((nil ~= dest), "Missing argument dest on lua/udir/fs.fnl:119")
-  _G.assert((nil ~= src), "Missing argument src on lua/udir/fs.fnl:119")
-  _G.assert((nil ~= should_move), "Missing argument should-move on lua/udir/fs.fnl:119")
+  _G.assert((nil ~= dest), "Missing argument dest on lua/udir/fs.fnl:122")
+  _G.assert((nil ~= src), "Missing argument src on lua/udir/fs.fnl:122")
+  _G.assert((nil ~= should_move), "Missing argument should-move on lua/udir/fs.fnl:122")
   assert((src ~= dest))
   M["assert-readable"](src)
   if M["dir?"](src) then
