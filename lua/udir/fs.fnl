@@ -87,7 +87,10 @@
   path)
 
 (λ M.get-parent-dir [dir]
-  (M.assert-readable (M.realpath (.. dir u.sep ".."))))
+  (local parts (vim.split dir u.sep))
+  (table.remove parts)
+  (local parent (table.concat parts u.sep))
+  (M.assert-readable parent))
 
 (λ M.basename [?path]
   ;; Strip trailing slash
