@@ -245,7 +245,7 @@ M.create = function()
   end
   return vim.ui.input({prompt = "New file: ", completion = "file_in_path"}, _29_)
 end
-M["toggle-hidden-files"] = function()
+M.toggle_hidden_files = function()
   local state = store.get()
   local _3fhovered_file = u["get-line"]()
   M.config.show_hidden_files = not M.config.show_hidden_files

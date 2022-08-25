@@ -170,7 +170,7 @@
                     (u.clear-prompt)
                     (u.set-cursor-pos (fs.basename path))))))
 
-(λ M.toggle-hidden-files []
+(λ M.toggle_hidden_files []
   (local state (store.get))
   (local ?hovered-file (u.get-line))
   (set M.config.show_hidden_files (not M.config.show_hidden_files))
