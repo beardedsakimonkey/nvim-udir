@@ -231,7 +231,7 @@
 ;; INITIALIZATION
 ;; --------------------------------------
 
-(λ M.udir [dir ?from-au]
+(λ init [dir ?from-au]
   ;; If we're executing from the BufEnter autocmd, the current buffer has
   ;; already changed, so the origin-buf is actually the altbuf, and we don't
   ;; know what the origin-buf's altbuf is.
@@ -254,6 +254,28 @@
     (store.set! buf state)
     (render state)
     (u.set-cursor-pos ?origin-filename)))
+
+;; If the user initializes a new udir buffer via the autocmd whilst on an
+;; existing udir buffer, we delete the newly created buffer, and update
+;; `state.cwd`
+(λ update-instance [dir]
+  (local state (store.get (vim.fn.bufnr "#")))
+  (local cwd
+         (if (not= "" dir) (fs.realpath (vim.fn.expand dir))
+             (let [p (vim.fn.expand "%:p:h")]
+               (if (not= "" p) (fs.realpath p) (assert (vim.loop.cwd))))))
+  (vim.cmd "noau bd")
+  (update-cwd state cwd)
+  (render state)
+  (u.update-buf-name state.buf state.cwd))
+
+(λ M.udir [dir ?from-au]
+  (local is-altbuf-udir (if ?from-au
+                            (vim.fn.getbufvar (vim.fn.bufnr "#") :is_udir false)
+                            false))
+  (if is-altbuf-udir
+      (update-instance dir)
+      (init dir ?from-au)))
 
 M
 

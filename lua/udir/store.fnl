@@ -12,8 +12,8 @@
   (tset buf-states (tostring buf) nil)
   nil)
 
-(λ M.get []
-  (let [buf (api.nvim_get_current_buf)]
+(λ M.get [?buf]
+  (let [buf (or ?buf (api.nvim_get_current_buf))]
     (assert (not (= -1 buf)))
     (let [state (. buf-states (tostring buf))]
       (assert state))))

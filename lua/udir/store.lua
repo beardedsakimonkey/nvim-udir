@@ -12,8 +12,8 @@ M["remove!"] = function(buf)
   do end (buf_states)[tostring(buf)] = nil
   return nil
 end
-M.get = function()
-  local buf = api.nvim_get_current_buf()
+M.get = function(_3fbuf)
+  local buf = (_3fbuf or api.nvim_get_current_buf())
   assert(not (-1 == buf))
   local state = buf_states[tostring(buf)]
   return assert(state)

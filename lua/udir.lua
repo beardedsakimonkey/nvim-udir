@@ -278,7 +278,7 @@ M.setup = function(_3fcfg)
     return nil
   end
 end
-M.udir = function(dir, _3ffrom_au)
+local function init(dir, _3ffrom_au)
   _G.assert((nil ~= dir), "Missing argument dir on lua/udir.fnl:234")
   local has_altbuf = (0 ~= vim.fn.bufexists(0))
   local origin_buf
@@ -321,5 +321,38 @@ M.udir = function(dir, _3ffrom_au)
   store["set!"](buf, state)
   render(state)
   return u["set-cursor-pos"](_3forigin_filename)
+end
+local function update_instance(dir)
+  _G.assert((nil ~= dir), "Missing argument dir on lua/udir.fnl:261")
+  local state = store.get(vim.fn.bufnr("#"))
+  local cwd
+  if ("" ~= dir) then
+    cwd = fs.realpath(vim.fn.expand(dir))
+  else
+    local p = vim.fn.expand("%:p:h")
+    if ("" ~= p) then
+      cwd = fs.realpath(p)
+    else
+      cwd = assert(vim.loop.cwd())
+    end
+  end
+  vim.cmd("noau bd")
+  update_cwd(state, cwd)
+  render(state)
+  return u["update-buf-name"](state.buf, state.cwd)
+end
+M.udir = function(dir, _3ffrom_au)
+  _G.assert((nil ~= dir), "Missing argument dir on lua/udir.fnl:272")
+  local is_altbuf_udir
+  if _3ffrom_au then
+    is_altbuf_udir = vim.fn.getbufvar(vim.fn.bufnr("#"), "is_udir", false)
+  else
+    is_altbuf_udir = false
+  end
+  if is_altbuf_udir then
+    return update_instance(dir)
+  else
+    return init(dir, _3ffrom_au)
+  end
 end
 return M
