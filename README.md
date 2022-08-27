@@ -42,20 +42,20 @@ vim.api.nvim_set_keymap("n", "-", "<Cmd>Udir<CR>", {noremap = true})
 
 ## Configuration
 
-Udir does not require any configuration, but can be configured using `udir.setup()`.
+Udir does not require any configuration, but can be configured by mutating `udir.config`.
 The defaults are listed below.
 
 ```lua
 local udir = require'udir'
 local map = udir.map
 
-udir.setup({
+udir.config = {
 	-- Whether to automatically open Udir when editing a directory
 	auto_open = true,
 	-- Whether hidden files should be shown by default
 	show_hidden_files = false,
 	-- Function used to determine what files should be hidden
-	is_file_hidden = function (file, files, dir) return false end, 
+	is_file_hidden = function (file, files, dir) return false end,
 	keymaps = {
 		q = map.quit,
 		h = map.up_dir,
@@ -74,7 +74,7 @@ udir.setup({
 		-- You can also create your own mapping like so:
 		-- C = "<Cmd>lua vim.cmd('lcd ' .. vim.fn.fnameescape(require('udir.store').get().cwd))<Bar>pwd<CR>",
 	}
-})
+}
 ```
 
 The `is_file_hidden()` function has the following API:

@@ -7,55 +7,6 @@
 (local M {})
 
 ;; --------------------------------------
-;; CONFIGURATION
-;; --------------------------------------
-
-(tset M :map
-      {:quit "<Cmd>lua require'udir'.quit()<CR>"
-       :up_dir "<Cmd>lua require'udir'[\"up-dir\"]()<CR>"
-       :open "<Cmd>lua require'udir'.open()<CR>"
-       :open_split "<Cmd>lua require'udir'.open('split')<CR>"
-       :open_vsplit "<Cmd>lua require'udir'.open('vsplit')<CR>"
-       :open_tab "<Cmd>lua require'udir'.open('tabedit')<CR>"
-       :reload "<Cmd>lua require'udir'.reload()<CR>"
-       :delete "<Cmd>lua require'udir'.delete()<CR>"
-       :create "<Cmd>lua require'udir'.create()<CR>"
-       :move "<Cmd>lua require'udir'.move()<CR>"
-       :copy "<Cmd>lua require'udir'.copy()<CR>"
-       :toggle_hidden_files "<Cmd>lua require'udir'[\"toggle-hidden-files\"]()<CR>"})
-
-(local config {:keymaps {:q M.map.quit
-                         :h M.map.up_dir
-                         :- M.map.up_dir
-                         :l M.map.open
-                         :<CR> M.map.open
-                         :s M.map.open_split
-                         :v M.map.open_vsplit
-                         :t M.map.open_tab
-                         :R M.map.reload
-                         :d M.map.delete
-                         :+ M.map.create
-                         :m M.map.move
-                         :c M.map.copy
-                         :. M.map.toggle_hidden_files}
-               :show-hidden-files true
-               :is-file-hidden #false})
-
-(λ M.setup [?cfg]
-  (local cfg (or ?cfg {}))
-  ;; Whether to automatically open Udir when editing a directory
-  (when (not= false cfg.auto_open)
-    (vim.cmd "aug udir | au!")
-    (vim.cmd "au BufEnter * if !empty(expand('%')) && isdirectory(expand('%')) && !get(b:, 'is_udir') | call luaeval(\"require'udir'.udir('', true)\") | endif")
-    (vim.cmd "aug END"))
-  (when cfg.keymaps
-    (tset config :keymaps cfg.keymaps))
-  (when (not= nil cfg.show_hidden_files)
-    (tset config :show-hidden-files cfg.show_hidden_files))
-  (when cfg.is_file_hidden
-    (tset config :is-file-hidden cfg.is_file_hidden)))
-
-;; --------------------------------------
 ;; RENDER
 ;; --------------------------------------
 
@@ -90,8 +41,8 @@
   (local files (fs.list cwd))
 
   (fn not-hidden? [file]
-    (if config.show-hidden-files true
-        (not (config.is-file-hidden file files cwd))))
+    (if M.config.show_hidden_files true
+        (not (M.config.is_file_hidden file files cwd))))
 
   (local visible-files (vim.tbl_filter not-hidden? files))
   (sort! visible-files)
@@ -111,7 +62,7 @@
                                  {:nowait true :noremap true :silent true}))))
 
 (λ setup-keymaps [buf]
-  (noremap :n buf config.keymaps))
+  (noremap :n buf M.config.keymaps))
 
 (λ cleanup [state]
   (api.nvim_buf_delete state.buf {:force true})
@@ -127,7 +78,7 @@
   (u.set-current-buf origin-buf)
   (cleanup state))
 
-(λ M.up-dir []
+(λ M.up_dir []
   (local state (store.get))
   (local cwd state.cwd)
   (local parent-dir (fs.get-parent-dir state.cwd))
@@ -219,12 +170,62 @@
                     (u.clear-prompt)
                     (u.set-cursor-pos (fs.basename path))))))
 
-(λ M.toggle-hidden-files []
+(λ M.toggle_hidden_files []
   (local state (store.get))
   (local ?hovered-file (u.get-line))
-  (set config.show-hidden-files (not config.show-hidden-files))
+  (set M.config.show_hidden_files (not M.config.show_hidden_files))
   (render state)
   (u.set-cursor-pos ?hovered-file))
+
+;; --------------------------------------
+;; CONFIGURATION
+;; --------------------------------------
+
+(tset M :map
+      {:quit "<Cmd>lua require'udir'.quit()<CR>"
+       :up_dir "<Cmd>lua require'udir'.up_dir()<CR>"
+       :open "<Cmd>lua require'udir'.open()<CR>"
+       :open_split "<Cmd>lua require'udir'.open('split')<CR>"
+       :open_vsplit "<Cmd>lua require'udir'.open('vsplit')<CR>"
+       :open_tab "<Cmd>lua require'udir'.open('tabedit')<CR>"
+       :reload "<Cmd>lua require'udir'.reload()<CR>"
+       :delete "<Cmd>lua require'udir'.delete()<CR>"
+       :create "<Cmd>lua require'udir'.create()<CR>"
+       :move "<Cmd>lua require'udir'.move()<CR>"
+       :copy "<Cmd>lua require'udir'.copy()<CR>"
+       :toggle_hidden_files "<Cmd>lua require'udir'.toggle_hidden_files()<CR>"})
+
+(tset M :config {:keymaps {:q M.map.quit
+                           :h M.map.up_dir
+                           :- M.map.up_dir
+                           :l M.map.open
+                           :<CR> M.map.open
+                           :s M.map.open_split
+                           :v M.map.open_vsplit
+                           :t M.map.open_tab
+                           :R M.map.reload
+                           :d M.map.delete
+                           :+ M.map.create
+                           :m M.map.move
+                           :c M.map.copy
+                           :. M.map.toggle_hidden_files}
+                 :show_hidden_files true
+                 :is_file_hidden #false})
+
+(λ M.setup [?cfg]
+  (vim.api.nvim_echo [["[udir] `setup()` is now deprecated. Please see the readme."
+                       :WarningMsg]] true {})
+  (local cfg (or ?cfg {}))
+  ;; Whether to automatically open Udir when editing a directory
+  (when (= false cfg.auto_open)
+    (vim.api.nvim_echo [["[udir] `auto_open` is no longer configurable."
+                         :WarningMsg]] true {}))
+  (when cfg.keymaps
+    (tset M.config :keymaps cfg.keymaps))
+  (when (not= nil cfg.show_hidden_files)
+    (tset M.config :show_hidden_files cfg.show_hidden_files))
+  (when cfg.is_file_hidden
+    (tset M.config :is_file_hidden cfg.is_file_hidden)))
 
 ;; --------------------------------------
 ;; INITIALIZATION
