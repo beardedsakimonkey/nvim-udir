@@ -180,6 +180,7 @@
 ;; CONFIGURATION
 ;; --------------------------------------
 
+;; For backwards compat
 (tset M :map
       {:quit "<Cmd>lua require'udir'.quit()<CR>"
        :up_dir "<Cmd>lua require'udir'.up_dir()<CR>"
@@ -212,6 +213,7 @@
                  :is_file_hidden #false
                  :sort sort-by-name})
 
+;; For backwards compat
 (λ M.setup [?cfg]
   (vim.api.nvim_echo [["[udir] `setup()` is now deprecated. Please see the readme."
                        :WarningMsg]] true {})

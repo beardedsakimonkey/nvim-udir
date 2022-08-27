@@ -21,7 +21,7 @@ However, udir differs from vim-dirvish in a few key ways.
    To achieve isolation, udir must give each buffer a unique name. Usually, this is
    the directory path, such that commands like `:cd %` work. However, if you have
    multiple loaded udir buffers on the same directory, the buffer names will be made
-   unique by appending an id like "[2]" to the name (in which case `cd %` won't work).
+   unique by appending an id like "[2]" to the name (in which case `:cd %` won't work).
    
    Admittedly, this is a hack; vim buffers are intended to have a 1-to-1 mapping
    with files. When naming a buffer with something that looks like a path, vim
@@ -47,33 +47,38 @@ The defaults are listed below.
 
 ```lua
 local udir = require'udir'
-local map = udir.map
 
 udir.config = {
-	-- Whether to automatically open Udir when editing a directory
-	auto_open = true,
-	-- Whether hidden files should be shown by default
-	show_hidden_files = false,
-	-- Function used to determine what files should be hidden
-	is_file_hidden = function (file, files, dir) return false end,
-	keymaps = {
-		q = map.quit,
-		h = map.up_dir,
-		["-"] = map.up_dir,
-		l = map.open,
-		["<CR>"] = map.open,
-		s = map.open_split,
-		v = map.open_vsplit,
-		t = map.open_tab,
-		R = map.reload,
-		d = map.delete,
-		["+"] = map.create,
-		m = map.move,
-		c = map.copy,
-		["."] = map.toggle_hidden_files
-		-- You can also create your own mapping like so:
-		-- C = "<Cmd>lua vim.cmd('lcd ' .. vim.fn.fnameescape(require('udir.store').get().cwd))<Bar>pwd<CR>",
-	}
+  -- Whether hidden files should be shown by default
+  show_hidden_files = false,
+  -- Function used to determine what files should be hidden
+  is_file_hidden = function (file, files, dir) return false end,
+  -- Function used to sort files/directories
+  sort = function (files)
+    table.sort(files, function (a, b)
+        if (a.type == "directory") == (b.type == "directory") then
+          return a.name < b.name
+        else
+          return a.type == "directory"
+        end
+    end)
+  return end,
+  keymaps = {
+    q = udir.quit,
+    h = udir.up_dir,
+    ["-"] = udir.up_dir,
+    l = udir.open,
+    ["<CR>"] = udir.open,
+    s = udir.open_split,
+    v = udir.open_vsplit,
+    t = udir.open_tab,
+    R = udir.reload,
+    d = udir.delete,
+    ["+"] = udir.create,
+    m = udir.move,
+    c = udir.copy,
+    ["."] = udir.toggle_hidden_files
+  }
 }
 ```
 
