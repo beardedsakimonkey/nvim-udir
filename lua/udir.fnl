@@ -16,9 +16,8 @@
                           (< a.name b.name)
                           (= :directory a.type)))))
 
-(λ render-virttext [cwd ns files]
+(λ add-hl-and-virttext [cwd ns files]
   (api.nvim_buf_clear_namespace 0 ns 0 -1)
-  ;; Add virtual text to each directory/symlink
   (each [i file (ipairs files)]
     (let [path (u.join-path cwd file.name)
           (?virttext ?hl) (match file.type
@@ -45,9 +44,9 @@
         (not (M.config.is_file_hidden file files cwd))))
 
   (local visible-files (vim.tbl_filter not-hidden? files))
-  (sort-by-name visible-files)
+  ((or M.config.sort sort-by-name) visible-files)
   (u.set-lines buf 0 -1 false (vim.tbl_map #$1.name visible-files))
-  (render-virttext cwd state.ns visible-files))
+  (add-hl-and-virttext cwd state.ns visible-files))
 
 ;; --------------------------------------
 ;; KEYMAPS
@@ -210,7 +209,8 @@
                            :c M.map.copy
                            :. M.map.toggle_hidden_files}
                  :show_hidden_files true
-                 :is_file_hidden #false})
+                 :is_file_hidden #false
+                 :sort sort-by-name})
 
 (λ M.setup [?cfg]
   (vim.api.nvim_echo [["[udir] `setup()` is now deprecated. Please see the readme."

@@ -15,7 +15,7 @@ local function sort_by_name(files)
   end
   return table.sort(files, _1_)
 end
-local function render_virttext(cwd, ns, files)
+local function add_hl_and_virttext(cwd, ns, files)
   _G.assert((nil ~= files), "Missing argument files on lua/udir.fnl:19")
   _G.assert((nil ~= ns), "Missing argument ns on lua/udir.fnl:19")
   _G.assert((nil ~= cwd), "Missing argument cwd on lua/udir.fnl:19")
@@ -48,7 +48,7 @@ local function render_virttext(cwd, ns, files)
   return nil
 end
 local function render(state)
-  _G.assert((nil ~= state), "Missing argument state on lua/udir.fnl:39")
+  _G.assert((nil ~= state), "Missing argument state on lua/udir.fnl:38")
   local _local_7_ = state
   local buf = _local_7_["buf"]
   local cwd = _local_7_["cwd"]
@@ -61,17 +61,17 @@ local function render(state)
     end
   end
   local visible_files = vim.tbl_filter(not_hidden_3f, files)
-  sort_by_name(visible_files)
+  do end (M.config.sort or sort_by_name)(visible_files)
   local function _9_(_241)
     return _241.name
   end
   u["set-lines"](buf, 0, -1, false, vim.tbl_map(_9_, visible_files))
-  return render_virttext(cwd, state.ns, visible_files)
+  return add_hl_and_virttext(cwd, state.ns, visible_files)
 end
 local function noremap(mode, buf, mappings)
-  _G.assert((nil ~= mappings), "Missing argument mappings on lua/udir.fnl:56")
-  _G.assert((nil ~= buf), "Missing argument buf on lua/udir.fnl:56")
-  _G.assert((nil ~= mode), "Missing argument mode on lua/udir.fnl:56")
+  _G.assert((nil ~= mappings), "Missing argument mappings on lua/udir.fnl:55")
+  _G.assert((nil ~= buf), "Missing argument buf on lua/udir.fnl:55")
+  _G.assert((nil ~= mode), "Missing argument mode on lua/udir.fnl:55")
   for lhs, rhs in pairs(mappings) do
     local _11_
     do
@@ -95,17 +95,17 @@ local function noremap(mode, buf, mappings)
   return nil
 end
 local function setup_keymaps(buf)
-  _G.assert((nil ~= buf), "Missing argument buf on lua/udir.fnl:64")
+  _G.assert((nil ~= buf), "Missing argument buf on lua/udir.fnl:63")
   return noremap("n", buf, M.config.keymaps)
 end
 local function cleanup(state)
-  _G.assert((nil ~= state), "Missing argument state on lua/udir.fnl:67")
+  _G.assert((nil ~= state), "Missing argument state on lua/udir.fnl:66")
   api.nvim_buf_delete(state.buf, {force = true})
   return store["remove!"](state.buf)
 end
 local function update_cwd(state, path)
-  _G.assert((nil ~= path), "Missing argument path on lua/udir.fnl:71")
-  _G.assert((nil ~= state), "Missing argument state on lua/udir.fnl:71")
+  _G.assert((nil ~= path), "Missing argument path on lua/udir.fnl:70")
+  _G.assert((nil ~= state), "Missing argument state on lua/udir.fnl:70")
   do end (state)["cwd"] = path
   return nil
 end
@@ -183,7 +183,7 @@ M.delete = function()
   end
 end
 local function copy_or_move(should_move)
-  _G.assert((nil ~= should_move), "Missing argument should-move on lua/udir.fnl:132")
+  _G.assert((nil ~= should_move), "Missing argument should-move on lua/udir.fnl:131")
   local _23_ = u["get-line"]()
   if (_23_ == "") then
     return u.err("Empty filename")
@@ -255,7 +255,7 @@ M["map"] = {quit = "<Cmd>lua require'udir'.quit()<CR>", up_dir = "<Cmd>lua requi
 local function _32_()
   return false
 end
-M["config"] = {keymaps = {q = M.map.quit, h = M.map.up_dir, ["-"] = M.map.up_dir, l = M.map.open, ["<CR>"] = M.map.open, s = M.map.open_split, v = M.map.open_vsplit, t = M.map.open_tab, R = M.map.reload, d = M.map.delete, ["+"] = M.map.create, m = M.map.move, c = M.map.copy, ["."] = M.map.toggle_hidden_files}, show_hidden_files = true, is_file_hidden = _32_}
+M["config"] = {keymaps = {q = M.map.quit, h = M.map.up_dir, ["-"] = M.map.up_dir, l = M.map.open, ["<CR>"] = M.map.open, s = M.map.open_split, v = M.map.open_vsplit, t = M.map.open_tab, R = M.map.reload, d = M.map.delete, ["+"] = M.map.create, m = M.map.move, c = M.map.copy, ["."] = M.map.toggle_hidden_files}, show_hidden_files = true, is_file_hidden = _32_, sort = sort_by_name}
 M.setup = function(_3fcfg)
   vim.api.nvim_echo({{"[udir] `setup()` is now deprecated. Please see the readme.", "WarningMsg"}}, true, {})
   local cfg = (_3fcfg or {})
