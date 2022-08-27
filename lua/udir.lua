@@ -4,17 +4,16 @@ local u = require("udir.util")
 local api = vim.api
 local uv = vim.loop
 local M = {}
-local function sort_21(files)
+local function sort_by_name(files)
   _G.assert((nil ~= files), "Missing argument files on lua/udir.fnl:13")
-  local function _1_(_241, _242)
-    if (_241.type == _242.type) then
-      return (_241.name < _242.name)
+  local function _1_(a, b)
+    if (("directory" == a.type) == ("directory" == b.type)) then
+      return (a.name < b.name)
     else
-      return ("directory" == _241.type)
+      return ("directory" == a.type)
     end
   end
-  table.sort(files, _1_)
-  return files
+  return table.sort(files, _1_)
 end
 local function render_virttext(cwd, ns, files)
   _G.assert((nil ~= files), "Missing argument files on lua/udir.fnl:19")
@@ -62,7 +61,7 @@ local function render(state)
     end
   end
   local visible_files = vim.tbl_filter(not_hidden_3f, files)
-  sort_21(visible_files)
+  sort_by_name(visible_files)
   local function _9_(_241)
     return _241.name
   end

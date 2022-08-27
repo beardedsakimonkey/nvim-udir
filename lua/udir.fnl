@@ -10,11 +10,11 @@
 ;; RENDER
 ;; --------------------------------------
 
-(λ sort! [files]
-  (table.sort files #(if (= $1.type $2.type)
-                         (< $1.name $2.name)
-                         (= :directory $1.type)))
-  files)
+(λ sort-by-name [files]
+  (table.sort files (fn [a b]
+                      (if (= (= :directory a.type) (= :directory b.type))
+                          (< a.name b.name)
+                          (= :directory a.type)))))
 
 (λ render-virttext [cwd ns files]
   (api.nvim_buf_clear_namespace 0 ns 0 -1)
@@ -45,7 +45,7 @@
         (not (M.config.is_file_hidden file files cwd))))
 
   (local visible-files (vim.tbl_filter not-hidden? files))
-  (sort! visible-files)
+  (sort-by-name visible-files)
   (u.set-lines buf 0 -1 false (vim.tbl_map #$1.name visible-files))
   (render-virttext cwd state.ns visible-files))
 
