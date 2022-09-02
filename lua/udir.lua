@@ -53,14 +53,14 @@ local function render(state)
   local buf = _local_7_["buf"]
   local cwd = _local_7_["cwd"]
   local files = fs.list(cwd)
-  local function not_hidden_3f(file)
+  local function visible_3f(file)
     if M.config.show_hidden_files then
       return true
     else
       return not M.config.is_file_hidden(file, files, cwd)
     end
   end
-  local visible_files = vim.tbl_filter(not_hidden_3f, files)
+  local visible_files = vim.tbl_filter(visible_3f, files)
   do end (M.config.sort or sort_by_name)(visible_files)
   local function _9_(_241)
     return _241.name
@@ -140,7 +140,7 @@ M.open = function(_3fcmd)
   local filename = u["get-line"]()
   if ("" ~= filename) then
     local path = fs.realpath(u["join-path"](state.cwd, filename))
-    fs["assert-readable"](path)
+    assert(fs["exists?"](path))
     if fs["dir?"](path) then
       if _3fcmd then
         return vim.cmd((_3fcmd .. " " .. vim.fn.fnameescape(path)))
@@ -182,28 +182,24 @@ M.delete = function()
     return u["clear-prompt"]()
   end
 end
-local function copy_or_move(should_move)
-  _G.assert((nil ~= should_move), "Missing argument should-move on lua/udir.fnl:131")
-  local _23_ = u["get-line"]()
-  if (_23_ == "") then
+local function copy_or_move(move_3f)
+  _G.assert((nil ~= move_3f), "Missing argument move? on lua/udir.fnl:131")
+  local filename = u["get-line"]()
+  if ("" == filename) then
     return u.err("Empty filename")
-  elseif (nil ~= _23_) then
-    local filename = _23_
+  else
     local state = store.get()
-    local path_saved = vim.opt_local.path
-    vim.opt_local.path = state.cwd
-    local _24_
-    if should_move then
-      _24_ = "Move to: "
+    local _23_
+    if move_3f then
+      _23_ = "Move to: "
     else
-      _24_ = "Copy to: "
+      _23_ = "Copy to: "
     end
-    local function _26_(name)
-      vim.opt_local.path = path_saved
+    local function _25_(name)
       if name then
         local src = u["join-path"](state.cwd, filename)
-        local dest = u["join-path"](state.cwd, name)
-        fs["copy-or-move"](should_move, src, dest)
+        local dest = vim.trim(name)
+        fs["copy-or-move"](move_3f, src, dest)
         render(state)
         u["clear-prompt"]()
         return u["set-cursor-pos"](fs.basename(dest))
@@ -211,9 +207,7 @@ local function copy_or_move(should_move)
         return nil
       end
     end
-    return vim.ui.input({prompt = _24_, completion = "file_in_path"}, _26_)
-  else
-    return nil
+    return vim.ui.input({prompt = _23_, completion = "file"}, _25_)
   end
 end
 M.move = function()
@@ -226,7 +220,7 @@ M.create = function()
   local state = store.get()
   local path_saved = vim.opt_local.path
   vim.opt_local.path = state.cwd
-  local function _29_(name)
+  local function _28_(name)
     vim.opt_local.path = path_saved
     if name then
       local path = u["join-path"](state.cwd, name)
@@ -242,7 +236,7 @@ M.create = function()
       return nil
     end
   end
-  return vim.ui.input({prompt = "New file: ", completion = "file_in_path"}, _29_)
+  return vim.ui.input({prompt = "New file: ", completion = "file_in_path"}, _28_)
 end
 M.toggle_hidden_files = function()
   local state = store.get()
@@ -252,10 +246,10 @@ M.toggle_hidden_files = function()
   return u["set-cursor-pos"](_3fhovered_file)
 end
 M["map"] = {quit = "<Cmd>lua require'udir'.quit()<CR>", up_dir = "<Cmd>lua require'udir'.up_dir()<CR>", open = "<Cmd>lua require'udir'.open()<CR>", open_split = "<Cmd>lua require'udir'.open('split')<CR>", open_vsplit = "<Cmd>lua require'udir'.open('vsplit')<CR>", open_tab = "<Cmd>lua require'udir'.open('tabedit')<CR>", reload = "<Cmd>lua require'udir'.reload()<CR>", delete = "<Cmd>lua require'udir'.delete()<CR>", create = "<Cmd>lua require'udir'.create()<CR>", move = "<Cmd>lua require'udir'.move()<CR>", copy = "<Cmd>lua require'udir'.copy()<CR>", toggle_hidden_files = "<Cmd>lua require'udir'.toggle_hidden_files()<CR>"}
-local function _32_()
+local function _31_()
   return false
 end
-M["config"] = {keymaps = {q = M.map.quit, h = M.map.up_dir, ["-"] = M.map.up_dir, l = M.map.open, ["<CR>"] = M.map.open, s = M.map.open_split, v = M.map.open_vsplit, t = M.map.open_tab, R = M.map.reload, d = M.map.delete, ["+"] = M.map.create, m = M.map.move, c = M.map.copy, ["."] = M.map.toggle_hidden_files}, show_hidden_files = true, is_file_hidden = _32_, sort = sort_by_name}
+M["config"] = {keymaps = {q = M.map.quit, h = M.map.up_dir, ["-"] = M.map.up_dir, l = M.map.open, ["<CR>"] = M.map.open, s = M.map.open_split, v = M.map.open_vsplit, t = M.map.open_tab, R = M.map.reload, d = M.map.delete, ["+"] = M.map.create, m = M.map.move, c = M.map.copy, ["."] = M.map.toggle_hidden_files}, show_hidden_files = true, is_file_hidden = _31_, sort = sort_by_name}
 M.setup = function(_3fcfg)
   vim.api.nvim_echo({{"[udir] `setup()` is now deprecated. Please see the readme.", "WarningMsg"}}, true, {})
   local cfg = (_3fcfg or {})
@@ -279,7 +273,7 @@ M.setup = function(_3fcfg)
   end
 end
 local function init(dir, _3ffrom_au)
-  _G.assert((nil ~= dir), "Missing argument dir on lua/udir.fnl:236")
+  _G.assert((nil ~= dir), "Missing argument dir on lua/udir.fnl:232")
   local has_altbuf = (0 ~= vim.fn.bufexists(0))
   local origin_buf
   if (_3ffrom_au and has_altbuf) then
@@ -323,7 +317,7 @@ local function init(dir, _3ffrom_au)
   return u["set-cursor-pos"](_3forigin_filename)
 end
 local function update_instance(dir)
-  _G.assert((nil ~= dir), "Missing argument dir on lua/udir.fnl:263")
+  _G.assert((nil ~= dir), "Missing argument dir on lua/udir.fnl:259")
   local state = store.get(vim.fn.bufnr("#"))
   local cwd
   if ("" ~= dir) then
@@ -342,7 +336,7 @@ local function update_instance(dir)
   return u["update-buf-name"](state.buf, state.cwd)
 end
 M.udir = function(dir, _3ffrom_au)
-  _G.assert((nil ~= dir), "Missing argument dir on lua/udir.fnl:274")
+  _G.assert((nil ~= dir), "Missing argument dir on lua/udir.fnl:270")
   local is_altbuf_udir
   if _3ffrom_au then
     is_altbuf_udir = vim.fn.getbufvar(vim.fn.bufnr("#"), "is_udir", false)

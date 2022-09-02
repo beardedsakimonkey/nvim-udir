@@ -39,11 +39,11 @@
   (local {: buf : cwd} state)
   (local files (fs.list cwd))
 
-  (fn not-hidden? [file]
+  (fn visible? [file]
     (if M.config.show_hidden_files true
         (not (M.config.is_file_hidden file files cwd))))
 
-  (local visible-files (vim.tbl_filter not-hidden? files))
+  (local visible-files (vim.tbl_filter visible? files))
   ((or M.config.sort sort-by-name) visible-files)
   (u.set-lines buf 0 -1 false (vim.tbl_map #$1.name visible-files))
   (add-hl-and-virttext cwd state.ns visible-files))
@@ -94,7 +94,7 @@
   (local filename (u.get-line))
   (when (not= "" filename)
     (local path (fs.realpath (u.join-path state.cwd filename)))
-    (fs.assert-readable path)
+    (assert (fs.exists? path))
     (if (fs.dir? path)
         (if ?cmd
             (vim.cmd (.. ?cmd " " (vim.fn.fnameescape path)))
@@ -128,24 +128,20 @@
           (render state))
         (u.clear-prompt))))
 
-(λ copy-or-move [should-move]
-  (match (u.get-line)
-    "" (u.err "Empty filename")
-    filename (do
-               (local state (store.get))
-               (local path-saved vim.opt_local.path)
-               (set vim.opt_local.path state.cwd)
-               (vim.ui.input {:prompt (if should-move "Move to: " "Copy to: ")
-                              :completion :file_in_path}
-                             (fn [name]
-                               (set vim.opt_local.path path-saved)
-                               (when name
-                                 (local src (u.join-path state.cwd filename))
-                                 (local dest (u.join-path state.cwd name))
-                                 (fs.copy-or-move should-move src dest)
-                                 (render state)
-                                 (u.clear-prompt)
-                                 (u.set-cursor-pos (fs.basename dest))))))))
+(λ copy-or-move [move?]
+  (local filename (u.get-line))
+  (if (= "" filename) (u.err "Empty filename")
+      (let [state (store.get)]
+        (vim.ui.input {:prompt (if move? "Move to: " "Copy to: ")
+                       :completion :file}
+                      (fn [name]
+                        (when name
+                          (local src (u.join-path state.cwd filename))
+                          (local dest (vim.trim name))
+                          (fs.copy-or-move move? src dest)
+                          (render state)
+                          (u.clear-prompt)
+                          (u.set-cursor-pos (fs.basename dest))))))))
 
 (λ M.move []
   (copy-or-move true))

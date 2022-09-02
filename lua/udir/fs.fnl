@@ -7,10 +7,6 @@
 
 (local M {})
 
-(λ assert-doesnt-exist [path]
-  (assert (not (uv.fs_access path :R)) (string.format "%q already exists" path))
-  path)
-
 (macro foreach-entry [path syms form]
   (let [name-sym (. syms 1)
         type-sym (. syms 2)]
@@ -59,6 +55,14 @@
   (local link (uv.fs_readlink path))
   (not= nil link))
 
+(λ abs? [path]
+  (let [c (path:sub 1 1)]
+    (= "/" c)))
+
+(λ expand-tilde [path]
+  (local res (path:gsub "^~" (os.getenv :HOME)))
+  res)
+
 ;; --------------------------------------
 ;; PUBLIC
 ;; --------------------------------------
@@ -82,53 +86,56 @@
                  (table.insert ret {: name : type}))
   ret)
 
-(λ M.assert-readable [path]
-  (assert (uv.fs_access path :R))
-  path)
+(λ M.exists? [path]
+  (uv.fs_access path ""))
 
 (λ M.get-parent-dir [dir]
   (local parts (vim.split dir u.sep))
   (table.remove parts)
   (local parent (table.concat parts u.sep))
-  (M.assert-readable parent))
+  (assert (M.exists? parent))
+  parent)
 
-(λ M.basename [?path]
+(λ M.basename [path]
   ;; Strip trailing slash
-  (local ?path (if (vim.endswith ?path u.sep) (?path:sub 1 -2) ?path))
-  (local parts (vim.split ?path u.sep))
+  (local path (if (vim.endswith path u.sep) (path:sub 1 -2) path))
+  (local parts (vim.split path u.sep))
   (. parts (length parts)))
 
 (λ M.delete [path]
   (if (and (M.dir? path) (not (symlink? path)))
       (delete-dir path)
-      (delete-file path))
-  nil)
+      (delete-file path)))
 
 (λ M.create-dir [path]
-  (assert-doesnt-exist path)
-  ;; 755 = RWX for owner, RX for group/other
-  (local mode (tonumber :755 8))
-  (assert (uv.fs_mkdir path mode))
-  nil)
+  (if (M.exists? path) (u.err (: "%q already exists" :format path))
+      (do
+        ;; 755 = RWX for owner, RX for group/other
+        (local mode (tonumber :755 8))
+        (assert (uv.fs_mkdir path mode)))))
 
 (λ M.create-file [path]
-  (assert-doesnt-exist path)
-  ;; 644 = RW for owner, R for group/other
-  (local mode (tonumber :644 8))
-  (local fd (assert (uv.fs_open path :w mode)))
-  (assert (uv.fs_close fd))
-  nil)
+  (if (M.exists? path) (u.err (: "%q already exists" :format path))
+      (do
+        ;; 644 = RW for owner, R for group/other
+        (local mode (tonumber :644 8))
+        (local fd (assert (uv.fs_open path :w mode)))
+        (assert (uv.fs_close fd)))))
 
-(λ M.copy-or-move [should-move src dest]
+(λ M.copy-or-move [move? src dest]
+  (assert (M.exists? src))
+  ;; Canonicalize
+  (local dest (-> dest (expand-tilde) (M.realpath)))
+  ;; Make absolute
+  (local dest (if (abs? dest) dest (u.join-path state.cwd name)))
   (assert (not= src dest))
-  (M.assert-readable src)
   (if (M.dir? src)
-      (let [op (if should-move move copy-dir)]
+      (let [op (if move? move copy-dir)]
         ;; Moving from a dir to a file should fail
         (assert (M.dir? dest))
         ;; Moving from a dir to a dir should move to a subdirectory
         (op src (u.join-path dest (M.basename src))))
-      (let [op (if should-move move copy-file)]
+      (let [op (if move? move copy-file)]
         (if (M.dir? dest)
             ;; Moving from a file to a dir should move it to a subdirectory
             (op src (u.join-path dest (M.basename src)))

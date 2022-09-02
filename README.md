@@ -51,18 +51,21 @@ local udir = require'udir'
 udir.config = {
   -- Whether hidden files should be shown by default
   show_hidden_files = false,
+
   -- Function used to determine what files should be hidden
   is_file_hidden = function (file, files, dir) return false end,
-  -- Function used to sort files/directories
+
+  -- Function used to sort files
   sort = function (files)
     table.sort(files, function (a, b)
-        if (a.type == "directory") == (b.type == "directory") then
-          return a.name < b.name
-        else
-          return a.type == "directory"
-        end
+      if (a.type == "directory") == (b.type == "directory") then
+        return a.name < b.name
+      else
+        return a.type == "directory"
+      end
     end)
-  return end,
+  end,
+
   keymaps = {
     q = udir.quit,
     h = udir.up_dir,
@@ -85,8 +88,8 @@ udir.config = {
 The `is_file_hidden()` function has the following API:
 ```typescript
 type file = {
-	name: string, // The file name
-	type: "file" | "directory" | "link" // The file type
+  name: string, // The file name
+  type: "file" | "directory" | "link" // The file type
 }
 
 // A sequential table containing all files in the current directory

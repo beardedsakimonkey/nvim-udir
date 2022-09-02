@@ -8,7 +8,7 @@ M["set!"] = function(buf, state)
   return nil
 end
 M["remove!"] = function(buf)
-  _G.assert((nil ~= buf), "Missing argument buf on lua/udir/store.fnl:11")
+  _G.assert((nil ~= buf), "Missing argument buf on lua/udir/store.fnl:10")
   do end (buf_states)[tostring(buf)] = nil
   return nil
 end

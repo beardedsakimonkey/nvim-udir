@@ -93,14 +93,12 @@
 
 (λ M.set-current-buf [buf]
   (when (vim.fn.bufexists buf)
-    (vim.cmd (.. "sil! keepj buffer " buf))
-    nil))
+    (vim.cmd (.. "sil! keepj buffer " buf))))
 
 (λ M.set-lines [buf start end strict-indexing replacement]
   (set vim.opt_local.modifiable true)
   (api.nvim_buf_set_lines buf start end strict-indexing replacement)
-  (set vim.opt_local.modifiable false)
-  nil)
+  (set vim.opt_local.modifiable false))
 
 (λ M.get-line []
   (local [row _] (api.nvim_win_get_cursor 0))

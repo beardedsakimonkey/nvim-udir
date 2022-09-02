@@ -5,12 +5,10 @@
 (local buf-states {})
 
 (λ M.set! [buf state]
-  (tset buf-states (tostring buf) state)
-  nil)
+  (tset buf-states (tostring buf) state))
 
 (λ M.remove! [buf]
-  (tset buf-states (tostring buf) nil)
-  nil)
+  (tset buf-states (tostring buf) nil))
 
 (λ M.get [?buf]
   (let [buf (or ?buf (api.nvim_get_current_buf))]
