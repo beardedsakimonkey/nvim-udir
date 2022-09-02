@@ -10,13 +10,13 @@
 ;; RENDER
 ;; --------------------------------------
 
-(λ sort-by-name [files]
+(fn sort-by-name [files]
   (table.sort files (fn [a b]
                       (if (= (= :directory a.type) (= :directory b.type))
                           (< a.name b.name)
                           (= :directory a.type)))))
 
-(λ add-hl-and-virttext [cwd ns files]
+(fn add-hl-and-virttext [cwd ns files]
   (api.nvim_buf_clear_namespace 0 ns 0 -1)
   (each [i file (ipairs files)]
     (let [path (u.join-path cwd file.name)
@@ -35,7 +35,7 @@
         (api.nvim_buf_set_extmark 0 ns (- i 1) 0
                                   {:end_col (length file.name) :hl_group ?hl})))))
 
-(λ render [state]
+(fn render [state]
   (local {: buf : cwd} state)
   (local files (fs.list cwd))
 
@@ -52,7 +52,7 @@
 ;; KEYMAPS
 ;; --------------------------------------
 
-(λ noremap [mode buf mappings]
+(fn noremap [mode buf mappings]
   (each [lhs rhs (pairs mappings)]
     (if (?. vim :keymap :set)
         ;; this one supports lua functions
@@ -60,24 +60,24 @@
         (api.nvim_buf_set_keymap buf mode lhs rhs
                                  {:nowait true :noremap true :silent true}))))
 
-(λ setup-keymaps [buf]
+(fn setup-keymaps [buf]
   (noremap :n buf M.config.keymaps))
 
-(λ cleanup [state]
+(fn cleanup [state]
   (api.nvim_buf_delete state.buf {:force true})
   (store.remove! state.buf))
 
-(λ update-cwd [state path]
+(fn update-cwd [state path]
   (tset state :cwd path))
 
-(λ M.quit []
+(fn M.quit []
   (local {: ?alt-buf : origin-buf &as state} (store.get))
   (when ?alt-buf
     (u.set-current-buf ?alt-buf))
   (u.set-current-buf origin-buf)
   (cleanup state))
 
-(λ M.up_dir []
+(fn M.up_dir []
   (local state (store.get))
   (local cwd state.cwd)
   (local parent-dir (fs.get-parent-dir state.cwd))
@@ -86,10 +86,10 @@
     (tset state.hovered-files state.cwd ?hovered-file))
   (update-cwd state parent-dir)
   (render state)
-  (u.update-buf-name state.buf state.cwd)
+  (u.update-buf-name state.cwd)
   (u.set-cursor-pos (fs.basename cwd) :or-top))
 
-(λ M.open [?cmd]
+(fn M.open [?cmd]
   (local state (store.get))
   (local filename (u.get-line))
   (when (not= "" filename)
@@ -101,7 +101,7 @@
             (do
               (update-cwd state path)
               (render state)
-              (u.update-buf-name state.buf state.cwd)
+              (u.update-buf-name state.cwd)
               (local ?hovered-file (. state.hovered-files path))
               (u.set-cursor-pos ?hovered-file :or-top)))
         (do
@@ -109,11 +109,11 @@
           (vim.cmd (.. (or ?cmd :edit) " " (vim.fn.fnameescape path)))
           (cleanup state)))))
 
-(λ M.reload []
+(fn M.reload []
   (local state (store.get))
   (render state))
 
-(λ M.delete []
+(fn M.delete []
   (local state (store.get))
   (local filename (u.get-line))
   (if (= "" filename)
@@ -128,7 +128,7 @@
           (render state))
         (u.clear-prompt))))
 
-(λ copy-or-move [move?]
+(fn copy-or-move []
   (local filename (u.get-line))
   (if (= "" filename) (u.err "Empty filename")
       (let [state (store.get)]
@@ -143,13 +143,13 @@
                           (u.clear-prompt)
                           (u.set-cursor-pos (fs.basename dest))))))))
 
-(λ M.move []
+(fn M.move []
   (copy-or-move true))
 
-(λ M.copy []
+(fn M.copy []
   (copy-or-move false))
 
-(λ M.create []
+(fn M.create []
   (local state (store.get))
   (local path-saved vim.opt_local.path)
   (set vim.opt_local.path state.cwd)
@@ -165,7 +165,7 @@
                     (u.clear-prompt)
                     (u.set-cursor-pos (fs.basename path))))))
 
-(λ M.toggle_hidden_files []
+(fn M.toggle_hidden_files []
   (local state (store.get))
   (local ?hovered-file (u.get-line))
   (set M.config.show_hidden_files (not M.config.show_hidden_files))
@@ -210,7 +210,7 @@
                  :sort sort-by-name})
 
 ;; For backwards compat
-(λ M.setup [?cfg]
+(fn M.setup [?cfg]
   (vim.api.nvim_echo [["[udir] `setup()` is now deprecated. Please see the readme."
                        :WarningMsg]] true {})
   (local cfg (or ?cfg {}))
@@ -229,7 +229,7 @@
 ;; INITIALIZATION
 ;; --------------------------------------
 
-(λ init [dir ?from-au]
+(fn init [dir ?from-au]
   ;; If we're executing from the BufEnter autocmd, the current buffer has
   ;; already changed, so the origin-buf is actually the altbuf, and we don't
   ;; know what the origin-buf's altbuf is.
@@ -256,7 +256,7 @@
 ;; If the user initializes a new udir buffer via the autocmd whilst on an
 ;; existing udir buffer, we delete the newly created buffer, and update
 ;; `state.cwd`
-(λ update-instance [dir]
+(fn update-instance [dir]
   (local state (store.get (vim.fn.bufnr "#")))
   (local cwd
          (if (not= "" dir) (fs.realpath (vim.fn.expand dir))
@@ -265,9 +265,9 @@
   (vim.cmd "noau bd")
   (update-cwd state cwd)
   (render state)
-  (u.update-buf-name state.buf state.cwd))
+  (u.update-buf-name state.cwd))
 
-(λ M.udir [dir ?from-au]
+(fn M.udir [dir ?from-au]
   (local is-altbuf-udir (if ?from-au
                             (vim.fn.getbufvar (vim.fn.bufnr "#") :is_udir false)
                             false))

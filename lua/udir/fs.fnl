@@ -22,26 +22,26 @@
                  (assert (not ,type-sym)))
                ,form))))))
 
-(λ delete-file [path]
+(fn delete-file [path]
   (assert (uv.fs_unlink path))
   (u.delete-buffers path))
 
-(λ delete-dir [path]
+(fn delete-dir [path]
   (foreach-entry path [name type]
                  (if (= type :directory)
                      (delete-dir (u.join-path path name))
                      (delete-file (u.join-path path name))))
   (assert (uv.fs_rmdir path)))
 
-(λ move [src dest]
+(fn move [src dest]
   (assert (uv.fs_rename src dest))
   (when (not (M.dir? src))
     (u.rename-buffers src dest)))
 
-(λ copy-file [src dest]
+(fn copy-file [src dest]
   (assert (uv.fs_copyfile src dest)))
 
-(λ copy-dir [src dest]
+(fn copy-dir [src dest]
   (local stat (assert (uv.fs_stat src)))
   (assert (uv.fs_mkdir dest stat.mode))
   (foreach-entry src [name type]
@@ -51,15 +51,15 @@
                        (copy-dir src2 dest2)
                        (copy-file src2 dest2)))))
 
-(λ symlink? [path]
+(fn symlink? [path]
   (local link (uv.fs_readlink path))
   (not= nil link))
 
-(λ abs? [path]
+(fn abs? [path]
   (let [c (path:sub 1 1)]
     (= "/" c)))
 
-(λ expand-tilde [path]
+(fn expand-tilde [path]
   (local res (path:gsub "^~" (os.getenv :HOME)))
   res)
 
@@ -67,54 +67,54 @@
 ;; PUBLIC
 ;; --------------------------------------
 
-(λ M.realpath [?path]
+(fn M.realpath [?path]
   (assert (uv.fs_realpath ?path)))
 
 ;; NOTE: Symlink dirs are considered directories
-(λ M.dir? [path]
+(fn M.dir? [path]
   (local ?file-info (uv.fs_stat path))
   (if (not= nil ?file-info) (= :directory ?file-info.type) false))
 
-(λ M.executable? [path]
+(fn M.executable? [path]
   (local ret (uv.fs_access path :X))
   ret)
 
-(λ M.list [path]
+(fn M.list [path]
   (local ret [])
   (foreach-entry path [name type] ;; `type` can be "file", "directory", "link",
                  ;; `name` is the file's basename
                  (table.insert ret {: name : type}))
   ret)
 
-(λ M.exists? [path]
+(fn M.exists? [path]
   (uv.fs_access path ""))
 
-(λ M.get-parent-dir [dir]
+(fn M.get-parent-dir [dir]
   (local parts (vim.split dir u.sep))
   (table.remove parts)
   (local parent (table.concat parts u.sep))
   (assert (M.exists? parent))
   parent)
 
-(λ M.basename [path]
+(fn M.basename [path]
   ;; Strip trailing slash
   (local path (if (vim.endswith path u.sep) (path:sub 1 -2) path))
   (local parts (vim.split path u.sep))
   (. parts (length parts)))
 
-(λ M.delete [path]
+(fn M.delete [path]
   (if (and (M.dir? path) (not (symlink? path)))
       (delete-dir path)
       (delete-file path)))
 
-(λ M.create-dir [path]
+(fn M.create-dir [path]
   (if (M.exists? path) (u.err (: "%q already exists" :format path))
       (do
         ;; 755 = RWX for owner, RX for group/other
         (local mode (tonumber :755 8))
         (assert (uv.fs_mkdir path mode)))))
 
-(λ M.create-file [path]
+(fn M.create-file [path]
   (if (M.exists? path) (u.err (: "%q already exists" :format path))
       (do
         ;; 644 = RW for owner, R for group/other
@@ -122,7 +122,7 @@
         (local fd (assert (uv.fs_open path :w mode)))
         (assert (uv.fs_close fd)))))
 
-(λ M.copy-or-move [move? src dest]
+(fn M.copy-or-move [move? src dest]
   (assert (M.exists? src))
   ;; Canonicalize
   (local dest (-> dest (expand-tilde) (M.realpath)))
