@@ -6,9 +6,7 @@
 
 (local M {})
 
-;; --------------------------------------
-;; RENDER
-;; --------------------------------------
+;; -- Render -------------------------------------------------------------------
 
 (fn sort-by-name [files]
   (table.sort files (fn [a b]
@@ -48,9 +46,7 @@
   (u.set-lines buf 0 -1 false (vim.tbl_map #$1.name visible-files))
   (add-hl-and-virttext cwd state.ns visible-files))
 
-;; --------------------------------------
-;; KEYMAPS
-;; --------------------------------------
+;; -- Keymaps ------------------------------------------------------------------
 
 (fn noremap [mode buf mappings]
   (each [lhs rhs (pairs mappings)]
@@ -128,7 +124,7 @@
           (render state))
         (u.clear-prompt))))
 
-(fn copy-or-move []
+(fn copy-or-move [move?]
   (local filename (u.get-line))
   (if (= "" filename) (u.err "Empty filename")
       (let [state (store.get)]
@@ -138,7 +134,7 @@
                         (when name
                           (local src (u.join-path state.cwd filename))
                           (local dest (vim.trim name))
-                          (fs.copy-or-move move? src dest)
+                          (fs.copy-or-move move? src dest state.cwd)
                           (render state)
                           (u.clear-prompt)
                           (u.set-cursor-pos (fs.basename dest))))))))
@@ -172,9 +168,7 @@
   (render state)
   (u.set-cursor-pos ?hovered-file))
 
-;; --------------------------------------
-;; CONFIGURATION
-;; --------------------------------------
+;; -- Configuration ------------------------------------------------------------
 
 ;; For backwards compat
 (tset M :map
@@ -225,9 +219,7 @@
   (when cfg.is_file_hidden
     (tset M.config :is_file_hidden cfg.is_file_hidden)))
 
-;; --------------------------------------
-;; INITIALIZATION
-;; --------------------------------------
+;; -- Initialization -----------------------------------------------------------
 
 (fn init [dir ?from-au]
   ;; If we're executing from the BufEnter autocmd, the current buffer has

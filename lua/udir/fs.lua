@@ -1,6 +1,13 @@
 local uv = vim.loop
 local u = require("udir.util")
-local M = {}
+local function dir_3f(path)
+  local _3ffile_info = uv.fs_stat(path)
+  if (nil ~= _3ffile_info) then
+    return ("directory" == _3ffile_info.type)
+  else
+    return false
+  end
+end
 local function delete_file(path)
   assert(uv.fs_unlink(path))
   return u["delete-buffers"](path)
@@ -27,7 +34,7 @@ local function delete_dir(path)
 end
 local function move(src, dest)
   assert(uv.fs_rename(src, dest))
-  if not M["dir?"](src) then
+  if not dir_3f(src) then
     return u["rename-buffers"](src, dest)
   else
     return nil
@@ -70,22 +77,14 @@ local function expand_tilde(path)
   local res = path:gsub("^~", os.getenv("HOME"))
   return res
 end
-M.realpath = function(_3fpath)
+local function realpath(_3fpath)
   return assert(uv.fs_realpath(_3fpath))
 end
-M["dir?"] = function(path)
-  local _3ffile_info = uv.fs_stat(path)
-  if (nil ~= _3ffile_info) then
-    return ("directory" == _3ffile_info.type)
-  else
-    return false
-  end
-end
-M["executable?"] = function(path)
+local function executable_3f(path)
   local ret = uv.fs_access(path, "X")
   return ret
 end
-M.list = function(path)
+local function list(path)
   local ret = {}
   do
     local fs_2_auto = assert(uv.fs_scandir(path))
@@ -102,17 +101,17 @@ M.list = function(path)
   end
   return ret
 end
-M["exists?"] = function(path)
+local function exists_3f(path)
   return uv.fs_access(path, "")
 end
-M["get-parent-dir"] = function(dir)
+local function get_parent_dir(dir)
   local parts = vim.split(dir, u.sep)
   table.remove(parts)
   local parent = table.concat(parts, u.sep)
-  assert(M["exists?"](parent))
+  assert(exists_3f(parent))
   return parent
 end
-M.basename = function(path)
+local function basename(path)
   local path0
   if vim.endswith(path, u.sep) then
     path0 = path:sub(1, -2)
@@ -122,23 +121,23 @@ M.basename = function(path)
   local parts = vim.split(path0, u.sep)
   return parts[#parts]
 end
-M.delete = function(path)
-  if (M["dir?"](path) and not symlink_3f(path)) then
+local function delete(path)
+  if (dir_3f(path) and not symlink_3f(path)) then
     return delete_dir(path)
   else
     return delete_file(path)
   end
 end
-M["create-dir"] = function(path)
-  if M["exists?"](path) then
+local function create_dir(path)
+  if exists_3f(path) then
     return u.err(("%q already exists"):format(path))
   else
     local mode = tonumber("755", 8)
     return assert(uv.fs_mkdir(path, mode))
   end
 end
-M["create-file"] = function(path)
-  if M["exists?"](path) then
+local function create_file(path)
+  if exists_3f(path) then
     return u.err(("%q already exists"):format(path))
   else
     local mode = tonumber("644", 8)
@@ -146,25 +145,25 @@ M["create-file"] = function(path)
     return assert(uv.fs_close(fd))
   end
 end
-M["copy-or-move"] = function(move_3f, src, dest)
-  assert(M["exists?"](src))
-  local dest0 = M.realpath(expand_tilde(dest))
+local function copy_or_move(move_3f, src, dest, cwd)
+  assert(exists_3f(src))
+  local dest0 = expand_tilde(dest)
   local dest1
   if abs_3f(dest0) then
     dest1 = dest0
   else
-    dest1 = u["join-path"](state.cwd, name)
+    dest1 = u["join-path"](cwd, dest0)
   end
   assert((src ~= dest1))
-  if M["dir?"](src) then
+  if dir_3f(src) then
     local op
     if move_3f then
       op = move
     else
       op = copy_dir
     end
-    assert(M["dir?"](dest1))
-    return op(src, u["join-path"](dest1, M.basename(src)))
+    assert(dir_3f(dest1))
+    return op(src, u["join-path"](dest1, basename(src)))
   else
     local op
     if move_3f then
@@ -172,11 +171,11 @@ M["copy-or-move"] = function(move_3f, src, dest)
     else
       op = copy_file
     end
-    if M["dir?"](dest1) then
-      return op(src, u["join-path"](dest1, M.basename(src)))
+    if dir_3f(dest1) then
+      return op(src, u["join-path"](dest1, basename(src)))
     else
       return op(src, dest1)
     end
   end
 end
-return M
+return {realpath = realpath, ["dir?"] = dir_3f, ["executable?"] = executable_3f, list = list, ["exists?"] = exists_3f, ["get-parent-dir"] = get_parent_dir, basename = basename, delete = delete, ["create-dir"] = create_dir, ["create-file"] = create_file, ["copy-or-move"] = copy_or_move}

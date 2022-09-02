@@ -170,14 +170,14 @@ M.delete = function()
     return u["clear-prompt"]()
   end
 end
-local function copy_or_move()
+local function copy_or_move(move_3f)
   local filename = u["get-line"]()
   if ("" == filename) then
     return u.err("Empty filename")
   else
     local state = store.get()
     local _23_
-    if __fnl_global__move_3f then
+    if move_3f then
       _23_ = "Move to: "
     else
       _23_ = "Copy to: "
@@ -186,7 +186,7 @@ local function copy_or_move()
       if name then
         local src = u["join-path"](state.cwd, filename)
         local dest = vim.trim(name)
-        fs["copy-or-move"](__fnl_global__move_3f, src, dest)
+        fs["copy-or-move"](move_3f, src, dest, state.cwd)
         render(state)
         u["clear-prompt"]()
         return u["set-cursor-pos"](fs.basename(dest))

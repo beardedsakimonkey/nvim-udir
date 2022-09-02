@@ -1,7 +1,5 @@
 (local api vim.api)
 
-(local M {})
-
 (fn find-index [list predicate?]
   (var ?ret nil)
   (each [i item (ipairs list) :until (not= nil ?ret)]
@@ -51,18 +49,21 @@
   (local (success ret) (pcall api.nvim_buf_get_var buf var-name))
   (if success ret false))
 
-;; --------------------------------------
-;; PUBLIC
-;; --------------------------------------
+;; -- Public -------------------------------------------------------------------
 
-(fn M.update-buf-name [cwd]
+(fn delete-buffers [name]
+  (each [_ buf (pairs (vim.fn.getbufinfo))]
+    (when (= buf.name name)
+      (pcall api.nvim_buf_delete buf.bufnr {}))))
+
+(fn update-buf-name [cwd]
   (local old-name (vim.fn.bufname))
   (local new-name (create-buf-name cwd))
   (vim.cmd (.. "sil keepalt file " (vim.fn.fnameescape new-name)))
   ;; Renaming a buffer creates a new buffer with the old name. Delete it.
-  (M.delete-buffers old-name))
+  (delete-buffers old-name))
 
-(fn M.create-buf [cwd]
+(fn create-buf [cwd]
   (local existing-buf (vim.fn.bufnr (.. "^" cwd "$")))
   (var buf nil)
   (if (not= -1 existing-buf)
@@ -91,44 +92,39 @@
   (api.nvim_buf_set_option buf :filetype :udir)
   buf)
 
-(fn M.set-current-buf [buf]
+(fn set-current-buf [buf]
   (when (vim.fn.bufexists buf)
     (vim.cmd (.. "sil! keepj buffer " buf))))
 
-(fn M.set-lines [buf start end strict-indexing replacement]
+(fn set-lines [buf start end strict-indexing replacement]
   (set vim.opt_local.modifiable true)
   (api.nvim_buf_set_lines buf start end strict-indexing replacement)
   (set vim.opt_local.modifiable false))
 
-(fn M.get-line []
+(fn get-line []
   (local [row _] (api.nvim_win_get_cursor 0))
   (local [line] (api.nvim_buf_get_lines 0 (- row 1) row true))
   line)
 
-(fn M.delete-buffers [name]
-  (each [_ buf (pairs (vim.fn.getbufinfo))]
-    (when (= buf.name name)
-      (pcall api.nvim_buf_delete buf.bufnr {}))))
-
-(fn M.rename-buffers [old-name new-name]
+(fn rename-buffers [old-name new-name]
   ;; If we're clobbering an existing file for which we have a buffer, delete
   ;; the buffer first
   (when (vim.fn.bufexists new-name)
-    (M.delete-buffers new-name))
+    (delete-buffers new-name))
   (each [_ buf (pairs (vim.fn.getbufinfo))]
     (when (= buf.name old-name)
       (api.nvim_buf_set_name buf.bufnr new-name)
       (api.nvim_buf_call buf.bufnr #(vim.cmd "silent! w!")))))
 
-(fn M.clear-prompt []
+(fn clear-prompt []
   (vim.cmd "norm! :"))
 
-(tset M :sep (package.config:sub 1 1))
+(local sep (package.config:sub 1 1))
 
-(fn M.join-path [fst snd]
-  (.. fst M.sep snd))
+(fn join-path [fst snd]
+  (.. fst sep snd))
 
-(fn M.set-cursor-pos [?filename ?or-top]
+(fn set-cursor-pos [?filename ?or-top]
   (var ?line (if ?or-top 1 nil))
   (when ?filename
     (local ?found (find-line #(= $1 ?filename)))
@@ -137,8 +133,19 @@
   (when (not= nil ?line)
     (api.nvim_win_set_cursor 0 [?line 0])))
 
-(fn M.err [msg]
+(fn err [msg]
   (api.nvim_err_writeln msg))
 
-M
+{: delete-buffers
+ : update-buf-name
+ : create-buf
+ : set-current-buf
+ : set-lines
+ : get-line
+ : rename-buffers
+ : clear-prompt
+ : sep
+ : join-path
+ : set-cursor-pos
+ : err}
 

@@ -1,5 +1,4 @@
 local api = vim.api
-local M = {}
 local function find_index(list, predicate_3f)
   local _3fret = nil
   for i, item in ipairs(list) do
@@ -40,13 +39,22 @@ local function buf_has_var(buf, var_name)
     return false
   end
 end
-M["update-buf-name"] = function(cwd)
+local function delete_buffers(name)
+  for _, buf in pairs(vim.fn.getbufinfo()) do
+    if (buf.name == name) then
+      pcall(api.nvim_buf_delete, buf.bufnr, {})
+    else
+    end
+  end
+  return nil
+end
+local function update_buf_name(cwd)
   local old_name = vim.fn.bufname()
   local new_name = create_buf_name(cwd)
   vim.cmd(("sil keepalt file " .. vim.fn.fnameescape(new_name)))
-  return M["delete-buffers"](old_name)
+  return delete_buffers(old_name)
 end
-M["create-buf"] = function(cwd)
+local function create_buf(cwd)
   local existing_buf = vim.fn.bufnr(("^" .. cwd .. "$"))
   local buf = nil
   if (-1 ~= existing_buf) then
@@ -70,39 +78,30 @@ M["create-buf"] = function(cwd)
   api.nvim_buf_set_option(buf, "filetype", "udir")
   return buf
 end
-M["set-current-buf"] = function(buf)
+local function set_current_buf(buf)
   if vim.fn.bufexists(buf) then
     return vim.cmd(("sil! keepj buffer " .. buf))
   else
     return nil
   end
 end
-M["set-lines"] = function(buf, start, _end, strict_indexing, replacement)
+local function set_lines(buf, start, _end, strict_indexing, replacement)
   vim.opt_local.modifiable = true
   api.nvim_buf_set_lines(buf, start, _end, strict_indexing, replacement)
   vim.opt_local.modifiable = false
   return nil
 end
-M["get-line"] = function()
-  local _local_9_ = api.nvim_win_get_cursor(0)
-  local row = _local_9_[1]
-  local _ = _local_9_[2]
-  local _local_10_ = api.nvim_buf_get_lines(0, (row - 1), row, true)
-  local line = _local_10_[1]
+local function get_line()
+  local _local_10_ = api.nvim_win_get_cursor(0)
+  local row = _local_10_[1]
+  local _ = _local_10_[2]
+  local _local_11_ = api.nvim_buf_get_lines(0, (row - 1), row, true)
+  local line = _local_11_[1]
   return line
 end
-M["delete-buffers"] = function(name)
-  for _, buf in pairs(vim.fn.getbufinfo()) do
-    if (buf.name == name) then
-      pcall(api.nvim_buf_delete, buf.bufnr, {})
-    else
-    end
-  end
-  return nil
-end
-M["rename-buffers"] = function(old_name, new_name)
+local function rename_buffers(old_name, new_name)
   if vim.fn.bufexists(new_name) then
-    M["delete-buffers"](new_name)
+    delete_buffers(new_name)
   else
   end
   for _, buf in pairs(vim.fn.getbufinfo()) do
@@ -117,14 +116,14 @@ M["rename-buffers"] = function(old_name, new_name)
   end
   return nil
 end
-M["clear-prompt"] = function()
+local function clear_prompt()
   return vim.cmd("norm! :")
 end
-M["sep"] = (package.config):sub(1, 1)
-M["join-path"] = function(fst, snd)
-  return (fst .. M.sep .. snd)
+local sep = (package.config):sub(1, 1)
+local function join_path(fst, snd)
+  return (fst .. sep .. snd)
 end
-M["set-cursor-pos"] = function(_3ffilename, _3for_top)
+local function set_cursor_pos(_3ffilename, _3for_top)
   local _3fline
   if _3for_top then
     _3fline = 1
@@ -149,7 +148,7 @@ M["set-cursor-pos"] = function(_3ffilename, _3for_top)
     return nil
   end
 end
-M.err = function(msg)
+local function err(msg)
   return api.nvim_err_writeln(msg)
 end
-return M
+return {["delete-buffers"] = delete_buffers, ["update-buf-name"] = update_buf_name, ["create-buf"] = create_buf, ["set-current-buf"] = set_current_buf, ["set-lines"] = set_lines, ["get-line"] = get_line, ["rename-buffers"] = rename_buffers, ["clear-prompt"] = clear_prompt, sep = sep, ["join-path"] = join_path, ["set-cursor-pos"] = set_cursor_pos, err = err}

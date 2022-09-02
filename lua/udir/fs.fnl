@@ -5,7 +5,10 @@
 ;; something is unrecoverable, not when the user does something silly like
 ;; rename a file to itself.
 
-(local M {})
+;; NOTE: Symlink dirs are considered directories
+(fn dir? [path]
+  (local ?file-info (uv.fs_stat path))
+  (if (not= nil ?file-info) (= :directory ?file-info.type) false))
 
 (macro foreach-entry [path syms form]
   (let [name-sym (. syms 1)
@@ -35,7 +38,7 @@
 
 (fn move [src dest]
   (assert (uv.fs_rename src dest))
-  (when (not (M.dir? src))
+  (when (not (dir? src))
     (u.rename-buffers src dest)))
 
 (fn copy-file [src dest]
@@ -63,84 +66,84 @@
   (local res (path:gsub "^~" (os.getenv :HOME)))
   res)
 
-;; --------------------------------------
-;; PUBLIC
-;; --------------------------------------
-
-(fn M.realpath [?path]
+(fn realpath [?path]
   (assert (uv.fs_realpath ?path)))
 
-;; NOTE: Symlink dirs are considered directories
-(fn M.dir? [path]
-  (local ?file-info (uv.fs_stat path))
-  (if (not= nil ?file-info) (= :directory ?file-info.type) false))
-
-(fn M.executable? [path]
+(fn executable? [path]
   (local ret (uv.fs_access path :X))
   ret)
 
-(fn M.list [path]
+(fn list [path]
   (local ret [])
-  (foreach-entry path [name type] ;; `type` can be "file", "directory", "link",
-                 ;; `name` is the file's basename
-                 (table.insert ret {: name : type}))
+  ;; `type` can be "file", "directory", "link". `name` is the file's basename
+  (foreach-entry path [name type] (table.insert ret {: name : type}))
   ret)
 
-(fn M.exists? [path]
+(fn exists? [path]
   (uv.fs_access path ""))
 
-(fn M.get-parent-dir [dir]
+(fn get-parent-dir [dir]
   (local parts (vim.split dir u.sep))
   (table.remove parts)
   (local parent (table.concat parts u.sep))
-  (assert (M.exists? parent))
+  (assert (exists? parent))
   parent)
 
-(fn M.basename [path]
+(fn basename [path]
   ;; Strip trailing slash
   (local path (if (vim.endswith path u.sep) (path:sub 1 -2) path))
   (local parts (vim.split path u.sep))
   (. parts (length parts)))
 
-(fn M.delete [path]
-  (if (and (M.dir? path) (not (symlink? path)))
+(fn delete [path]
+  (if (and (dir? path) (not (symlink? path)))
       (delete-dir path)
       (delete-file path)))
 
-(fn M.create-dir [path]
-  (if (M.exists? path) (u.err (: "%q already exists" :format path))
+(fn create-dir [path]
+  (if (exists? path) (u.err (: "%q already exists" :format path))
       (do
         ;; 755 = RWX for owner, RX for group/other
         (local mode (tonumber :755 8))
         (assert (uv.fs_mkdir path mode)))))
 
-(fn M.create-file [path]
-  (if (M.exists? path) (u.err (: "%q already exists" :format path))
+(fn create-file [path]
+  (if (exists? path) (u.err (: "%q already exists" :format path))
       (do
         ;; 644 = RW for owner, R for group/other
         (local mode (tonumber :644 8))
         (local fd (assert (uv.fs_open path :w mode)))
         (assert (uv.fs_close fd)))))
 
-(fn M.copy-or-move [move? src dest]
-  (assert (M.exists? src))
+(fn copy-or-move [move? src dest cwd]
+  (assert (exists? src))
   ;; Canonicalize
-  (local dest (-> dest (expand-tilde) (M.realpath)))
+  (local dest (expand-tilde dest))
   ;; Make absolute
-  (local dest (if (abs? dest) dest (u.join-path state.cwd name)))
+  (local dest (if (abs? dest) dest (u.join-path cwd dest)))
   (assert (not= src dest))
-  (if (M.dir? src)
+  (if (dir? src)
       (let [op (if move? move copy-dir)]
         ;; Moving from a dir to a file should fail
-        (assert (M.dir? dest))
+        (assert (dir? dest))
         ;; Moving from a dir to a dir should move to a subdirectory
-        (op src (u.join-path dest (M.basename src))))
+        (op src (u.join-path dest (basename src))))
       (let [op (if move? move copy-file)]
-        (if (M.dir? dest)
+        (if (dir? dest)
             ;; Moving from a file to a dir should move it to a subdirectory
-            (op src (u.join-path dest (M.basename src)))
+            (op src (u.join-path dest (basename src)))
             ;; Moving from a file to a file should overwrite the file
             (op src dest)))))
 
-M
+{: realpath
+ : dir?
+ : executable?
+ : list
+ : exists?
+ : get-parent-dir
+ : basename
+ : delete
+ : create-dir
+ : create-file
+ : copy-or-move}
 
