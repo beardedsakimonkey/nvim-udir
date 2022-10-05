@@ -65,24 +65,7 @@ local function render(state)
 end
 local function noremap(mode, buf, mappings)
   for lhs, rhs in pairs(mappings) do
-    local _11_
-    do
-      local t_10_ = vim
-      if (nil ~= t_10_) then
-        t_10_ = (t_10_).keymap
-      else
-      end
-      if (nil ~= t_10_) then
-        t_10_ = (t_10_).set
-      else
-      end
-      _11_ = t_10_
-    end
-    if _11_ then
-      vim.keymap.set(mode, lhs, rhs, {nowait = true, silent = true, buffer = buf})
-    else
-      api.nvim_buf_set_keymap(buf, mode, lhs, rhs, {nowait = true, noremap = true, silent = true})
-    end
+    vim.keymap.set(mode, lhs, rhs, {nowait = true, silent = true, buffer = buf})
   end
   return nil
 end
@@ -98,10 +81,10 @@ local function update_cwd(state, path)
   return nil
 end
 M.quit = function()
-  local _local_15_ = store.get()
-  local _3falt_buf = _local_15_["?alt-buf"]
-  local origin_buf = _local_15_["origin-buf"]
-  local state = _local_15_
+  local _local_10_ = store.get()
+  local _3falt_buf = _local_10_["?alt-buf"]
+  local origin_buf = _local_10_["origin-buf"]
+  local state = _local_10_
   if _3falt_buf then
     u["set-current-buf"](_3falt_buf)
   else
@@ -184,13 +167,13 @@ local function copy_or_move(move_3f)
     return u.err("Empty filename")
   else
     local state = store.get()
-    local _25_
+    local _20_
     if move_3f then
-      _25_ = "Move to: "
+      _20_ = "Move to: "
     else
-      _25_ = "Copy to: "
+      _20_ = "Copy to: "
     end
-    local function _27_(name)
+    local function _22_(name)
       u["clear-prompt"]()
       local src = u["join-path"](state.cwd, filename)
       local ok_3f, msg = pcall(fs["copy-or-move"], move_3f, src, name, state.cwd)
@@ -201,7 +184,7 @@ local function copy_or_move(move_3f)
         return u["set-cursor-pos"](fs.basename(name))
       end
     end
-    return vim.ui.input({prompt = _25_, completion = "file"}, _27_)
+    return vim.ui.input({prompt = _20_, completion = "file"}, _22_)
   end
 end
 M.move = function()
@@ -214,7 +197,7 @@ M.create = function()
   local state = store.get()
   local path_saved = vim.opt_local.path
   vim.opt_local.path = state.cwd
-  local function _30_(name)
+  local function _25_(name)
     vim.opt_local.path = path_saved
     u["clear-prompt"]()
     if name then
@@ -235,7 +218,7 @@ M.create = function()
       return nil
     end
   end
-  return vim.ui.input({prompt = "New file: ", completion = "file_in_path"}, _30_)
+  return vim.ui.input({prompt = "New file: ", completion = "file_in_path"}, _25_)
 end
 M.toggle_hidden_files = function()
   local state = store.get()
@@ -245,10 +228,10 @@ M.toggle_hidden_files = function()
   return u["set-cursor-pos"](_3fhovered_file)
 end
 M["map"] = {quit = "<Cmd>lua require'udir'.quit()<CR>", up_dir = "<Cmd>lua require'udir'.up_dir()<CR>", open = "<Cmd>lua require'udir'.open()<CR>", open_split = "<Cmd>lua require'udir'.open('split')<CR>", open_vsplit = "<Cmd>lua require'udir'.open('vsplit')<CR>", open_tab = "<Cmd>lua require'udir'.open('tabedit')<CR>", reload = "<Cmd>lua require'udir'.reload()<CR>", delete = "<Cmd>lua require'udir'.delete()<CR>", create = "<Cmd>lua require'udir'.create()<CR>", move = "<Cmd>lua require'udir'.move()<CR>", copy = "<Cmd>lua require'udir'.copy()<CR>", toggle_hidden_files = "<Cmd>lua require'udir'.toggle_hidden_files()<CR>"}
-local function _34_()
+local function _29_()
   return false
 end
-M["config"] = {keymaps = {q = M.map.quit, h = M.map.up_dir, ["-"] = M.map.up_dir, l = M.map.open, ["<CR>"] = M.map.open, s = M.map.open_split, v = M.map.open_vsplit, t = M.map.open_tab, R = M.map.reload, d = M.map.delete, ["+"] = M.map.create, m = M.map.move, c = M.map.copy, ["."] = M.map.toggle_hidden_files}, show_hidden_files = true, is_file_hidden = _34_, sort = sort_by_name}
+M["config"] = {keymaps = {q = M.map.quit, h = M.map.up_dir, ["-"] = M.map.up_dir, l = M.map.open, ["<CR>"] = M.map.open, s = M.map.open_split, v = M.map.open_vsplit, t = M.map.open_tab, R = M.map.reload, d = M.map.delete, ["+"] = M.map.create, m = M.map.move, c = M.map.copy, ["."] = M.map.toggle_hidden_files}, show_hidden_files = true, is_file_hidden = _29_, sort = sort_by_name}
 M.setup = function(_3fcfg)
   u.warn("`setup()` is now deprecated. Please see the readme.")
   local cfg = (_3fcfg or {})

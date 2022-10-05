@@ -50,11 +50,7 @@
 
 (fn noremap [mode buf mappings]
   (each [lhs rhs (pairs mappings)]
-    (if (?. vim :keymap :set)
-        ;; this one supports lua functions
-        (vim.keymap.set mode lhs rhs {:nowait true :silent true :buffer buf})
-        (api.nvim_buf_set_keymap buf mode lhs rhs
-                                 {:nowait true :noremap true :silent true}))))
+    (vim.keymap.set mode lhs rhs {:nowait true :silent true :buffer buf})))
 
 (fn setup-keymaps [buf]
   (noremap :n buf M.config.keymaps))
