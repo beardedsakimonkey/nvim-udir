@@ -162,12 +162,17 @@ M.delete = function()
     local _ = print(string.format("Are you sure you want to delete %q? (y/n)", path))
     local input = vim.fn.getchar()
     local confirmed_3f = ("y" == vim.fn.nr2char(input))
+    u["clear-prompt"]()
     if confirmed_3f then
-      fs.delete(path)
-      render(state)
+      local ok_3f, msg = pcall(fs.delete, path)
+      if not ok_3f then
+        return u.err(msg)
+      else
+        return render(state)
+      end
     else
+      return nil
     end
-    return u["clear-prompt"]()
   end
 end
 local function copy_or_move(move_3f)
@@ -176,25 +181,24 @@ local function copy_or_move(move_3f)
     return u.err("Empty filename")
   else
     local state = store.get()
-    local _23_
+    local _24_
     if move_3f then
-      _23_ = "Move to: "
+      _24_ = "Move to: "
     else
-      _23_ = "Copy to: "
+      _24_ = "Copy to: "
     end
-    local function _25_(name)
-      if name then
-        local src = u["join-path"](state.cwd, filename)
-        local dest = vim.trim(name)
-        fs["copy-or-move"](move_3f, src, dest, state.cwd)
-        render(state)
-        u["clear-prompt"]()
-        return u["set-cursor-pos"](fs.basename(dest))
+    local function _26_(name)
+      u["clear-prompt"]()
+      local src = u["join-path"](state.cwd, filename)
+      local ok_3f, msg = pcall(fs["copy-or-move"], move_3f, src, name, state.cwd)
+      if not ok_3f then
+        return u.err(msg)
       else
-        return nil
+        render(state)
+        return u["set-cursor-pos"](fs.basename(name))
       end
     end
-    return vim.ui.input({prompt = _23_, completion = "file"}, _25_)
+    return vim.ui.input({prompt = _24_, completion = "file"}, _26_)
   end
 end
 M.move = function()
@@ -207,23 +211,28 @@ M.create = function()
   local state = store.get()
   local path_saved = vim.opt_local.path
   vim.opt_local.path = state.cwd
-  local function _28_(name)
+  local function _29_(name)
     vim.opt_local.path = path_saved
+    u["clear-prompt"]()
     if name then
       local path = u["join-path"](state.cwd, name)
+      local ok_3f, msg = nil, nil
       if vim.endswith(name, u.sep) then
-        fs["create-dir"](path)
+        ok_3f, msg = pcall(fs["create-dir"], path)
       else
-        fs["create-file"](path)
+        ok_3f, msg = pcall(fs["create-file"], path)
       end
-      render(state)
-      u["clear-prompt"]()
-      return u["set-cursor-pos"](fs.basename(path))
+      if not ok_3f then
+        return u.err(msg)
+      else
+        render(state)
+        return u["set-cursor-pos"](fs.basename(path))
+      end
     else
       return nil
     end
   end
-  return vim.ui.input({prompt = "New file: ", completion = "file_in_path"}, _28_)
+  return vim.ui.input({prompt = "New file: ", completion = "file_in_path"}, _29_)
 end
 M.toggle_hidden_files = function()
   local state = store.get()
@@ -233,10 +242,10 @@ M.toggle_hidden_files = function()
   return u["set-cursor-pos"](_3fhovered_file)
 end
 M["map"] = {quit = "<Cmd>lua require'udir'.quit()<CR>", up_dir = "<Cmd>lua require'udir'.up_dir()<CR>", open = "<Cmd>lua require'udir'.open()<CR>", open_split = "<Cmd>lua require'udir'.open('split')<CR>", open_vsplit = "<Cmd>lua require'udir'.open('vsplit')<CR>", open_tab = "<Cmd>lua require'udir'.open('tabedit')<CR>", reload = "<Cmd>lua require'udir'.reload()<CR>", delete = "<Cmd>lua require'udir'.delete()<CR>", create = "<Cmd>lua require'udir'.create()<CR>", move = "<Cmd>lua require'udir'.move()<CR>", copy = "<Cmd>lua require'udir'.copy()<CR>", toggle_hidden_files = "<Cmd>lua require'udir'.toggle_hidden_files()<CR>"}
-local function _31_()
+local function _33_()
   return false
 end
-M["config"] = {keymaps = {q = M.map.quit, h = M.map.up_dir, ["-"] = M.map.up_dir, l = M.map.open, ["<CR>"] = M.map.open, s = M.map.open_split, v = M.map.open_vsplit, t = M.map.open_tab, R = M.map.reload, d = M.map.delete, ["+"] = M.map.create, m = M.map.move, c = M.map.copy, ["."] = M.map.toggle_hidden_files}, show_hidden_files = true, is_file_hidden = _31_, sort = sort_by_name}
+M["config"] = {keymaps = {q = M.map.quit, h = M.map.up_dir, ["-"] = M.map.up_dir, l = M.map.open, ["<CR>"] = M.map.open, s = M.map.open_split, v = M.map.open_vsplit, t = M.map.open_tab, R = M.map.reload, d = M.map.delete, ["+"] = M.map.create, m = M.map.move, c = M.map.copy, ["."] = M.map.toggle_hidden_files}, show_hidden_files = true, is_file_hidden = _33_, sort = sort_by_name}
 M.setup = function(_3fcfg)
   vim.api.nvim_echo({{"[udir] `setup()` is now deprecated. Please see the readme.", "WarningMsg"}}, true, {})
   local cfg = (_3fcfg or {})

@@ -151,4 +151,8 @@ end
 local function err(msg)
   return api.nvim_err_writeln(msg)
 end
-return {["delete-buffers"] = delete_buffers, ["update-buf-name"] = update_buf_name, ["create-buf"] = create_buf, ["set-current-buf"] = set_current_buf, ["set-lines"] = set_lines, ["get-line"] = get_line, ["rename-buffers"] = rename_buffers, ["clear-prompt"] = clear_prompt, sep = sep, ["join-path"] = join_path, ["set-cursor-pos"] = set_cursor_pos, err = err}
+local function trim_start(str)
+  local _20_ = str:gsub("^%s*", "")
+  return _20_
+end
+return {["delete-buffers"] = delete_buffers, ["update-buf-name"] = update_buf_name, ["create-buf"] = create_buf, ["set-current-buf"] = set_current_buf, ["set-lines"] = set_lines, ["get-line"] = get_line, ["rename-buffers"] = rename_buffers, ["clear-prompt"] = clear_prompt, sep = sep, ["join-path"] = join_path, ["set-cursor-pos"] = set_cursor_pos, err = err, ["trim-start"] = trim_start}

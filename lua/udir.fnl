@@ -119,10 +119,12 @@
                                     path))
             input (vim.fn.getchar)
             confirmed? (= :y (vim.fn.nr2char input))]
+        (u.clear-prompt)
         (when confirmed?
-          (fs.delete path)
-          (render state))
-        (u.clear-prompt))))
+          (local (ok? msg) (pcall fs.delete path))
+          (if (not ok?)
+              (u.err msg)
+              (render state))))))
 
 (fn copy-or-move [move?]
   (local filename (u.get-line))
@@ -131,13 +133,14 @@
         (vim.ui.input {:prompt (if move? "Move to: " "Copy to: ")
                        :completion :file}
                       (fn [name]
-                        (when name
-                          (local src (u.join-path state.cwd filename))
-                          (local dest (vim.trim name))
-                          (fs.copy-or-move move? src dest state.cwd)
-                          (render state)
-                          (u.clear-prompt)
-                          (u.set-cursor-pos (fs.basename dest))))))))
+                        (u.clear-prompt)
+                        (local src (u.join-path state.cwd filename))
+                        (local (ok? msg)
+                               (pcall fs.copy-or-move move? src name state.cwd))
+                        (if (not ok?) (u.err msg)
+                            (do
+                              (render state)
+                              (u.set-cursor-pos (fs.basename name)))))))))
 
 (fn M.move []
   (copy-or-move true))
@@ -152,14 +155,17 @@
   (vim.ui.input {:prompt "New file: " :completion :file_in_path}
                 (fn [name]
                   (set vim.opt_local.path path-saved)
+                  (u.clear-prompt)
                   (when name
                     (local path (u.join-path state.cwd name))
-                    (if (vim.endswith name u.sep)
-                        (fs.create-dir path)
-                        (fs.create-file path))
-                    (render state)
-                    (u.clear-prompt)
-                    (u.set-cursor-pos (fs.basename path))))))
+                    (local (ok? msg)
+                           (if (vim.endswith name u.sep)
+                               (pcall fs.create-dir path)
+                               (pcall fs.create-file path)))
+                    (if (not ok?) (u.err msg)
+                        (do
+                          (render state)
+                          (u.set-cursor-pos (fs.basename path))))))))
 
 (fn M.toggle_hidden_files []
   (local state (store.get))
@@ -246,4 +252,3 @@
     (u.set-cursor-pos ?origin-filename)))
 
 M
-

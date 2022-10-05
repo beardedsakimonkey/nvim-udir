@@ -136,6 +136,9 @@
 (fn err [msg]
   (api.nvim_err_writeln msg))
 
+(fn trim-start [str]
+  (pick-values 1 (str:gsub "^%s*" "")))
+
 {: delete-buffers
  : update-buf-name
  : create-buf
@@ -147,5 +150,5 @@
  : sep
  : join-path
  : set-cursor-pos
- : err}
-
+ : err
+ : trim-start}

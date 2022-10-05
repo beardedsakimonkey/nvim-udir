@@ -1,10 +1,6 @@
 (local uv vim.loop)
 (local u (require :udir.util))
 
-;; TODO: `assert` should only be used when it's indicative of a bug, or
-;; something is unrecoverable, not when the user does something silly like
-;; rename a file to itself.
-
 ;; NOTE: Symlink dirs are considered directories
 (fn dir? [path]
   (local ?file-info (uv.fs_stat path))
@@ -101,31 +97,30 @@
       (delete-file path)))
 
 (fn create-dir [path]
-  (if (exists? path) (u.err (: "%q already exists" :format path))
-      (do
-        ;; 755 = RWX for owner, RX for group/other
-        (local mode (tonumber :755 8))
-        (assert (uv.fs_mkdir path mode)))))
+  (assert (not (exists? path)) (: "%q already exists" :format path))
+  ;; 755 = RWX for owner, RX for group/other
+  (assert (uv.fs_mkdir path (tonumber :755 8))))
 
 (fn create-file [path]
-  (if (exists? path) (u.err (: "%q already exists" :format path))
-      (do
-        ;; 644 = RW for owner, R for group/other
-        (local mode (tonumber :644 8))
-        (local fd (assert (uv.fs_open path :w mode)))
-        (assert (uv.fs_close fd)))))
+  (assert (not (exists? path)) (: "%q already exists" :format path))
+  ;; 644 = RW for owner, R for group/other
+  (local fd (assert (uv.fs_open path :w (tonumber :644 8))))
+  (assert (uv.fs_close fd)))
 
 (fn copy-or-move [move? src dest cwd]
   (assert (exists? src))
+  (assert dest "Empty destination")
+  ;; Trim `dest` because we'll check its first character
+  (local dest (u.trim-start dest))
   ;; Canonicalize
   (local dest (expand-tilde dest))
   ;; Make absolute
   (local dest (if (abs? dest) dest (u.join-path cwd dest)))
-  (assert (not= src dest))
+  (assert (not= src dest) "`src` equals `dest`")
   (if (dir? src)
       (let [op (if move? move copy-dir)]
         ;; Moving from a dir to a file should fail
-        (assert (dir? dest))
+        (assert (dir? dest) "Cannot move directory to a file")
         ;; Moving from a dir to a dir should move to a subdirectory
         (op src (u.join-path dest (basename src))))
       (let [op (if move? move copy-file)]
@@ -146,4 +141,3 @@
  : create-dir
  : create-file
  : copy-or-move}
-

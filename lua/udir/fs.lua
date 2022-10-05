@@ -129,32 +129,26 @@ local function delete(path)
   end
 end
 local function create_dir(path)
-  if exists_3f(path) then
-    return u.err(("%q already exists"):format(path))
-  else
-    local mode = tonumber("755", 8)
-    return assert(uv.fs_mkdir(path, mode))
-  end
+  assert(not exists_3f(path), ("%q already exists"):format(path))
+  return assert(uv.fs_mkdir(path, tonumber("755", 8)))
 end
 local function create_file(path)
-  if exists_3f(path) then
-    return u.err(("%q already exists"):format(path))
-  else
-    local mode = tonumber("644", 8)
-    local fd = assert(uv.fs_open(path, "w", mode))
-    return assert(uv.fs_close(fd))
-  end
+  assert(not exists_3f(path), ("%q already exists"):format(path))
+  local fd = assert(uv.fs_open(path, "w", tonumber("644", 8)))
+  return assert(uv.fs_close(fd))
 end
 local function copy_or_move(move_3f, src, dest, cwd)
   assert(exists_3f(src))
-  local dest0 = expand_tilde(dest)
-  local dest1
-  if abs_3f(dest0) then
-    dest1 = dest0
+  assert(dest, "Empty destination")
+  local dest0 = u["trim-start"](dest)
+  local dest1 = expand_tilde(dest0)
+  local dest2
+  if abs_3f(dest1) then
+    dest2 = dest1
   else
-    dest1 = u["join-path"](cwd, dest0)
+    dest2 = u["join-path"](cwd, dest1)
   end
-  assert((src ~= dest1))
+  assert((src ~= dest2), "`src` equals `dest`")
   if dir_3f(src) then
     local op
     if move_3f then
@@ -162,8 +156,8 @@ local function copy_or_move(move_3f, src, dest, cwd)
     else
       op = copy_dir
     end
-    assert(dir_3f(dest1))
-    return op(src, u["join-path"](dest1, basename(src)))
+    assert(dir_3f(dest2), "Cannot move directory to a file")
+    return op(src, u["join-path"](dest2, basename(src)))
   else
     local op
     if move_3f then
@@ -171,10 +165,10 @@ local function copy_or_move(move_3f, src, dest, cwd)
     else
       op = copy_file
     end
-    if dir_3f(dest1) then
-      return op(src, u["join-path"](dest1, basename(src)))
+    if dir_3f(dest2) then
+      return op(src, u["join-path"](dest2, basename(src)))
     else
-      return op(src, dest1)
+      return op(src, dest2)
     end
   end
 end
