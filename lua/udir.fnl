@@ -21,7 +21,7 @@
           (?virttext ?hl) (match file.type
                             :directory (values u.sep :UdirDirectory)
                             :link (values (.. "@ → "
-                                              (assert (uv.fs_readlink path)))
+                                              (or (uv.fs_readlink path) "???"))
                                           :UdirSymlink)
                             :file (if (fs.executable? path)
                                       (values "*" :UdirExecutable)
@@ -89,21 +89,23 @@
   (local state (store.get))
   (local filename (u.get-line))
   (when (not= "" filename)
-    (local path (fs.realpath (u.join-path state.cwd filename)))
-    (assert (fs.exists? path))
-    (if (fs.dir? path)
-        (if ?cmd
-            (vim.cmd (.. ?cmd " " (vim.fn.fnameescape path)))
+    ;; fs_realpath also checks file existence
+    (local (path msg) (uv.fs_realpath (u.join-path state.cwd filename)))
+    (if (not path)
+        (u.err msg)
+        (if (fs.dir? path)
+            (if ?cmd
+                (vim.cmd (.. ?cmd " " (vim.fn.fnameescape path)))
+                (do
+                  (update-cwd state path)
+                  (render state)
+                  (u.update-buf-name state.cwd)
+                  (local ?hovered-file (. state.hovered-files path))
+                  (u.set-cursor-pos ?hovered-file :or-top)))
             (do
-              (update-cwd state path)
-              (render state)
-              (u.update-buf-name state.cwd)
-              (local ?hovered-file (. state.hovered-files path))
-              (u.set-cursor-pos ?hovered-file :or-top)))
-        (do
-          (u.set-current-buf state.origin-buf) ; Update the altfile
-          (vim.cmd (.. (or ?cmd :edit) " " (vim.fn.fnameescape path)))
-          (cleanup state)))))
+              (u.set-current-buf state.origin-buf) ; Update the altfile
+              (vim.cmd (.. (or ?cmd :edit) " " (vim.fn.fnameescape path)))
+              (cleanup state))))))
 
 (fn M.reload []
   (local state (store.get))
@@ -239,7 +241,7 @@
                 ;; `expand('%')` can be empty if in an unnamed buffer, like `:enew`, so
                 ;; fallback to the cwd.
                 (let [p (vim.fn.expand "%:p:h")]
-                  (if (not= "" p) (fs.realpath p) (assert (vim.loop.cwd)))))
+                  (if (not= "" p) (fs.realpath p) (assert (uv.cwd)))))
         ?origin-filename (let [p (vim.fn.expand "%:p:t")]
                            (if (= "" p) nil p))
         buf (u.create-buf cwd)

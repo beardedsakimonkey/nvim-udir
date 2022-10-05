@@ -24,7 +24,7 @@ local function add_hl_and_virttext(cwd, ns, files)
       if (_3_ == "directory") then
         _3fvirttext, _3fhl = u.sep, "UdirDirectory"
       elseif (_3_ == "link") then
-        _3fvirttext, _3fhl = ("@ \226\134\146 " .. assert(uv.fs_readlink(path))), "UdirSymlink"
+        _3fvirttext, _3fhl = ("@ \226\134\146 " .. (uv.fs_readlink(path) or "???")), "UdirSymlink"
       elseif (_3_ == "file") then
         if fs["executable?"](path) then
           _3fvirttext, _3fhl = "*", "UdirExecutable"
@@ -127,22 +127,25 @@ M.open = function(_3fcmd)
   local state = store.get()
   local filename = u["get-line"]()
   if ("" ~= filename) then
-    local path = fs.realpath(u["join-path"](state.cwd, filename))
-    assert(fs["exists?"](path))
-    if fs["dir?"](path) then
-      if _3fcmd then
-        return vim.cmd((_3fcmd .. " " .. vim.fn.fnameescape(path)))
-      else
-        update_cwd(state, path)
-        render(state)
-        u["update-buf-name"](state.cwd)
-        local _3fhovered_file = (state["hovered-files"])[path]
-        return u["set-cursor-pos"](_3fhovered_file, "or-top")
-      end
+    local path, msg = uv.fs_realpath(u["join-path"](state.cwd, filename))
+    if not path then
+      return u.err(msg)
     else
-      u["set-current-buf"](state["origin-buf"])
-      vim.cmd(((_3fcmd or "edit") .. " " .. vim.fn.fnameescape(path)))
-      return cleanup(state)
+      if fs["dir?"](path) then
+        if _3fcmd then
+          return vim.cmd((_3fcmd .. " " .. vim.fn.fnameescape(path)))
+        else
+          update_cwd(state, path)
+          render(state)
+          u["update-buf-name"](state.cwd)
+          local _3fhovered_file = (state["hovered-files"])[path]
+          return u["set-cursor-pos"](_3fhovered_file, "or-top")
+        end
+      else
+        u["set-current-buf"](state["origin-buf"])
+        vim.cmd(((_3fcmd or "edit") .. " " .. vim.fn.fnameescape(path)))
+        return cleanup(state)
+      end
     end
   else
     return nil
@@ -181,13 +184,13 @@ local function copy_or_move(move_3f)
     return u.err("Empty filename")
   else
     local state = store.get()
-    local _24_
+    local _25_
     if move_3f then
-      _24_ = "Move to: "
+      _25_ = "Move to: "
     else
-      _24_ = "Copy to: "
+      _25_ = "Copy to: "
     end
-    local function _26_(name)
+    local function _27_(name)
       u["clear-prompt"]()
       local src = u["join-path"](state.cwd, filename)
       local ok_3f, msg = pcall(fs["copy-or-move"], move_3f, src, name, state.cwd)
@@ -198,7 +201,7 @@ local function copy_or_move(move_3f)
         return u["set-cursor-pos"](fs.basename(name))
       end
     end
-    return vim.ui.input({prompt = _24_, completion = "file"}, _26_)
+    return vim.ui.input({prompt = _25_, completion = "file"}, _27_)
   end
 end
 M.move = function()
@@ -211,7 +214,7 @@ M.create = function()
   local state = store.get()
   local path_saved = vim.opt_local.path
   vim.opt_local.path = state.cwd
-  local function _29_(name)
+  local function _30_(name)
     vim.opt_local.path = path_saved
     u["clear-prompt"]()
     if name then
@@ -232,7 +235,7 @@ M.create = function()
       return nil
     end
   end
-  return vim.ui.input({prompt = "New file: ", completion = "file_in_path"}, _29_)
+  return vim.ui.input({prompt = "New file: ", completion = "file_in_path"}, _30_)
 end
 M.toggle_hidden_files = function()
   local state = store.get()
@@ -242,10 +245,10 @@ M.toggle_hidden_files = function()
   return u["set-cursor-pos"](_3fhovered_file)
 end
 M["map"] = {quit = "<Cmd>lua require'udir'.quit()<CR>", up_dir = "<Cmd>lua require'udir'.up_dir()<CR>", open = "<Cmd>lua require'udir'.open()<CR>", open_split = "<Cmd>lua require'udir'.open('split')<CR>", open_vsplit = "<Cmd>lua require'udir'.open('vsplit')<CR>", open_tab = "<Cmd>lua require'udir'.open('tabedit')<CR>", reload = "<Cmd>lua require'udir'.reload()<CR>", delete = "<Cmd>lua require'udir'.delete()<CR>", create = "<Cmd>lua require'udir'.create()<CR>", move = "<Cmd>lua require'udir'.move()<CR>", copy = "<Cmd>lua require'udir'.copy()<CR>", toggle_hidden_files = "<Cmd>lua require'udir'.toggle_hidden_files()<CR>"}
-local function _33_()
+local function _34_()
   return false
 end
-M["config"] = {keymaps = {q = M.map.quit, h = M.map.up_dir, ["-"] = M.map.up_dir, l = M.map.open, ["<CR>"] = M.map.open, s = M.map.open_split, v = M.map.open_vsplit, t = M.map.open_tab, R = M.map.reload, d = M.map.delete, ["+"] = M.map.create, m = M.map.move, c = M.map.copy, ["."] = M.map.toggle_hidden_files}, show_hidden_files = true, is_file_hidden = _33_, sort = sort_by_name}
+M["config"] = {keymaps = {q = M.map.quit, h = M.map.up_dir, ["-"] = M.map.up_dir, l = M.map.open, ["<CR>"] = M.map.open, s = M.map.open_split, v = M.map.open_vsplit, t = M.map.open_tab, R = M.map.reload, d = M.map.delete, ["+"] = M.map.create, m = M.map.move, c = M.map.copy, ["."] = M.map.toggle_hidden_files}, show_hidden_files = true, is_file_hidden = _34_, sort = sort_by_name}
 M.setup = function(_3fcfg)
   vim.api.nvim_echo({{"[udir] `setup()` is now deprecated. Please see the readme.", "WarningMsg"}}, true, {})
   local cfg = (_3fcfg or {})
@@ -290,7 +293,7 @@ M.udir = function(dir, _3ffrom_au)
     if ("" ~= p) then
       cwd = fs.realpath(p)
     else
-      cwd = assert(vim.loop.cwd())
+      cwd = assert(uv.cwd())
     end
   end
   local _3forigin_filename
