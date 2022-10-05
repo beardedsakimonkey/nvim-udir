@@ -108,7 +108,7 @@
   (assert (uv.fs_close fd)))
 
 (fn copy-or-move [move? src dest cwd]
-  (assert (exists? src))
+  (assert (exists? src) (: "%s doesn't exist" :format src))
   (assert dest "Empty destination")
   ;; Trim `dest` because we'll check its first character
   (local dest (u.trim-start dest))

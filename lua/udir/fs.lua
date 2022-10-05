@@ -138,7 +138,7 @@ local function create_file(path)
   return assert(uv.fs_close(fd))
 end
 local function copy_or_move(move_3f, src, dest, cwd)
-  assert(exists_3f(src))
+  assert(exists_3f(src), ("%s doesn't exist"):format(src))
   assert(dest, "Empty destination")
   local dest0 = u["trim-start"](dest)
   local dest1 = expand_tilde(dest0)
