@@ -1,6 +1,6 @@
 # Udir
 
-Udir is a small (~400 sloc) directory viewer for neovim (>= 0.6). Similar to
+Udir is a small (~400 sloc) directory viewer for neovim (>= 0.7). Similar to
 [vim-dirvish](https://github.com/justinmk/vim-dirvish), udir opens within the
 current window and is not meant to be used as a project drawer as found in IDEs.
 
