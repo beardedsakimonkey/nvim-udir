@@ -250,10 +250,10 @@ local function _34_()
 end
 M["config"] = {keymaps = {q = M.map.quit, h = M.map.up_dir, ["-"] = M.map.up_dir, l = M.map.open, ["<CR>"] = M.map.open, s = M.map.open_split, v = M.map.open_vsplit, t = M.map.open_tab, R = M.map.reload, d = M.map.delete, ["+"] = M.map.create, m = M.map.move, c = M.map.copy, ["."] = M.map.toggle_hidden_files}, show_hidden_files = true, is_file_hidden = _34_, sort = sort_by_name}
 M.setup = function(_3fcfg)
-  vim.api.nvim_echo({{"[udir] `setup()` is now deprecated. Please see the readme.", "WarningMsg"}}, true, {})
+  u.warn("`setup()` is now deprecated. Please see the readme.")
   local cfg = (_3fcfg or {})
   if (false == cfg.auto_open) then
-    vim.api.nvim_echo({{"[udir] `auto_open` is no longer configurable.", "WarningMsg"}}, true, {})
+    u.warn("`auto_open` is no longer configurable.")
   else
   end
   if cfg.keymaps then

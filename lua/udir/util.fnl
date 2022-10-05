@@ -134,7 +134,10 @@
     (api.nvim_win_set_cursor 0 [?line 0])))
 
 (fn err [msg]
-  (api.nvim_err_writeln msg))
+  (vim.notify (.. "[udir] " msg) vim.log.levels.ERROR))
+
+(fn warn [msg]
+  (vim.notify (.. "[udir] " msg) vim.log.levels.WARN))
 
 (fn trim-start [str]
   (pick-values 1 (str:gsub "^%s*" "")))
@@ -151,4 +154,5 @@
  : join-path
  : set-cursor-pos
  : err
+ : warn
  : trim-start}

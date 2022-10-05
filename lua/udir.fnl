@@ -213,13 +213,11 @@
 
 ;; For backwards compat
 (fn M.setup [?cfg]
-  (vim.api.nvim_echo [["[udir] `setup()` is now deprecated. Please see the readme."
-                       :WarningMsg]] true {})
+  (u.warn "`setup()` is now deprecated. Please see the readme.")
   (local cfg (or ?cfg {}))
   ;; Whether to automatically open Udir when editing a directory
   (when (= false cfg.auto_open)
-    (vim.api.nvim_echo [["[udir] `auto_open` is no longer configurable."
-                         :WarningMsg]] true {}))
+    (u.warn "`auto_open` is no longer configurable."))
   (when cfg.keymaps
     (tset M.config :keymaps cfg.keymaps))
   (when (not= nil cfg.show_hidden_files)
