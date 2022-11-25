@@ -3,6 +3,7 @@ if not vim.b.did_ftplugin then
   vim.opt_local.buftype = "nofile"
   vim.opt_local.modifiable = false
   vim.opt_local.swapfile = false
+  vim.opt_local.colorcolumn = false
   vim.b.undo_ftplugin = "setl buftype< modifiable< swapfile<"
   return nil
 else
