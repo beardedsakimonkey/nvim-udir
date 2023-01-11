@@ -1,175 +1,104 @@
+local util = require'udir.util'
 local uv = vim.loop
-local u = require("udir.util")
-local function dir_3f(path)
-  local _3ffile_info = uv.fs_stat(path)
-  if (nil ~= _3ffile_info) then
-    return ("directory" == _3ffile_info.type)
-  else
-    return false
-  end
-end
-local function delete_file(path)
-  assert(uv.fs_unlink(path))
-  return u["delete-buffers"](path)
-end
-local function delete_dir(path)
-  do
-    local fs_2_auto = assert(uv.fs_scandir(path))
-    local done_3f_3_auto = false
-    while not done_3f_3_auto do
-      local name, type = uv.fs_scandir_next(fs_2_auto)
-      if not name then
-        done_3f_3_auto = true
-        assert(not type)
-      else
-        if (type == "directory") then
-          delete_dir(u["join-path"](path, name))
-        else
-          delete_file(u["join-path"](path, name))
-        end
-      end
-    end
-  end
-  return assert(uv.fs_rmdir(path))
-end
+
+local M = {}
+
 local function move(src, dest)
-  assert(uv.fs_rename(src, dest))
-  if not dir_3f(src) then
-    return u["rename-buffers"](src, dest)
-  else
-    return nil
-  end
+    assert(uv.fs_rename(src, dest))
+    if not M.is_dir(src) then
+        util.rename_buffers(src, dest)
+    end
 end
+
 local function copy_file(src, dest)
-  return assert(uv.fs_copyfile(src, dest))
+    assert(uv.fs_copyfile(src, dest))
 end
+
 local function copy_dir(src, dest)
-  local stat = assert(uv.fs_stat(src))
-  assert(uv.fs_mkdir(dest, stat.mode))
-  local fs_2_auto = assert(uv.fs_scandir(src))
-  local done_3f_3_auto = false
-  while not done_3f_3_auto do
-    local name, type = uv.fs_scandir_next(fs_2_auto)
-    if not name then
-      done_3f_3_auto = true
-      assert(not type)
-    else
-      local src2 = u["join-path"](src, name)
-      local dest2 = u["join-path"](dest, name)
-      if (type == "directory") then
-        copy_dir(src2, dest2)
-      else
-        copy_file(src2, dest2)
-      end
+    local stat = assert(uv.fs_stat(src))
+    assert(uv.fs_mkdir(dest, stat.mode))
+    for name, type in vim.fs.dir(src) do
+        local copy = type == 'directory' and copy_dir or copy_file
+        copy(util.join_path(src, name), util.join_path(dest, name))
     end
-  end
-  return nil
 end
-local function symlink_3f(path)
-  local link = uv.fs_readlink(path)
-  return (nil ~= link)
+
+local function exists(path)
+    return (uv.fs_access(path, ''))
 end
-local function abs_3f(path)
-  local c = path:sub(1, 1)
-  return ("/" == c)
+
+function M.realpath(path)
+    return assert(uv.fs_realpath(path))
 end
-local function expand_tilde(path)
-  local res = path:gsub("^~", os.getenv("HOME"))
-  return res
+
+-- NOTE: Symlink dirs are considered directories
+function M.is_dir(path)
+    local file_info = uv.fs_stat(path)
+    return file_info and file_info.type == 'directory' or false
 end
-local function realpath(_3fpath)
-  return assert(uv.fs_realpath(_3fpath))
-end
-local function executable_3f(path)
-  local ret = uv.fs_access(path, "X")
-  return ret
-end
-local function list(path)
-  local ret = {}
-  do
-    local fs_2_auto = assert(uv.fs_scandir(path))
-    local done_3f_3_auto = false
-    while not done_3f_3_auto do
-      local name, type = uv.fs_scandir_next(fs_2_auto)
-      if not name then
-        done_3f_3_auto = true
-        assert(not type)
-      else
-        table.insert(ret, {name = name, type = type})
-      end
+
+function M.list(path)
+    local ret = {}
+    for basename, type in vim.fs.dir(path) do
+        table.insert(ret, {name=basename, type=type})
     end
-  end
-  return ret
+    return ret
 end
-local function exists_3f(path)
-  return uv.fs_access(path, "")
+
+function M.get_parent_dir(dir)
+    local parts = vim.split(dir, util.sep)
+    table.remove(parts)
+    local parent = table.concat(parts, util.sep)
+    assert(exists(parent))
+    return parent
 end
-local function get_parent_dir(dir)
-  local parts = vim.split(dir, u.sep)
-  table.remove(parts)
-  local parent = table.concat(parts, u.sep)
-  assert(exists_3f(parent))
-  return parent
-end
-local function basename(path)
-  local path0
-  if vim.endswith(path, u.sep) then
-    path0 = path:sub(1, -2)
-  else
-    path0 = path
-  end
-  local parts = vim.split(path0, u.sep)
-  return parts[#parts]
-end
-local function delete(path)
-  if (dir_3f(path) and not symlink_3f(path)) then
-    return delete_dir(path)
-  else
-    return delete_file(path)
-  end
-end
-local function create_dir(path)
-  assert(not exists_3f(path), ("%q already exists"):format(path))
-  return assert(uv.fs_mkdir(path, tonumber("755", 8)))
-end
-local function create_file(path)
-  assert(not exists_3f(path), ("%q already exists"):format(path))
-  local fd = assert(uv.fs_open(path, "w", tonumber("644", 8)))
-  return assert(uv.fs_close(fd))
-end
-local function copy_or_move(move_3f, src, dest, cwd)
-  assert(exists_3f(src), ("%s doesn't exist"):format(src))
-  assert(dest, "Empty destination")
-  local dest0 = u["trim-start"](dest)
-  local dest1 = expand_tilde(dest0)
-  local dest2
-  if abs_3f(dest1) then
-    dest2 = dest1
-  else
-    dest2 = u["join-path"](cwd, dest1)
-  end
-  assert((src ~= dest2), "`src` equals `dest`")
-  if dir_3f(src) then
-    local op
-    if move_3f then
-      op = move
-    else
-      op = copy_dir
+
+function M.basename(path)
+    if vim.endswith(path, util.sep) then  -- strip trailing slash
+        path = path:sub(1, -2)
     end
-    assert(dir_3f(dest2), "Cannot move directory to a file")
-    return op(src, u["join-path"](dest2, basename(src)))
-  else
-    local op
-    if move_3f then
-      op = move
-    else
-      op = copy_file
-    end
-    if dir_3f(dest2) then
-      return op(src, u["join-path"](dest2, basename(src)))
-    else
-      return op(src, dest2)
-    end
-  end
+    local parts = vim.split(path, util.sep)
+    return parts[#parts]
 end
-return {realpath = realpath, ["dir?"] = dir_3f, ["executable?"] = executable_3f, list = list, ["exists?"] = exists_3f, ["get-parent-dir"] = get_parent_dir, basename = basename, delete = delete, ["create-dir"] = create_dir, ["create-file"] = create_file, ["copy-or-move"] = copy_or_move}
+
+function M.delete(path)
+    local is_symlink = uv.fs_readlink(path) ~= nil
+    local flags = (M.is_dir(path) and not is_symlink) and 'rf' or ''
+    local ret = vim.fn.delete(path, flags)
+    assert(ret == 0)
+end
+
+function M.create_dir(path)
+    assert(not exists(path), ('%q already exists'):format(path))
+    -- 755 = RWX for owner, RX for group/other
+    assert(uv.fs_mkdir(path, tonumber('755', 8)))
+end
+
+function M.create_file(path)
+    assert(not exists(path), ('%q already exists'):format(path))
+    -- 644 = RW for owner, R for group/other
+    local fd = assert(uv.fs_open(path, 'w', tonumber('644', 8)))
+    assert(uv.fs_close(fd))
+end
+
+-- Uses the semantics of `mv` / `cp -R`
+function M.copy_or_move(is_move, src, dest, cwd)
+    assert(exists(src), ("%s doesn't exist"):format(src))
+    assert(dest, 'Empty destination')
+    -- Trim `dest` because we'll check its first character
+    dest = util.trim_start(dest)
+    -- Expand tilde
+    dest = dest:gsub('^~', os.getenv'HOME')
+    -- Make absolute
+    dest = dest:sub(1, 1) == '/' and dest or util.join_path(cwd, dest)
+    assert(src ~= dest, '`src` equals `dest`')
+    local op = is_move and move or M.is_dir(src) and copy_dir or copy_file
+    -- Moving to an existing dir should move to a subdirectory
+    if M.is_dir(dest) then
+        dest = util.join_path(dest, M.basename(src))
+    end
+    -- Note: Moving from a file to a file should overwrite the file
+    op(src, dest)
+end
+
+return M

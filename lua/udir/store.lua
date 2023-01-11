@@ -1,17 +1,20 @@
-local api = vim.api
+local M = {}
+
 local buf_states = {}
-local function set_21(buf, state)
-  buf_states[tostring(buf)] = state
-  return nil
+
+function M.set(buf, state)
+    buf_states[tostring(buf)] = state
 end
-local function remove_21(buf)
-  buf_states[tostring(buf)] = nil
-  return nil
+
+function M.remove(buf)
+    buf_states[tostring(buf)] = nil
 end
-local function get(_3fbuf)
-  local buf = (_3fbuf or api.nvim_get_current_buf())
-  assert(not (-1 == buf))
-  local state = buf_states[tostring(buf)]
-  return assert(state)
+
+function M.get(buf)
+    buf = buf or vim.api.nvim_get_current_buf()
+    assert(buf ~= -1)
+    local state = buf_states[tostring(buf)]
+    return assert(state)
 end
-return {["set!"] = set_21, ["remove!"] = remove_21, get = get}
+
+return M

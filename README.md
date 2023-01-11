@@ -1,6 +1,6 @@
 # Udir
 
-Udir is a small (~400 sloc) directory viewer for neovim (>= 0.7). Similar to
+Udir is a small (~500 sloc) directory viewer for neovim (>= 0.7). Similar to
 [vim-dirvish](https://github.com/justinmk/vim-dirvish), udir opens within the
 current window and is not meant to be used as a project drawer as found in IDEs.
 
@@ -10,19 +10,19 @@ However, udir differs from vim-dirvish in a few key ways.
    feature and I prefer the extra keymap availability from not having modifiable
    buffers.
 
-2) **Udir buffers don't populate the jumplist.**  Hitting `<C-o>` will never take
+2) **Udir buffers don't populate the jumplist.**  Hitting `<C-o>` typically won't take
    you to a udir buffer. This is partly a matter of personal preference, and dirvish
    opts [against it](https://github.com/justinmk/vim-dirvish/issues/110).
 
 3) **Udir ensures that each instance is isolated.** This means that if you open
    udir to the same directory in two different windows, those buffers are distinct,
    and as such, opening a file or navigating in one won't affect the other.
-   
+
    To achieve isolation, udir must give each buffer a unique name. Usually, this is
    the directory path, such that commands like `:cd %` work. However, if you have
    multiple loaded udir buffers on the same directory, the buffer names will be made
    unique by appending an id like "[2]" to the name (in which case `:cd %` won't work).
-   
+
    Admittedly, this is a hack; vim buffers are intended to have a 1-to-1 mapping
    with files. When naming a buffer with something that looks like a path, vim
    internally canonicalizes the name in order to avoid having multiple buffers
@@ -36,7 +36,7 @@ However, udir differs from vim-dirvish in a few key ways.
 
 You can use the `:Udir [dir]` command to open udir, or create your own mapping:
 ``` lua
-vim.api.nvim_set_keymap("n", "-", "<Cmd>Udir<CR>", {noremap = true})
+vim.keymap.set('n', '-', '<Cmd>Udir<CR>')
 ```
 
 
@@ -44,61 +44,52 @@ vim.api.nvim_set_keymap("n", "-", "<Cmd>Udir<CR>", {noremap = true})
 
 Udir does not require any configuration, but can be configured by mutating `udir.config`.
 The defaults are listed below.
-
 ```lua
-local udir = require'udir'
-
-udir.config = {
-  -- Whether hidden files should be shown by default
-  show_hidden_files = false,
-
-  -- Function used to determine what files should be hidden
-  is_file_hidden = function (file, files, dir) return false end,
-
-  -- Function used to sort files
-  sort = function (files)
-    table.sort(files, function (a, b)
-      if (a.type == "directory") == (b.type == "directory") then
-        return a.name < b.name
-      else
-        return a.type == "directory"
-      end
-    end)
-  end,
-
-  keymaps = {
-    q = udir.quit,
-    h = udir.up_dir,
-    ["-"] = udir.up_dir,
-    l = udir.open,
-    ["<CR>"] = udir.open,
-    s = udir.open_split,
-    v = udir.open_vsplit,
-    t = udir.open_tab,
-    R = udir.reload,
-    d = udir.delete,
-    ["+"] = udir.create,
-    m = udir.move,
-    c = udir.copy,
-    ["."] = udir.toggle_hidden_files
-  }
+---@alias File {name: string, type: 'file'|'directory'|'link'}
+require'udir'.config = {
+    keymaps = {
+        q = "<Cmd>lua require'udir.core'.quit()<CR>",
+        h = "<Cmd>lua require'udir.core'.up_dir()<CR>",
+        ['-'] = "<Cmd>lua require'udir.core'.up_dir()<CR>",
+        l = "<Cmd>lua require'udir.core'.open()<CR>",
+        ['<CR>'] = "<Cmd>lua require'udir.core'.open()<CR>",
+        s = "<Cmd>lua require'udir.core'.open('split')<CR>",
+        v = "<Cmd>lua require'udir.core'.open('vsplit')<CR>",
+        t = "<Cmd>lua require'udir.core'.open('tabedit')<CR>",
+        R = "<Cmd>lua require'udir.core'.reload()<CR>",
+        d = "<Cmd>lua require'udir.core'.delete()<CR>",
+        ['+'] = "<Cmd>lua require'udir.core'.create()<CR>",
+        m = "<Cmd>lua require'udir.core'.move()<CR>",
+        c = "<Cmd>lua require'udir.core'.copy()<CR>",
+        ['.'] = "<Cmd>lua require'udir.core'.toggle_hidden_files()<CR>",
+    },
+    -- Whether hidden files should be shown by default
+    show_hidden_files = true,
+    -- Function used to determine what files should be hidden
+    ---@type fun(file: File, files: File[], dir: string): boolean
+    is_file_hidden = function() return false end,
+    -- Function used to sort files
+    ---@type fun(files: File[])
+    sort = nil,
 }
 ```
 
-The `is_file_hidden()` function has the following API:
-```typescript
-type file = {
-  name: string, // The file name
-  type: "file" | "directory" | "link" // The file type
-}
+Configuration can be applied by mutating the `config` table:
+```lua
+local config = require'udir'.config
 
-// A sequential table containing all files in the current directory
-type files = list<file>
+vim.tbl_deep_extend('force', config, {
+    show_hidden_files = false,
+    keymaps = {
+        i = "<Cmd>lua require'udir'.open()<CR>",
+        C = function() --[[...]] end,  -- keymaps can also be lua functions
+    },
+})
 
-// The absolute path of the current directory
-type dir = string
+-- or...
 
-type is_file_hidden = (file, files, dir) => boolean
+config.show_hidden_files = false
+config.keymaps.i = "<Cmd>lua require'udir'.open()<CR>"
 ```
 
 You can also customize the colors in udir using the following highlight groups:
