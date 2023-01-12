@@ -3,6 +3,14 @@ local uv = vim.loop
 
 local M = {}
 
+-- Polyfill for vim.fs.dir
+local function dir(path)
+    return function(fs)
+        return uv.fs_scandir_next(fs)
+    end,
+    uv.fs_scandir(path)
+end
+
 local function move(src, dest)
     assert(uv.fs_rename(src, dest))
     if not M.is_dir(src) then
@@ -17,7 +25,7 @@ end
 local function copy_dir(src, dest)
     local stat = assert(uv.fs_stat(src))
     assert(uv.fs_mkdir(dest, stat.mode))
-    for name, type in vim.fs.dir(src) do
+    for name, type in dir(src) do
         local copy = type == 'directory' and copy_dir or copy_file
         copy(util.join_path(src, name), util.join_path(dest, name))
     end
@@ -39,7 +47,7 @@ end
 
 function M.list(path)
     local ret = {}
-    for basename, type in vim.fs.dir(path) do
+    for basename, type in dir(path) do
         table.insert(ret, {name=basename, type=type})
     end
     return ret

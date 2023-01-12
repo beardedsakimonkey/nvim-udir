@@ -13,8 +13,8 @@ end
 function M.get(buf)
     buf = buf or vim.api.nvim_get_current_buf()
     assert(buf ~= -1)
-    local state = buf_states[tostring(buf)]
-    return assert(state)
+    local state = assert(buf_states[tostring(buf)])
+    return state
 end
 
 return M
