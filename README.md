@@ -76,9 +76,9 @@ require'udir'.config = {
 
 Configuration can be applied by mutating the `config` table:
 ```lua
-local config = require'udir'.config
+local udir = require'udir'
 
-vim.tbl_deep_extend('force', config, {
+udir.config = vim.tbl_deep_extend('force', udir.config, {
     show_hidden_files = false,
     keymaps = {
         i = "<Cmd>lua require'udir'.open()<CR>",
@@ -88,8 +88,8 @@ vim.tbl_deep_extend('force', config, {
 
 -- or...
 
-config.show_hidden_files = false
-config.keymaps.i = "<Cmd>lua require'udir'.open()<CR>"
+udir.config.show_hidden_files = false
+udir.config.keymaps.i = "<Cmd>lua require'udir'.open()<CR>"
 ```
 
 You can also customize the colors in udir using the following highlight groups:
