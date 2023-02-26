@@ -16,6 +16,11 @@ local function find_line(fn)
     return find_index(lines, fn)
 end
 
+local function buf_has_var(buf, var_name)
+    local ok, ret = pcall(api.nvim_buf_get_var, buf, var_name)
+    return ok and ret or false
+end
+
 -- Problem: We'd like udir buffers to be completely unique (udir instances in
 -- two different windows should be isolated), and also have a buffer name that
 -- we can `:cd %` to.
@@ -53,27 +58,6 @@ local function create_buf_name(cwd)
     return new_name
 end
 
-local function buf_has_var(buf, var_name)
-    local ok, ret = pcall(api.nvim_buf_get_var, buf, var_name)
-    return ok and ret or false
-end
-
-function M.delete_buffers(name)
-    for _, buf in pairs(vim.fn.getbufinfo()) do
-        if buf.name == name then
-            pcall(api.nvim_buf_delete, buf.bufnr, {})
-        end
-    end
-end
-
-function M.update_buf_name(cwd)
-    local old_name = vim.fn.bufname
-    local new_name = create_buf_name(cwd)
-    vim.cmd('sil keepalt file ' .. vim.fn.fnameescape(new_name))
-    -- Renaming a buffer creates a new buffer with the old name. Delete it.
-    M.delete_buffers(old_name)
-end
-
 function M.create_buf(cwd)
     local existing_buf = vim.fn.bufnr('^' .. cwd .. '$')
     local buf
@@ -104,6 +88,22 @@ function M.create_buf(cwd)
     -- Triggers ftplugin, so must get called after setting the current buffer
     api.nvim_buf_set_option(buf, 'filetype', 'udir')
     return buf
+end
+
+function M.delete_buffers(name)
+    for _, buf in pairs(vim.fn.getbufinfo()) do
+        if buf.name == name then
+            pcall(api.nvim_buf_delete, buf.bufnr, {})
+        end
+    end
+end
+
+function M.update_buf_name(cwd)
+    local old_name = vim.fn.bufname
+    local new_name = create_buf_name(cwd)
+    vim.cmd('sil keepalt file ' .. vim.fn.fnameescape(new_name))
+    -- Renaming a buffer creates a new buffer with the old name. Delete it.
+    M.delete_buffers(old_name)
 end
 
 function M.set_current_buf(buf)

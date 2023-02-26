@@ -89,7 +89,7 @@ function M.create_file(path)
     assert(uv.fs_close(fd))
 end
 
--- Uses the semantics of `mv` / `cp -R`
+-- Mimics the semantics of `mv` / `cp -R`
 function M.copy_or_move(is_move, src, dest, cwd)
     assert(exists(src), ("%s doesn't exist"):format(src))
     assert(dest, 'Empty destination')
