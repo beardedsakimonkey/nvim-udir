@@ -65,6 +65,8 @@ require'udir'.config = {
     },
     -- Whether hidden files should be shown by default
     show_hidden_files = true,
+    -- Whether to sync the window's current directory with udir's current path
+    sync_local_cwd = false,
     -- Function used to determine what files should be hidden
     ---@type fun(file: File, files: File[], dir: string): boolean
     is_file_hidden = function() return false end,

@@ -77,8 +77,58 @@ local function cleanup(state)
     store.remove(state.buf)
 end
 
+local function get_cwd_scope()
+    if vim.fn.haslocaldir(0, 0) == 1 then
+        return 'window'
+    elseif vim.fn.haslocaldir(-1, 0) == 1 then
+        return 'tab'
+    else
+        return 'global'
+    end
+end
+
+local function save_cwd()
+    return {
+        cwd = vim.fn.getcwd(0, 0),
+        scope = get_cwd_scope(),
+    }
+end
+
+local function cd_cmd(scope)
+    return ({
+        window = 'lcd',
+        tab = 'tcd',
+        global = 'cd',
+    })[scope]
+end
+
+local function set_cwd(scope, cwd)
+    vim.cmd(('sil %s %s'):format(cd_cmd(scope), vim.fn.fnameescape(cwd)))
+end
+
+local function sync_local_cwd(state)
+    if state.sync_local_cwd then
+        local ok, msg = pcall(set_cwd, 'window', state.cwd)
+        if not ok then
+            util.warn(msg)
+        end
+    end
+end
+
+local function restore_cwd(state)
+    if state.cwd_restore then
+        local restore = state.cwd_restore
+        state.cwd_restore = nil
+        local ok, msg = pcall(set_cwd, restore.scope, restore.cwd)
+        if not ok then
+            util.warn(msg)
+        end
+    end
+end
+
 function M.quit()
     local state = store.get()
+    restore_cwd(state)
     if state.alt_buf then
         util.set_current_buf(state.alt_buf)
     end
@@ -97,6 +147,7 @@ function M.up_dir()
     state.cwd = parent_dir
     render(state)
     util.update_buf_name(state.cwd)
+    sync_local_cwd(state)
     util.set_cursor_pos(fs.basename(cwd), --[[or_top]]true)
 end
 
@@ -118,10 +169,12 @@ function M.open(cmd)
                 state.cwd = path
                 render(state)
                 util.update_buf_name(state.cwd)
+                sync_local_cwd(state)
                 local hovered_file = state.hovered_files[path]
                 util.set_cursor_pos(hovered_file, --[[or_top]]true)
             end
         else
+            restore_cwd(state)
             util.set_current_buf(state.origin_buf)  -- update the altfile
             vim.cmd((cmd or 'edit') .. ' ' .. vim.fn.fnameescape(path))
             cleanup(state)
@@ -238,6 +291,8 @@ function M.udir(dir, from_au)
     local cwd = getcwd(dir)
     local origin_filename = vim.fn.expand'%:p:t'
     origin_filename = origin_filename ~= '' and origin_filename or nil
+    local sync = config.sync_local_cwd
+    local cwd_restore = sync and save_cwd() or nil
     local buf = util.create_buf(cwd)
     local ns = api.nvim_create_namespace('udir.' .. buf)
     local state = {
@@ -245,11 +300,14 @@ function M.udir(dir, from_au)
         origin_buf = origin_buf,
         alt_buf = alt_buf,
         cwd = cwd,
+        sync_local_cwd = sync,
+        cwd_restore = cwd_restore,
         ns = ns,
         hovered_files = {},  -- map<realpath, filename>
     }
     setup_keymaps(buf)
     store.set(buf, state)
+    sync_local_cwd(state)
     render(state)
     util.set_cursor_pos(origin_filename)
 end
