@@ -35,6 +35,18 @@ local function exists(path)
     return (uv.fs_access(path, ''))
 end
 
+function M.exists(path)
+    return exists(path)
+end
+
+function M.normalize_path(path, cwd)
+    assert(path, 'Empty path')
+    path = util.trim_start(path)
+    assert(path ~= '', 'Empty path')
+    path = path:gsub('^~', os.getenv'HOME')
+    return path:sub(1, 1) == '/' and path or util.join_path(cwd, path)
+end
+
 function M.realpath(path)
     return assert(uv.fs_realpath(path))
 end
@@ -89,22 +101,33 @@ function M.create_file(path)
     assert(uv.fs_close(fd))
 end
 
--- Mimics the semantics of `mv` / `cp -R`
-function M.copy_or_move(is_move, src, dest, cwd)
+function M.validate_create(input, cwd)
+    assert(input, 'Empty path')
+    input = util.trim_start(input)
+    assert(input ~= '', 'Empty path')
+    assert(input:sub(1, 1) ~= util.sep, 'Create paths must be relative')
+    local path = util.join_path(cwd, input)
+    assert(not exists(path), ('%q already exists'):format(path))
+    local path_for_parent = vim.endswith(path, util.sep) and path:sub(1, -2) or path
+    local parent = M.get_parent_dir(path_for_parent)
+    assert(M.is_dir(parent), ('%q is not a directory'):format(parent))
+    return path
+end
+
+function M.resolve_copy_or_move_dest(is_move, src, dest, cwd)
     assert(exists(src), ("%s doesn't exist"):format(src))
-    assert(dest, 'Empty destination')
-    -- Trim `dest` because we'll check its first character
-    dest = util.trim_start(dest)
-    -- Expand tilde
-    dest = dest:gsub('^~', os.getenv'HOME')
-    -- Make absolute
-    dest = dest:sub(1, 1) == '/' and dest or util.join_path(cwd, dest)
+    dest = M.normalize_path(dest, cwd)
     assert(src ~= dest, '`src` equals `dest`')
-    local op = is_move and move or M.is_dir(src) and copy_dir or copy_file
-    -- Moving to an existing dir should move to a subdirectory
     if M.is_dir(dest) then
         dest = util.join_path(dest, M.basename(src))
     end
+    return dest
+end
+
+-- Mimics the semantics of `mv` / `cp -R`
+function M.copy_or_move(is_move, src, dest, cwd)
+    dest = M.resolve_copy_or_move_dest(is_move, src, dest, cwd)
+    local op = is_move and move or M.is_dir(src) and copy_dir or copy_file
     -- Note: Moving from a file to a file should overwrite the file
     op(src, dest)
 end

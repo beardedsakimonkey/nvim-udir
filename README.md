@@ -1,6 +1,6 @@
 # Udir
 
-Udir is a small (~500 sloc) directory viewer for neovim (>= 0.7). Similar to
+Udir is a small (~500 sloc) directory viewer for neovim (>= 0.12). Similar to
 [vim-dirvish](https://github.com/justinmk/vim-dirvish), udir opens within the
 current window and is not meant to be used as a project drawer as found in IDEs.
 
@@ -100,14 +100,18 @@ UdirDirectory
 UdirSymlink
 UdirExecutable
 UdirVirtText
+UdirPromptBorder
+UdirPromptBorderValid
+UdirPromptBorderInvalid
+UdirPromptCompletion
 ```
 
-## Roadmap
+## Smoke test
 
-Udir is intended to be a small, simple plugin. Future changes are unlikely to
-include major feature additions and will probably be limited to bugfixes and
-small, quality of life improvements. However, if you have a suggestion for
-something, feel free to file an issue.
+Run the headless smoke test with:
+```sh
+sh scripts/smoke.sh
+```
 
 ## Acknowledgements
 

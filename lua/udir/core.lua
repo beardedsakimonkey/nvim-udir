@@ -1,4 +1,5 @@
 local fs = require'udir.fs'
+local prompt = require'udir.prompt'
 local store = require'udir.store'
 local util = require'udir.util'
 local config = require'udir'.config
@@ -211,16 +212,25 @@ local function copy_or_move(is_move)
         return
     end
     local state = store.get()
-    local prompt = is_move and 'Move to: ' or 'Copy to: '
-    vim.ui.input({prompt=prompt, completion='file'}, function(input)
-        util.clear_prompt()
+    local prompt_label = is_move and 'Move to' or 'Copy to'
+    local src = util.join_path(state.cwd, filename)
+    prompt.input({
+        prompt = prompt_label,
+        cwd = state.cwd,
+        validate = function(input)
+            return fs.resolve_copy_or_move_dest(is_move, src, input, state.cwd)
+        end,
+    }, function(input, dest)
         local src = util.join_path(state.cwd, filename)
+        if not input then
+            return
+        end
         local ok, msg = pcall(fs.copy_or_move, is_move, src, input, state.cwd)
         if not ok then
             util.err(msg)
         else
             render(state)
-            util.set_cursor_pos(fs.basename(input))
+            util.set_cursor_pos(fs.basename(dest))
         end
     end)
 end
@@ -230,30 +240,28 @@ function M.copy() copy_or_move(false) end
 
 function M.create()
     local state = store.get()
-    local path_saved = vim.opt_local.path
-    vim.opt_local.path = state.cwd
-    vim.ui.input(
-        {prompt='New file: ', completion='file_in_path'},
-        function(input)
-            vim.opt_local.path = path_saved
-            util.clear_prompt()
-            if input then
-                local path = util.join_path(state.cwd, input)
-                local ok, msg
-                if vim.endswith(input, util.sep) then
-                    ok, msg = pcall(fs.create_dir, path)
-                else
-                    ok, msg = pcall(fs.create_file, path)
-                end
-                if not ok then
-                    util.err(msg)
-                else
-                    render(state)
-                    util.set_cursor_pos(fs.basename(path))
-                end
+    prompt.input({
+        prompt = 'New file',
+        cwd = state.cwd,
+        validate = function(input)
+            return fs.validate_create(input, state.cwd)
+        end,
+    }, function(input, path)
+        if input then
+            local ok, msg
+            if vim.endswith(input, util.sep) then
+                ok, msg = pcall(fs.create_dir, path)
+            else
+                ok, msg = pcall(fs.create_file, path)
+            end
+            if not ok then
+                util.err(msg)
+            else
+                render(state)
+                util.set_cursor_pos(fs.basename(path))
             end
         end
-    )
+    end)
 end
 
 function M.toggle_hidden_files()

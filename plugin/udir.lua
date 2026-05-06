@@ -8,6 +8,10 @@ vim.cmd 'hi default link UdirDirectory  Directory'
 vim.cmd 'hi default link UdirSymlink    Constant'
 vim.cmd 'hi default link UdirExecutable Special'
 vim.cmd 'hi default link UdirVirtText   Comment'
+vim.cmd 'hi default link UdirPromptBorder NormalFloat'
+vim.cmd 'hi default link UdirPromptBorderValid DiagnosticOk'
+vim.cmd 'hi default link UdirPromptBorderInvalid DiagnosticError'
+vim.cmd 'hi default link UdirPromptCompletion Comment'
 
 vim.api.nvim_create_user_command('Udir', function(o)
     require'udir'.udir(o.args)
