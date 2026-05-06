@@ -61,6 +61,7 @@ require'udir'.config = {
         ['+'] = "<Cmd>lua require'udir.core'.create()<CR>",
         m = "<Cmd>lua require'udir.core'.move()<CR>",
         c = "<Cmd>lua require'udir.core'.copy()<CR>",
+        ['<Tab>'] = "<Cmd>lua require'udir.core'.toggle_mark()<CR>",
         ['.'] = "<Cmd>lua require'udir.core'.toggle_hidden_files()<CR>",
     },
     -- Whether hidden files should be shown by default
@@ -104,6 +105,7 @@ UdirPromptBorder
 UdirPromptBorderValid
 UdirPromptBorderInvalid
 UdirPromptCompletion
+UdirMarkedText
 ```
 
 ## Smoke test

@@ -8,11 +8,26 @@ local function assert_match(str, pattern, msg)
     assert(str:match(pattern), msg or (vim.inspect(str) .. ' does not match ' .. vim.inspect(pattern)))
 end
 
-require'udir.core'
 local fs = require'udir.fs'
 local prompt = require'udir.prompt'
+local core = require'udir.core'
+local store = require'udir.store'
+local util = require'udir.util'
 
 local cwd = assert(vim.loop.cwd())
+
+local function touch(path)
+    local fd = assert(vim.loop.fs_open(path, 'w', tonumber('644', 8)))
+    assert(vim.loop.fs_close(fd))
+end
+
+local function mark_count(state)
+    local count = 0
+    for _ in pairs(state.marks) do
+        count = count + 1
+    end
+    return count
+end
 
 do
     local p = prompt.input({
@@ -79,11 +94,55 @@ assert_match(fs.validate_create('x-new-dir/', cwd), 'x%-new%-dir/$')
 assert(not pcall(fs.validate_create, '/tmp/x', cwd), 'create paths should stay relative')
 assert_match(fs.resolve_copy_or_move_dest(false, cwd, '/tmp', cwd), '/tmp/[^/]+$')
 
+do
+    local tmp = vim.fn.tempname()
+    assert(vim.loop.fs_mkdir(tmp, tonumber('755', 8)))
+    assert(vim.loop.fs_mkdir(tmp .. '/dest', tonumber('755', 8)))
+    touch(tmp .. '/a')
+    touch(tmp .. '/b')
+
+    vim.cmd('Udir ' .. vim.fn.fnameescape(tmp))
+    local state = store.get()
+
+    util.set_cursor_pos('a')
+    core.toggle_mark()
+    util.set_cursor_pos('b')
+    core.toggle_mark()
+    assert_eq(mark_count(state), 2)
+    assert(state.marks[state.cwd .. '/a'], 'a should be marked')
+    assert(state.marks[state.cwd .. '/b'], 'b should be marked')
+    local marks = api.nvim_buf_get_extmarks(state.buf, state.ns, 0, -1, {details = true})
+    local has_prefix = false
+    for _, mark in ipairs(marks) do
+        local details = mark[4]
+        if details.virt_text and details.virt_text[1] and details.virt_text[1][1] == '> ' then
+            has_prefix = true
+            break
+        end
+    end
+    assert(has_prefix, 'marked rows should render a visible prefix')
+
+    local old_input = prompt.input
+    prompt.input = function(opts, cb)
+        local dest = opts.validate('dest')
+        cb('dest', dest)
+    end
+    core.copy()
+    prompt.input = old_input
+
+    assert(fs.exists(tmp .. '/dest/a'), 'bulk copy should copy a')
+    assert(fs.exists(tmp .. '/dest/b'), 'bulk copy should copy b')
+    assert_eq(mark_count(state), 0)
+
+    core.quit()
+    assert_eq(vim.fn.delete(tmp, 'rf'), 0)
+end
+
 vim.cmd('Udir ' .. vim.fn.fnameescape(cwd))
-local state = require'udir.store'.get()
+local state = store.get()
 assert_eq(state.cwd, fs.realpath(cwd))
 assert(api.nvim_buf_get_var(0, 'is_udir'), 'Udir buffer should be marked')
 assert(#api.nvim_buf_get_lines(0, 0, -1, false) > 0, 'Udir buffer should render entries')
-require'udir.core'.quit()
+core.quit()
 
 print('[udir] smoke ok')

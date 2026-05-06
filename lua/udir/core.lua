@@ -38,7 +38,7 @@ local function render(state)
         return f.name
     end, files))
     -- Add virttext and highlights
-    api.nvim_buf_clear_namespace(0, ns, 0, -1)
+    api.nvim_buf_clear_namespace(buf, ns, 0, -1)
     for i, file in ipairs(files) do
         local path = util.join_path(cwd, file.name)
         local virttext, hl
@@ -62,7 +62,49 @@ local function render(state)
                 hl_group = hl,
             })
         end
+        if state.marks[path] then
+            api.nvim_buf_set_extmark(buf, ns, i-1, 0, {
+                virt_text = {{'> ', 'UdirMarkedText'}},
+                virt_text_pos = 'inline',
+            })
+        end
     end
+end
+
+local function count_marks(state)
+    local count = 0
+    for _ in pairs(state.marks) do
+        count = count + 1
+    end
+    return count
+end
+
+local function current_path(state)
+    local filename = util.get_line()
+    if filename == '' then
+        return nil, 'Empty filename'
+    end
+    return util.join_path(state.cwd, filename)
+end
+
+local function selected_paths(state)
+    if count_marks(state) == 0 then
+        local path, msg = current_path(state)
+        if not path then
+            return nil, msg
+        end
+        return {path}, false
+    end
+    local paths = {}
+    for path in pairs(state.marks) do
+        paths[#paths+1] = path
+    end
+    table.sort(paths)
+    return paths, true
+end
+
+local function clear_marks(state)
+    state.marks = {}
 end
 
 -- Keymaps ---------------------------------------------------------------------
@@ -183,52 +225,89 @@ function M.open(cmd)
     end
 end
 
-function M.delete()
-    local filename = util.get_line()
-    if filename == '' then
-        util.err'Empty filename'
+function M.toggle_mark()
+    local state = store.get()
+    local path, msg = current_path(state)
+    if not path then
+        util.err(msg)
         return
     end
+    if state.marks[path] then
+        state.marks[path] = nil
+    else
+        state.marks[path] = true
+    end
+    render(state)
+end
+
+function M.delete()
     local state = store.get()
-    local path = util.join_path(state.cwd, filename)
-    print(string.format("Are you sure you want to delete %q? (y/n)", path))
+    local paths, is_bulk = selected_paths(state)
+    if not paths then
+        util.err(is_bulk)
+        return
+    end
+    local message = is_bulk
+        and string.format('Are you sure you want to delete %d marked files? (y/n)', #paths)
+        or string.format('Are you sure you want to delete %q? (y/n)', paths[1])
+    print(message)
     local input = vim.fn.getchar()
     local confirmed = vim.fn.nr2char(input) == 'y'
     util.clear_prompt()
     if confirmed then
-        local ok, msg = pcall(fs.delete, path)
+        local ok, msg = pcall(function()
+            for _, path in ipairs(paths) do
+                fs.delete(path)
+            end
+        end)
         if not ok then
             util.err(msg)
         else
+            if is_bulk then
+                clear_marks(state)
+            end
             render(state)
         end
     end
 end
 
 local function copy_or_move(is_move)
-    local filename = util.get_line()
-    if filename == '' then
-        util.err'Empty filename'
+    local state = store.get()
+    local paths, is_bulk = selected_paths(state)
+    if not paths then
+        util.err(is_bulk)
         return
     end
-    local state = store.get()
     local prompt_label = is_move and 'Move to' or 'Copy to'
-    local src = util.join_path(state.cwd, filename)
     prompt.input({
         prompt = prompt_label,
         cwd = state.cwd,
         validate = function(input)
-            return fs.resolve_copy_or_move_dest(is_move, src, input, state.cwd)
+            if is_bulk then
+                local dest = fs.normalize_path(input, state.cwd)
+                assert(fs.is_dir(dest), 'Bulk destination must be an existing directory')
+                for _, src in ipairs(paths) do
+                    fs.resolve_copy_or_move_dest(is_move, src, dest, state.cwd)
+                end
+                return dest
+            end
+            return fs.resolve_copy_or_move_dest(is_move, paths[1], input, state.cwd)
         end,
     }, function(input, dest)
-        local src = util.join_path(state.cwd, filename)
         if not input then
             return
         end
-        local ok, msg = pcall(fs.copy_or_move, is_move, src, input, state.cwd)
+        local ok, msg = pcall(function()
+            for _, src in ipairs(paths) do
+                fs.copy_or_move(is_move, src, is_bulk and dest or input, state.cwd)
+            end
+        end)
         if not ok then
             util.err(msg)
         else
+            if is_bulk then
+                clear_marks(state)
+            end
             render(state)
             util.set_cursor_pos(fs.basename(dest))
         end
@@ -312,6 +391,7 @@ function M.udir(dir, from_au)
         cwd_restore = cwd_restore,
         ns = ns,
         hovered_files = {},  -- map<realpath, filename>
+        marks = {},  -- map<path, true>
     }
     setup_keymaps(buf)
     store.set(buf, state)
