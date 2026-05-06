@@ -32,6 +32,8 @@ do
     assert_eq(cfg.anchor, 'NW')
     assert_eq(cfg.border[1][1], '╭')
     assert(not p.list_win, 'prompt should not create a completion window')
+    assert_eq(vim.fn.maparg('<Esc>', 'i', false, true).rhs, '<Esc>')
+    assert_eq(type(vim.fn.maparg('<Esc>', 'n', false, true).callback), 'function')
 
     p:set_input('bad', 3)
     p:redraw()
