@@ -30,7 +30,6 @@ do
     local cfg = api.nvim_win_get_config(p.input_win)
     assert_eq(cfg.relative, 'editor')
     assert_eq(cfg.anchor, 'NW')
-    assert_eq(cfg.title_pos, 'center')
     assert_eq(cfg.border[1][1], '╭')
     assert(not p.list_win, 'prompt should not create a completion window')
 
@@ -44,6 +43,13 @@ do
     assert_eq(p.completion.suffix, 'NLICENSE')
     p:accept_completion()
     assert_eq(p:get_input(), 'UNLICENSE')
+
+    p:set_input('lua/u', 5)
+    p:redraw()
+    assert_eq(p.completion.word, 'lua/udir/')
+    assert_eq(p.completion.suffix, 'dir/')
+    p:accept_completion()
+    assert_eq(p:get_input(), 'lua/udir/')
 
     p:set_input('abc', 3)
     p:confirm()

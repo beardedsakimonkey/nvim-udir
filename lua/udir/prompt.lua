@@ -99,7 +99,7 @@ local function completion(input, col, cwd)
     if not match then
         return nil
     end
-    local suffix = match.word:sub(col - start_col + 1)
+    local suffix = match.word:sub(col + 1)
     if suffix == '' then
         return nil
     end
@@ -181,8 +181,8 @@ function Prompt:accept_completion()
     end
     local input = self:get_input()
     local col = api.nvim_win_get_cursor(self.input_win)[2]
-    local new_input = input:sub(1, self.completion.start_col) .. self.completion.word .. input:sub(col + 1)
-    self:set_input(new_input, self.completion.start_col + #self.completion.word)
+    local new_input = self.completion.word .. input:sub(col + 1)
+    self:set_input(new_input, #self.completion.word)
     self:redraw()
 end
 
