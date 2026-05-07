@@ -47,7 +47,7 @@ do
     assert_eq(cfg.anchor, 'NW')
     assert_eq(cfg.border[1][1], '╭')
     assert(not p.list_win, 'prompt should not create a completion window')
-    assert_eq(vim.fn.maparg('<Esc>', 'i', false, true).rhs, '<Esc>')
+    assert_eq(type(vim.fn.maparg('<Esc>', 'i', false, true).callback), 'function')
     assert_eq(type(vim.fn.maparg('<Esc>', 'n', false, true).callback), 'function')
 
     p:set_input('bad', 3)
@@ -72,6 +72,41 @@ do
     p:confirm()
     assert_eq(vim.g.udir_smoke_input, 'abc')
     assert_eq(vim.g.udir_smoke_result, 'abc-ok')
+end
+
+do
+    local p = prompt.input({
+        prompt = 'Escape non-empty',
+        cwd = cwd,
+        validate = function(input)
+            return input
+        end,
+    }, function(input)
+        vim.g.udir_smoke_escape_non_empty = input == nil
+    end)
+
+    p:set_input('abc', 3)
+    p:escape_insert()
+    assert(not p.closed, 'escape with input should leave prompt open')
+    p:cancel()
+    assert_eq(vim.g.udir_smoke_escape_non_empty, true)
+end
+
+do
+    local p = prompt.input({
+        prompt = 'Escape empty',
+        cwd = cwd,
+        validate = function(input)
+            return input
+        end,
+    }, function(input)
+        vim.g.udir_smoke_escape_empty = input == nil
+    end)
+
+    p:set_input('', 0)
+    p:escape_insert()
+    assert(p.closed, 'escape with empty input should close prompt')
+    assert_eq(vim.g.udir_smoke_escape_empty, true)
 end
 
 do
