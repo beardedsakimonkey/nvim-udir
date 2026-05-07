@@ -24,6 +24,7 @@ M.config = {
         c = {"<Cmd>lua require'udir.core'.copy()<CR>", desc="Copy"},
         ['<Tab>'] = {"<Cmd>lua require'udir.core'.toggle_mark()<CR>", desc="Toggle mark"},
         ['.'] = {"<Cmd>lua require'udir.core'.toggle_hidden_files()<CR>", desc="Toggle hidden files"},
+        H = {"<Cmd>lua require'udir.core'.help()<CR>", desc="Show help"},
     },
     visual_keymaps = {
         ['<Tab>'] = {"<Cmd>lua require'udir.core'.toggle_mark_visual()<CR>", desc="Toggle marks"},

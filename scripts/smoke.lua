@@ -215,7 +215,39 @@ end
 do
     vim.cmd('Udir ' .. vim.fn.fnameescape(cwd))
     assert_eq(vim.fn.maparg('q', 'n', false, true).desc, 'Quit')
+    assert_eq(vim.fn.maparg('H', 'n', false, true).desc, 'Show help')
     assert_eq(vim.fn.maparg('<Tab>', 'x', false, true).desc, 'Toggle marks')
+    core.quit()
+end
+
+do
+    vim.cmd('Udir ' .. vim.fn.fnameescape(cwd))
+    local origin_win = api.nvim_get_current_win()
+    core.help()
+    local help_win = api.nvim_get_current_win()
+    local help_buf = api.nvim_get_current_buf()
+    assert(help_win ~= origin_win, 'help should open in a floating window')
+    local help_lines = api.nvim_buf_get_lines(help_buf, 0, -1, false)
+    local help_cfg = api.nvim_win_get_config(help_win)
+    assert_eq(help_cfg.height, math.min(#help_lines, math.max(1, vim.o.lines - 4)))
+    assert(vim.tbl_contains(help_lines, 'Normal'), 'help should show normal mappings')
+    assert(vim.tbl_contains(help_lines, 'Visual'), 'help should show visual mappings')
+    assert(table.concat(help_lines, '\n'):match('H%s+Show help'), 'help should include described mappings')
+
+    local marks = api.nvim_buf_get_extmarks(help_buf, -1, 0, -1, {details=true})
+    local has_header, has_key, has_desc = false, false, false
+    for _, mark in ipairs(marks) do
+        local hl = mark[4].hl_group
+        has_header = has_header or hl == 'UdirHelpHeader'
+        has_key = has_key or hl == 'UdirHelpKey'
+        has_desc = has_desc or hl == 'UdirHelpDesc'
+    end
+    assert(has_header, 'help should highlight section headers')
+    assert(has_key, 'help should highlight keys')
+    assert(has_desc, 'help should highlight descriptions')
+
+    api.nvim_feedkeys('q', 'xt', false)
+    assert_eq(api.nvim_get_current_win(), origin_win, 'closing help should restore origin window')
     core.quit()
 end
 
@@ -232,6 +264,11 @@ do
     vim.cmd('Udir ' .. vim.fn.fnameescape(cwd))
     assert_eq(vim.fn.maparg('x', 'n', false, true).rhs, "<Cmd>lua vim.g.udir_smoke_legacy_keymap = 'normal'<CR>")
     assert_eq(vim.fn.maparg('y', 'x', false, true).rhs, "<Cmd>lua vim.g.udir_smoke_legacy_keymap = 'visual'<CR>")
+    core.help()
+    local help_lines = table.concat(api.nvim_buf_get_lines(0, 0, -1, false), '\n')
+    assert(help_lines:match("x%s+<Cmd>lua vim%.g%.udir_smoke_legacy_keymap = 'normal'<CR>"), 'help should include legacy normal mappings')
+    assert(help_lines:match("y%s+<Cmd>lua vim%.g%.udir_smoke_legacy_keymap = 'visual'<CR>"), 'help should include legacy visual mappings')
+    api.nvim_feedkeys('q', 'xt', false)
     core.quit()
 
     config.keymaps = old_keymaps

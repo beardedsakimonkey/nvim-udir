@@ -14,6 +14,9 @@ vim.cmd 'hi default link UdirPromptBorderValid DiagnosticOk'
 vim.cmd 'hi default link UdirPromptBorderInvalid DiagnosticError'
 vim.cmd 'hi default link UdirPromptCompletion Comment'
 vim.cmd 'hi default link UdirMarkedText Special'
+vim.cmd 'hi default link UdirHelpHeader  Title'
+vim.cmd 'hi default link UdirHelpKey     Special'
+vim.cmd 'hi default link UdirHelpDesc    Normal'
 
 vim.api.nvim_create_user_command('Udir', function(o)
     require'udir'.udir(o.args)

@@ -1,4 +1,5 @@
 local fs = require'udir.fs'
+local help = require'udir.help'
 local prompt = require'udir.prompt'
 local store = require'udir.store'
 local util = require'udir.util'
@@ -366,6 +367,10 @@ end
 
 function M.prev_directory()
     move_to_directory(store.get(), -1)
+end
+
+function M.help()
+    help.open(config)
 end
 
 function M.open(cmd)
