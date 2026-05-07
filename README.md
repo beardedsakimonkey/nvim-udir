@@ -138,6 +138,7 @@ UdirPromptCompletion
 UdirDeletePath
 UdirDeleteFile
 UdirDeleteMore
+UdirDeleteCursor
 UdirMarkedText
 UdirMarkedSign
 UdirMarkedFile

@@ -86,6 +86,7 @@ end
 
 do
     local origin_win = api.nvim_get_current_win()
+    local old_guicursor = vim.o.guicursor
     local tmp = vim.fn.tempname()
     local paths = {tmp .. '/foo.js', tmp .. '/dir/bar.lua'}
     for i = 3, 12 do
@@ -101,6 +102,8 @@ do
     local confirm_lines = api.nvim_buf_get_lines(confirm_buf, 0, -1, false)
 
     assert_eq(confirm_cfg.border[1][2], 'UdirPromptBorderInvalid')
+    assert_match(vim.wo[confirm_win].winhighlight, 'Cursor:UdirDeleteCursor')
+    assert_eq(vim.o.guicursor, 'a:block-UdirDeleteCursor')
     assert_match(win_title(confirm_win), 'Delete 12 files%? %(y/n%)')
     assert_eq(#confirm_lines, 11, 'delete confirmation should cap visible files')
     assert_eq(confirm_lines[1], '  ./foo.js')
@@ -125,6 +128,7 @@ do
     api.nvim_feedkeys('n', 'xt', false)
     assert_eq(vim.g.udir_smoke_confirm_delete, false)
     assert_eq(api.nvim_get_current_win(), origin_win)
+    assert_eq(vim.o.guicursor, old_guicursor)
 end
 
 do

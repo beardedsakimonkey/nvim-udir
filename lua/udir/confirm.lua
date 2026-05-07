@@ -128,6 +128,7 @@ function M.delete(paths, cwd, cb)
     local rendered_lines = lines(confirm_items, overflow)
     local confirm_title = title(#paths)
     local origin_win = api.nvim_get_current_win()
+    local guicursor = vim.o.guicursor
     local autocmds = {}
     local closed = false
     local buf = api.nvim_create_buf(false, true)
@@ -149,7 +150,8 @@ function M.delete(paths, cwd, cb)
     end
 
     local win = api.nvim_open_win(buf, true, layout())
-    vim.wo[win].winhighlight = 'NormalFloat:Normal,FloatBorder:UdirPromptBorderInvalid'
+    vim.o.guicursor = 'a:block-UdirDeleteCursor'
+    vim.wo[win].winhighlight = 'NormalFloat:Normal,FloatBorder:UdirPromptBorderInvalid,Cursor:UdirDeleteCursor'
     vim.wo[win].wrap = false
 
     local function finish(confirmed)
@@ -160,6 +162,7 @@ function M.delete(paths, cwd, cb)
         for _, au in ipairs(autocmds) do
             pcall(api.nvim_del_autocmd, au)
         end
+        vim.o.guicursor = guicursor
         float.close(buf, win)
         if float.valid_win(origin_win) then
             pcall(api.nvim_set_current_win, origin_win)
