@@ -151,6 +151,18 @@ local function current_row(state)
     return state.rows and state.rows[row] or nil
 end
 
+local function move_to_directory(state, step)
+    local line = api.nvim_win_get_cursor(0)[1] + step
+    while line >= 1 and line <= #state.rows do
+        local row = state.rows[line]
+        if row and row.type == 'directory' then
+            api.nvim_win_set_cursor(0, {line, 0})
+            return
+        end
+        line = line + step
+    end
+end
+
 local function count_marks(state)
     local count = 0
     for _ in pairs(state.marks) do
@@ -220,6 +232,32 @@ local function expand_next_level(state, path)
         state.expanded_dirs[dir] = true
     end
     return #frontier > 0
+end
+
+local function expand_all_dirs(state, path)
+    local changed = not state.expanded_dirs[path]
+    state.expanded_dirs[path] = true
+    for _, file in ipairs(visible_files(path)) do
+        if file.type == 'directory' then
+            local child_path = util.join_path(path, file.name)
+            if expand_all_dirs(state, child_path) then
+                changed = true
+            end
+        end
+    end
+    return changed
+end
+
+local function clear_expanded_subtree(state, path)
+    local prefix = path .. util.sep
+    local changed = false
+    for expanded_path in pairs(state.expanded_dirs) do
+        if expanded_path == path or vim.startswith(expanded_path, prefix) then
+            state.expanded_dirs[expanded_path] = nil
+            changed = true
+        end
+    end
+    return changed
 end
 
 -- Keymaps ---------------------------------------------------------------------
@@ -312,6 +350,14 @@ function M.up_dir()
     util.set_cursor_pos(fs.basename(cwd), --[[or_top]]true)
 end
 
+function M.next_directory()
+    move_to_directory(store.get(), 1)
+end
+
+function M.prev_directory()
+    move_to_directory(store.get(), -1)
+end
+
 function M.open(cmd)
     local state = store.get()
     local row = current_row(state)
@@ -356,6 +402,19 @@ function M.expand()
     end
 end
 
+function M.expand_recursive()
+    local state = store.get()
+    local row = current_row(state)
+    if not row or not row.path or row.type ~= 'directory' then
+        return
+    end
+    local changed = expand_all_dirs(state, row.path)
+    if changed then
+        render(state)
+        util.set_cursor_pos(row.display_name)
+    end
+end
+
 function M.collapse()
     local state = store.get()
     local row = current_row(state)
@@ -365,6 +424,19 @@ function M.collapse()
     state.expanded_dirs[row.path] = nil
     render(state)
     util.set_cursor_pos(row.display_name)
+end
+
+function M.collapse_reset()
+    local state = store.get()
+    local row = current_row(state)
+    if not row or not row.path or row.type ~= 'directory' then
+        return
+    end
+    local changed = clear_expanded_subtree(state, row.path)
+    if changed then
+        render(state)
+        util.set_cursor_pos(row.display_name)
+    end
 end
 
 function M.toggle_mark()

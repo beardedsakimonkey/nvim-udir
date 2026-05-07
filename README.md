@@ -41,9 +41,12 @@ vim.keymap.set('n', '-', '<Cmd>Udir<CR>')
 
 In a udir buffer, `l`/`<CR>` navigates into a directory. Press `o` on a
 directory to expand it inline using a tree-style view, and press `o` again on
-that directory to expand one more level of subdirectories. Press `u` on an
-expanded directory to collapse only that directory; previously expanded
-descendants are remembered and restored when the directory is expanded again.
+that directory to expand one more level of subdirectories. Press `O` to expand
+all nested subdirectories recursively. Press `u` on an expanded directory to
+collapse only that directory; previously expanded descendants are remembered and
+restored when the directory is expanded again. Press `U` to collapse a directory
+and forget its expanded descendant state. Press `J` or `K` to jump to the next
+or previous visible directory row.
 Use `<Tab>` to toggle a mark on the current row, or select multiple rows in
 visual mode and press `<Tab>` to toggle marks for every selected row.
 
@@ -59,8 +62,12 @@ require'udir'.config = {
         q = "<Cmd>lua require'udir.core'.quit()<CR>",
         h = "<Cmd>lua require'udir.core'.up_dir()<CR>",
         ['-'] = "<Cmd>lua require'udir.core'.up_dir()<CR>",
+        J = "<Cmd>lua require'udir.core'.next_directory()<CR>",
+        K = "<Cmd>lua require'udir.core'.prev_directory()<CR>",
         o = "<Cmd>lua require'udir.core'.expand()<CR>",
+        O = "<Cmd>lua require'udir.core'.expand_recursive()<CR>",
         u = "<Cmd>lua require'udir.core'.collapse()<CR>",
+        U = "<Cmd>lua require'udir.core'.collapse_reset()<CR>",
         l = "<Cmd>lua require'udir.core'.open()<CR>",
         ['<CR>'] = "<Cmd>lua require'udir.core'.open()<CR>",
         s = "<Cmd>lua require'udir.core'.open('split')<CR>",

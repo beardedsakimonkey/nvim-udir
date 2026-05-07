@@ -43,6 +43,10 @@ local function set_cursor_line(pattern)
     error('could not find line matching ' .. pattern)
 end
 
+local function current_line()
+    return api.nvim_get_current_line()
+end
+
 local function has_highlight(state, hl_group)
     local marks = api.nvim_buf_get_extmarks(state.buf, state.ns, 0, -1, {details = true})
     for _, mark in ipairs(marks) do
@@ -202,6 +206,83 @@ do
     assert(fs.exists(tmp .. '/dest/a'), 'bulk copy should copy a')
     assert(fs.exists(tmp .. '/dest/b'), 'bulk copy should copy b')
     assert_eq(mark_count(state), 0)
+
+    core.quit()
+    assert_eq(vim.fn.delete(tmp, 'rf'), 0)
+end
+
+do
+    local tmp = vim.fn.tempname()
+    assert(vim.loop.fs_mkdir(tmp, tonumber('755', 8)))
+    assert(vim.loop.fs_mkdir(tmp .. '/alpha', tonumber('755', 8)))
+    assert(vim.loop.fs_mkdir(tmp .. '/alpha/nested', tonumber('755', 8)))
+    assert(vim.loop.fs_mkdir(tmp .. '/beta', tonumber('755', 8)))
+    touch(tmp .. '/alpha/file.txt')
+    touch(tmp .. '/top.txt')
+
+    vim.cmd('Udir ' .. vim.fn.fnameescape(tmp))
+    local state = store.get()
+
+    util.set_cursor_pos('alpha')
+    core.expand()
+    set_cursor_line('top%.txt$')
+    core.prev_directory()
+    assert_eq(current_line(), 'beta/', 'K should jump to previous visible directory')
+    core.prev_directory()
+    assert_eq(current_line(), '├── nested/', 'K should skip files')
+    core.prev_directory()
+    assert_eq(current_line(), 'alpha/', 'K should keep moving to previous directories')
+    core.next_directory()
+    assert_eq(current_line(), '├── nested/', 'J should jump to next visible directory')
+    core.next_directory()
+    assert_eq(current_line(), 'beta/', 'J should skip nested files')
+    core.next_directory()
+    assert_eq(current_line(), 'beta/', 'J should stop when no next directory exists')
+
+    set_cursor_line('file%.txt$')
+    core.next_directory()
+    assert_eq(current_line(), 'beta/', 'J should work from file rows')
+
+    core.quit()
+    assert_eq(vim.fn.delete(tmp, 'rf'), 0)
+end
+
+do
+    local tmp = vim.fn.tempname()
+    assert(vim.loop.fs_mkdir(tmp, tonumber('755', 8)))
+    assert(vim.loop.fs_mkdir(tmp .. '/root', tonumber('755', 8)))
+    assert(vim.loop.fs_mkdir(tmp .. '/root/a', tonumber('755', 8)))
+    assert(vim.loop.fs_mkdir(tmp .. '/root/a/b', tonumber('755', 8)))
+    assert(vim.loop.fs_mkdir(tmp .. '/root/empty', tonumber('755', 8)))
+    touch(tmp .. '/root/a/b/file.txt')
+
+    vim.cmd('Udir ' .. vim.fn.fnameescape(tmp))
+    local state = store.get()
+    local root = state.cwd
+
+    util.set_cursor_pos('root')
+    core.expand_recursive()
+    assert(vim.tbl_contains(lines(), '├── a/'), 'recursive expand should show child directories')
+    assert(vim.tbl_contains(lines(), '│   └── b/'), 'recursive expand should show nested directories')
+    assert(vim.tbl_contains(lines(), '│       └── file.txt'), 'recursive expand should show nested files')
+    assert(vim.tbl_contains(lines(), '└── empty/'), 'recursive expand should show empty child directories')
+    assert(vim.tbl_contains(lines(), '    └── (empty)'), 'recursive expand should show empty placeholders')
+    assert(state.expanded_dirs[root .. '/root'], 'recursive expand should expand selected directory')
+    assert(state.expanded_dirs[root .. '/root/a'], 'recursive expand should expand descendants')
+    assert(state.expanded_dirs[root .. '/root/a/b'], 'recursive expand should expand nested descendants')
+    assert(state.expanded_dirs[root .. '/root/empty'], 'recursive expand should expand empty descendants')
+
+    util.set_cursor_pos('root')
+    core.collapse_reset()
+    assert(not state.expanded_dirs[root .. '/root'], 'reset collapse should clear selected directory')
+    assert(not state.expanded_dirs[root .. '/root/a'], 'reset collapse should clear descendants')
+    assert(not state.expanded_dirs[root .. '/root/a/b'], 'reset collapse should clear nested descendants')
+    assert(not state.expanded_dirs[root .. '/root/empty'], 'reset collapse should clear empty descendants')
+    assert(not vim.tbl_contains(lines(), '├── a/'), 'reset collapse should hide children')
+
+    core.expand()
+    assert(vim.tbl_contains(lines(), '├── a/'), 'expand after reset should show one level')
+    assert(not vim.tbl_contains(lines(), '│   └── b/'), 'expand after reset should not restore recursive state')
 
     core.quit()
     assert_eq(vim.fn.delete(tmp, 'rf'), 0)
