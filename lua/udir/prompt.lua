@@ -1,5 +1,6 @@
 local api = vim.api
 local uv = vim.loop
+local float = require'udir.float'
 local util = require'udir.util'
 
 local M = {}
@@ -16,46 +17,16 @@ local M = {}
 ---@field suffix string
 ---@field start_col integer
 
----@param win integer?
----@return boolean
-local function valid_win(win)
-    return win ~= nil and api.nvim_win_is_valid(win)
-end
-
----@param buf integer?
----@return boolean
-local function valid_buf(buf)
-    return buf ~= nil and api.nvim_buf_is_valid(buf)
-end
-
----@param hl string
----@return table
-local function make_border(hl)
-    return {
-        {'╭', hl}, {'─', hl}, {'╮', hl}, {'│', hl},
-        {'╯', hl}, {'─', hl}, {'╰', hl}, {'│', hl},
-    }
-end
-
 ---@param prompt? string
 ---@param width integer
 ---@return table
 local function win_layout(prompt, width)
-    local title = prompt and (' ' .. prompt .. ' ') or nil
-    width = math.min(width, math.max(20, vim.o.columns - 4))
-    return {
-        relative = 'editor',
-        anchor = 'NW',
-        row = math.max(0, math.floor((vim.o.lines - 3) / 2)),
-        col = math.floor((vim.o.columns - width) / 2),
+    return float.centered_layout({
+        title = prompt,
         width = width,
         height = 1,
-        border = make_border('UdirPromptBorder'),
-        title = title,
-        title_pos = title and 'left' or nil,
-        style = 'minimal',
-        noautocmd = true,
-    }
+        border_hl = 'UdirPromptBorder',
+    })
 end
 
 ---@param str string
@@ -169,13 +140,8 @@ function Prompt:close()
     for _, au in ipairs(self.autocmds) do
         pcall(api.nvim_del_autocmd, au)
     end
-    if valid_win(self.input_win) then
-        pcall(api.nvim_win_close, self.input_win, true)
-    end
-    if valid_buf(self.input_buf) then
-        pcall(api.nvim_buf_delete, self.input_buf, {force = true})
-    end
-    if valid_win(self.origin_win) then
+    float.close(self.input_buf, self.input_win)
+    if float.valid_win(self.origin_win) then
         pcall(api.nvim_set_current_win, self.origin_win)
     end
     vim.cmd'stopinsert'
@@ -198,9 +164,9 @@ function Prompt:validate()
     self.is_valid = ok
     self.valid_result = ok and result or nil
     local hl = ok and 'UdirPromptBorderValid' or 'UdirPromptBorderInvalid'
-    if valid_win(self.input_win) then
+    if float.valid_win(self.input_win) then
         local cfg = api.nvim_win_get_config(self.input_win)
-        cfg.border = make_border(hl)
+        cfg.border = float.border(hl)
         api.nvim_win_set_config(self.input_win, cfg)
     end
 end
@@ -208,7 +174,7 @@ end
 function Prompt:update_completion()
     api.nvim_buf_clear_namespace(self.input_buf, self.ns, 0, -1)
     self.completion = nil
-    if not valid_win(self.input_win) then
+    if not float.valid_win(self.input_win) then
         return
     end
     local input = self:get_input()
@@ -228,7 +194,7 @@ function Prompt:redraw()
 end
 
 function Prompt:accept_completion()
-    if not self.completion or not valid_win(self.input_win) then
+    if not self.completion or not float.valid_win(self.input_win) then
         return
     end
     local input = self:get_input()
@@ -262,7 +228,7 @@ function Prompt:escape_insert()
 end
 
 function Prompt:relayout()
-    if valid_win(self.input_win) then
+    if float.valid_win(self.input_win) then
         api.nvim_win_set_config(self.input_win, win_layout(self.opts.prompt, self.width))
         self:redraw()
     end

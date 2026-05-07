@@ -164,6 +164,16 @@ end
 
 M.sep = package.config:sub(1, 1)
 
+---@param path string
+---@return string
+function M.display_path(path)
+    local home = os.getenv'HOME'
+    if home and home ~= '' and (path == home or vim.startswith(path, home .. M.sep)) then
+        return '~' .. path:sub(#home + 1)
+    end
+    return path
+end
+
 ---@param fst string
 ---@param snd string
 ---@return string

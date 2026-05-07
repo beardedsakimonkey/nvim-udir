@@ -1,5 +1,6 @@
 local fs = require'udir.fs'
 local help = require'udir.help'
+local confirm = require'udir.confirm'
 local prompt = require'udir.prompt'
 local store = require'udir.store'
 local util = require'udir.util'
@@ -53,16 +54,6 @@ local function sort_by_name(files)
             return a.type == 'directory'
         end
     end)
-end
-
----@param path string
----@return string
-local function display_path(path)
-    local home = os.getenv'HOME'
-    if home and home ~= '' and (path == home or vim.startswith(path, home .. util.sep)) then
-        return '~' .. path:sub(#home + 1)
-    end
-    return path
 end
 
 ---@param dir string
@@ -159,7 +150,7 @@ local function render(state)
             virttext, hl = nil, 'UdirTree'
         elseif file.type == 'link' then
             local link = uv.fs_readlink(path)
-            virttext = '@ → ' .. (link and display_path(link) or '???')
+            virttext = '@ → ' .. (link and util.display_path(link) or '???')
             hl = 'UdirSymlink'
         elseif uv.fs_access(path, 'X') then
             virttext, hl = '*', 'UdirExecutable'
@@ -606,14 +597,10 @@ function M.delete()
         util.err(is_bulk)
         return
     end
-    local message = is_bulk
-        and string.format('Are you sure you want to delete %d marked files? (y/n)', #paths)
-        or string.format('Are you sure you want to delete %q? (y/n)', paths[1])
-    print(message)
-    local input = vim.fn.getchar()
-    local confirmed = vim.fn.nr2char(input) == 'y'
-    util.clear_prompt()
-    if confirmed then
+    confirm.delete(paths, state.cwd, function(confirmed)
+        if not confirmed then
+            return
+        end
         local ok, msg = pcall(function()
             for _, path in ipairs(paths) do
                 fs.delete(path)
@@ -627,7 +614,7 @@ function M.delete()
             end
             render(state)
         end
-    end
+    end)
 end
 
 ---@param is_move boolean

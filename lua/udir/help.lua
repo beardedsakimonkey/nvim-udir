@@ -1,4 +1,5 @@
 local util = require'udir.util'
+local float = require'udir.float'
 
 local api = vim.api
 
@@ -11,45 +12,16 @@ local M = {}
 ---@field header? boolean
 ---@field blank? boolean
 
----@param hl string
----@return table
-local function make_border(hl)
-    return {
-        {'╭', hl}, {'─', hl}, {'╮', hl}, {'│', hl},
-        {'╯', hl}, {'─', hl}, {'╰', hl}, {'│', hl},
-    }
-end
-
----@param buf integer?
----@param win integer?
-local function close_float(buf, win)
-    if win and api.nvim_win_is_valid(win) then
-        pcall(api.nvim_win_close, win, true)
-    end
-    if buf and api.nvim_buf_is_valid(buf) then
-        pcall(api.nvim_buf_delete, buf, {force=true})
-    end
-end
-
 ---@param width integer
 ---@param height integer
 ---@return table
 local function layout(width, height)
-    width = math.min(width, math.max(20, vim.o.columns - 4))
-    height = math.min(height, math.max(1, vim.o.lines - 4))
-    return {
-        relative = 'editor',
-        anchor = 'NW',
-        row = math.max(0, math.floor((vim.o.lines - height - 2) / 2)),
-        col = math.floor((vim.o.columns - width) / 2),
+    return float.centered_layout({
+        title = 'Help',
         width = width,
         height = height,
-        border = make_border('UdirPromptBorder'),
-        title = ' Help ',
-        title_pos = 'left',
-        style = 'minimal',
-        noautocmd = true,
-    }
+        border_hl = 'UdirPromptBorder',
+    })
 end
 
 ---@param label string
@@ -161,7 +133,7 @@ function M.open(config)
     vim.wo[win].cursorline = true
 
     local function close()
-        close_float(buf, win)
+        float.close(buf, win)
         if api.nvim_win_is_valid(origin_win) then
             pcall(api.nvim_set_current_win, origin_win)
         end
