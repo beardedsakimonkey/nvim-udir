@@ -630,6 +630,10 @@ local function copy_or_move(is_move)
         return
     end
     local prompt_label = is_move and 'Move to' or 'Copy to'
+    if is_bulk then
+        local noun = #paths == 1 and 'file' or 'files'
+        prompt_label = string.format('%s %d %s to', is_move and 'Move' or 'Copy', #paths, noun)
+    end
     prompt.input({
         prompt = prompt_label,
         cwd = state.cwd,
