@@ -210,6 +210,54 @@ end
 do
     local tmp = vim.fn.tempname()
     assert(vim.loop.fs_mkdir(tmp, tonumber('755', 8)))
+    touch(tmp .. '/a')
+    touch(tmp .. '/b')
+    touch(tmp .. '/c')
+
+    vim.cmd('Udir ' .. vim.fn.fnameescape(tmp))
+    local state = store.get()
+
+    vim.fn.setpos("'<", {0, 1, 1, 0})
+    vim.fn.setpos("'>", {0, 2, 1, 0})
+    core.toggle_mark_visual()
+    assert_eq(mark_count(state), 2)
+    assert(state.marks[state.cwd .. '/a'], 'visual toggle should mark first selected row')
+    assert(state.marks[state.cwd .. '/b'], 'visual toggle should mark second selected row')
+    assert(not state.marks[state.cwd .. '/c'], 'visual toggle should not mark unselected rows')
+
+    vim.fn.setpos("'<", {0, 2, 1, 0})
+    vim.fn.setpos("'>", {0, 1, 1, 0})
+    core.toggle_mark_visual()
+    assert_eq(mark_count(state), 0, 'visual toggle should handle reversed ranges')
+
+    core.quit()
+    assert_eq(vim.fn.delete(tmp, 'rf'), 0)
+end
+
+do
+    local tmp = vim.fn.tempname()
+    assert(vim.loop.fs_mkdir(tmp, tonumber('755', 8)))
+    touch(tmp .. '/a')
+    touch(tmp .. '/b')
+
+    vim.cmd('Udir ' .. vim.fn.fnameescape(tmp))
+    local state = store.get()
+
+    vim.fn.setpos("'<", {0, 1, 1, 0})
+    vim.fn.setpos("'>", {0, 1, 1, 0})
+    api.nvim_win_set_cursor(0, {2, 0})
+    api.nvim_feedkeys(api.nvim_replace_termcodes('V<Tab>', true, false, true), 'xt', false)
+    assert_eq(mark_count(state), 1)
+    assert(not state.marks[state.cwd .. '/a'], 'live visual toggle should not use stale visual marks')
+    assert(state.marks[state.cwd .. '/b'], 'live visual toggle should mark the selected cursor line')
+
+    core.quit()
+    assert_eq(vim.fn.delete(tmp, 'rf'), 0)
+end
+
+do
+    local tmp = vim.fn.tempname()
+    assert(vim.loop.fs_mkdir(tmp, tonumber('755', 8)))
     assert(vim.loop.fs_mkdir(tmp .. '/alpha', tonumber('755', 8)))
     assert(vim.loop.fs_mkdir(tmp .. '/alpha/one', tonumber('755', 8)))
     assert(vim.loop.fs_mkdir(tmp .. '/alpha/two', tonumber('755', 8)))

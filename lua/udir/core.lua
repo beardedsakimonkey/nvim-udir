@@ -209,6 +209,9 @@ local function setup_keymaps(buf)
     for lhs, rhs in pairs(config.keymaps) do
         vim.keymap.set('n', lhs, rhs, {nowait=true, silent=true, buffer=buf})
     end
+    for lhs, rhs in pairs(config.visual_keymaps or {}) do
+        vim.keymap.set('x', lhs, rhs, {nowait=true, silent=true, buffer=buf})
+    end
 end
 
 local function cleanup(state)
@@ -356,6 +359,28 @@ function M.toggle_mark()
         state.marks[path] = nil
     else
         state.marks[path] = true
+    end
+    render(state)
+end
+
+function M.toggle_mark_visual()
+    local state = store.get()
+    local mode = vim.fn.mode()
+    local is_visual = mode == 'v' or mode == 'V' or mode == '\22'
+    local start_line = is_visual and vim.fn.line('v') or vim.fn.line("'<")
+    local end_line = is_visual and vim.fn.line('.') or vim.fn.line("'>")
+    if start_line > end_line then
+        start_line, end_line = end_line, start_line
+    end
+    for line = start_line, end_line do
+        local row = state.rows and state.rows[line]
+        if row then
+            if state.marks[row.path] then
+                state.marks[row.path] = nil
+            else
+                state.marks[row.path] = true
+            end
+        end
     end
     render(state)
 end

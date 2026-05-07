@@ -21,6 +21,9 @@ M.config = {
         ['<Tab>'] = "<Cmd>lua require'udir.core'.toggle_mark()<CR>",
         ['.'] = "<Cmd>lua require'udir.core'.toggle_hidden_files()<CR>",
     },
+    visual_keymaps = {
+        ['<Tab>'] = "<Cmd>lua require'udir.core'.toggle_mark_visual()<CR>",
+    },
     -- Whether hidden files should be shown by default
     show_hidden_files = true,
     -- Whether to sync the window's current directory with udir's current path

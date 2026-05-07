@@ -44,6 +44,8 @@ directory to expand it inline using a tree-style view, and press `o` again on
 that directory to expand one more level of subdirectories. Press `u` on an
 expanded directory to collapse only that directory; previously expanded
 descendants are remembered and restored when the directory is expanded again.
+Use `<Tab>` to toggle a mark on the current row, or select multiple rows in
+visual mode and press `<Tab>` to toggle marks for every selected row.
 
 
 ## Configuration
@@ -71,6 +73,9 @@ require'udir'.config = {
         c = "<Cmd>lua require'udir.core'.copy()<CR>",
         ['<Tab>'] = "<Cmd>lua require'udir.core'.toggle_mark()<CR>",
         ['.'] = "<Cmd>lua require'udir.core'.toggle_hidden_files()<CR>",
+    },
+    visual_keymaps = {
+        ['<Tab>'] = "<Cmd>lua require'udir.core'.toggle_mark_visual()<CR>",
     },
     -- Whether hidden files should be shown by default
     show_hidden_files = true,
