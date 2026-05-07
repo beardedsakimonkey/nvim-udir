@@ -29,6 +29,40 @@ local function mark_count(state)
     return count
 end
 
+local function lines()
+    return api.nvim_buf_get_lines(0, 0, -1, false)
+end
+
+local function set_cursor_line(pattern)
+    for i, line in ipairs(lines()) do
+        if line:match(pattern) then
+            api.nvim_win_set_cursor(0, {i, 0})
+            return
+        end
+    end
+    error('could not find line matching ' .. pattern)
+end
+
+local function has_highlight(state, hl_group)
+    local marks = api.nvim_buf_get_extmarks(state.buf, state.ns, 0, -1, {details = true})
+    for _, mark in ipairs(marks) do
+        if mark[4].hl_group == hl_group then
+            return true
+        end
+    end
+    return false
+end
+
+local function has_high_priority_highlight(state, hl_group)
+    local marks = api.nvim_buf_get_extmarks(state.buf, state.ns, 0, -1, {details = true})
+    for _, mark in ipairs(marks) do
+        if mark[4].hl_group == hl_group and mark[4].priority == 10000 then
+            return true
+        end
+    end
+    return false
+end
+
 do
     local p = prompt.input({
         prompt = 'Smoke',
@@ -168,6 +202,76 @@ do
     assert(fs.exists(tmp .. '/dest/a'), 'bulk copy should copy a')
     assert(fs.exists(tmp .. '/dest/b'), 'bulk copy should copy b')
     assert_eq(mark_count(state), 0)
+
+    core.quit()
+    assert_eq(vim.fn.delete(tmp, 'rf'), 0)
+end
+
+do
+    local tmp = vim.fn.tempname()
+    assert(vim.loop.fs_mkdir(tmp, tonumber('755', 8)))
+    assert(vim.loop.fs_mkdir(tmp .. '/alpha', tonumber('755', 8)))
+    assert(vim.loop.fs_mkdir(tmp .. '/alpha/one', tonumber('755', 8)))
+    assert(vim.loop.fs_mkdir(tmp .. '/alpha/two', tonumber('755', 8)))
+    assert(vim.loop.fs_mkdir(tmp .. '/beta', tonumber('755', 8)))
+    touch(tmp .. '/alpha/one/file.txt')
+    touch(tmp .. '/root.txt')
+
+    vim.cmd('Udir ' .. vim.fn.fnameescape(tmp))
+    local state = store.get()
+    local root = state.cwd
+
+    util.set_cursor_pos('alpha')
+    core.expand()
+    assert(vim.tbl_contains(lines(), '├── one/'), 'first expand should show alpha children')
+    assert(vim.tbl_contains(lines(), '└── two/'), 'first expand should show all alpha children')
+    assert(not vim.tbl_contains(lines(), '│   └── file.txt'), 'first expand should not expand grandchildren')
+    assert(has_highlight(state, 'UdirDirectory'), 'directory rows should be highlighted')
+    assert(has_high_priority_highlight(state, 'UdirTree'), 'tree prefixes should be highlighted')
+    assert(has_high_priority_highlight(state, 'UdirVirtText'), 'directory suffixes should be highlighted')
+
+    core.expand()
+    assert(vim.tbl_contains(lines(), '│   └── file.txt'), 'second expand should expand another level')
+
+    set_cursor_line('file%.txt$')
+    core.toggle_mark()
+    assert(state.marks[root .. '/alpha/one/file.txt'], 'nested row should mark its real path')
+
+    util.set_cursor_pos('alpha')
+    core.collapse()
+    assert(not vim.tbl_contains(lines(), '├── one/'), 'collapse should hide children')
+    assert(state.expanded_dirs[root .. '/alpha/one'], 'collapse should remember descendant state')
+
+    core.expand()
+    assert(vim.tbl_contains(lines(), '│   └── file.txt'), 're-expand should restore previous tree state')
+
+    set_cursor_line('one/$')
+    core.collapse()
+    assert(not vim.tbl_contains(lines(), '│   └── file.txt'), 'collapsing child should hide child contents')
+    assert(state.expanded_dirs[root .. '/alpha'], 'collapsing child should leave parent expanded')
+
+    core.quit()
+    assert_eq(vim.fn.delete(tmp, 'rf'), 0)
+end
+
+do
+    local tmp = vim.fn.tempname()
+    assert(vim.loop.fs_mkdir(tmp, tonumber('755', 8)))
+    assert(vim.loop.fs_mkdir(tmp .. '/unreadable', tonumber('755', 8)))
+
+    vim.cmd('Udir ' .. vim.fn.fnameescape(tmp))
+    local old_list = fs.list
+    fs.list = function(path)
+        if path:match('/unreadable$') then
+            error('permission denied')
+        end
+        return old_list(path)
+    end
+
+    util.set_cursor_pos('unreadable')
+    local ok, msg = pcall(core.expand)
+    fs.list = old_list
+    assert(ok, msg)
 
     core.quit()
     assert_eq(vim.fn.delete(tmp, 'rf'), 0)

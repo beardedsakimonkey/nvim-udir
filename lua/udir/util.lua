@@ -150,7 +150,9 @@ end
 function M.set_cursor_pos(filename, or_top)
     local line = or_top and 1 or nil
     if filename then
-        local found = find_line(function(l) return l == filename end)
+        local found = find_line(function(l)
+            return l == filename or l == filename .. M.sep
+        end)
         if found then
             line = found
         end

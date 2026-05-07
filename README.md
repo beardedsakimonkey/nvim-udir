@@ -39,6 +39,12 @@ You can use the `:Udir [dir]` command to open udir, or create your own mapping:
 vim.keymap.set('n', '-', '<Cmd>Udir<CR>')
 ```
 
+In a udir buffer, `l`/`<CR>` navigates into a directory. Press `o` on a
+directory to expand it inline using a tree-style view, and press `o` again on
+that directory to expand one more level of subdirectories. Press `u` on an
+expanded directory to collapse only that directory; previously expanded
+descendants are remembered and restored when the directory is expanded again.
+
 
 ## Configuration
 
@@ -51,6 +57,8 @@ require'udir'.config = {
         q = "<Cmd>lua require'udir.core'.quit()<CR>",
         h = "<Cmd>lua require'udir.core'.up_dir()<CR>",
         ['-'] = "<Cmd>lua require'udir.core'.up_dir()<CR>",
+        o = "<Cmd>lua require'udir.core'.expand()<CR>",
+        u = "<Cmd>lua require'udir.core'.collapse()<CR>",
         l = "<Cmd>lua require'udir.core'.open()<CR>",
         ['<CR>'] = "<Cmd>lua require'udir.core'.open()<CR>",
         s = "<Cmd>lua require'udir.core'.open('split')<CR>",
@@ -100,6 +108,7 @@ You can also customize the colors in udir using the following highlight groups:
 UdirDirectory
 UdirSymlink
 UdirExecutable
+UdirTree
 UdirVirtText
 UdirPromptBorder
 UdirPromptBorderValid

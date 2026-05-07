@@ -21,29 +21,74 @@ local function sort_by_name(files)
     end)
 end
 
-local function render(state)
-    local cwd, buf, ns = state.cwd, state.buf, state.ns
-    local all_files = fs.list(cwd)
-    -- Get visible files
+local function visible_files(dir)
+    local ok, all_files = pcall(fs.list, dir)
+    if not ok then
+        util.warn(all_files)
+        return {}
+    end
     local files = vim.tbl_filter(function(file)
         if config.show_hidden_files then
             return true
         else
-            return not config.is_file_hidden(file, all_files, cwd)
+            return not config.is_file_hidden(file, all_files, dir)
         end
     end, all_files)
     local sort_fn = config.sort or sort_by_name
     sort_fn(files)
+    return files
+end
+
+local function build_tree_rows(state)
+    local rows = {}
+
+    local function add_dir(dir, prefix, depth)
+        local files = visible_files(dir)
+        for i, file in ipairs(files) do
+            local is_last = i == #files
+            local connector = depth == 0 and '' or (is_last and '└── ' or '├── ')
+            local child_prefix = depth == 0 and '' or prefix .. (is_last and '    ' or '│   ')
+            local path = util.join_path(dir, file.name)
+            local tree_prefix = prefix .. connector
+            local display_name = tree_prefix .. file.name
+            local directory_suffix_col
+            if file.type == 'directory' then
+                directory_suffix_col = #display_name
+                display_name = display_name .. util.sep
+            end
+            rows[#rows+1] = {
+                name = file.name,
+                display_name = display_name,
+                path = path,
+                type = file.type,
+                depth = depth,
+                tree_prefix_len = #tree_prefix,
+                directory_suffix_col = directory_suffix_col,
+            }
+            if file.type == 'directory' and state.expanded_dirs[path] then
+                add_dir(path, child_prefix, depth + 1)
+            end
+        end
+    end
+
+    add_dir(state.cwd, '', 0)
+    return rows
+end
+
+local function render(state)
+    local buf, ns = state.buf, state.ns
+    local rows = build_tree_rows(state)
+    state.rows = rows
     util.set_lines(buf, vim.tbl_map(function(f)
-        return f.name
-    end, files))
+        return f.display_name
+    end, rows))
     -- Add virttext and highlights
     api.nvim_buf_clear_namespace(buf, ns, 0, -1)
-    for i, file in ipairs(files) do
-        local path = util.join_path(cwd, file.name)
+    for i, file in ipairs(rows) do
+        local path = file.path
         local virttext, hl
         if file.type == 'directory' then
-            virttext, hl = util.sep, 'UdirDirectory'
+            virttext, hl = nil, 'UdirDirectory'
         elseif file.type == 'link' then
             virttext = '@ → ' .. (uv.fs_readlink(path) or '???')
             hl = 'UdirSymlink'
@@ -52,14 +97,28 @@ local function render(state)
         else
             virttext, hl = nil, 'UdirFile'
         end
+        api.nvim_buf_set_extmark(0, ns, i-1, 0, {
+            end_col = #file.display_name,
+            hl_group = hl,
+        })
         if virttext then
-            api.nvim_buf_set_extmark(0, ns, i-1, #file.name, {
+            api.nvim_buf_set_extmark(0, ns, i-1, #file.display_name, {
                 virt_text = {{virttext, 'UdirVirtText'}},
                 virt_text_pos = 'overlay',
             })
+        end
+        if file.tree_prefix_len > 0 then
             api.nvim_buf_set_extmark(0, ns, i-1, 0, {
-                end_col = #file.name,
-                hl_group = hl,
+                end_col = file.tree_prefix_len,
+                hl_group = 'UdirTree',
+                priority = 10000,
+            })
+        end
+        if file.directory_suffix_col then
+            api.nvim_buf_set_extmark(0, ns, i-1, file.directory_suffix_col, {
+                end_col = #file.display_name,
+                hl_group = 'UdirVirtText',
+                priority = 10000,
             })
         end
         if state.marks[path] then
@@ -71,6 +130,11 @@ local function render(state)
     end
 end
 
+local function current_row(state)
+    local row = api.nvim_win_get_cursor(0)[1]
+    return state.rows and state.rows[row] or nil
+end
+
 local function count_marks(state)
     local count = 0
     for _ in pairs(state.marks) do
@@ -80,11 +144,11 @@ local function count_marks(state)
 end
 
 local function current_path(state)
-    local filename = util.get_line()
-    if filename == '' then
+    local row = current_row(state)
+    if not row then
         return nil, 'Empty filename'
     end
-    return util.join_path(state.cwd, filename)
+    return row.path
 end
 
 local function selected_paths(state)
@@ -105,6 +169,38 @@ end
 
 local function clear_marks(state)
     state.marks = {}
+end
+
+local function expand_next_level(state, path)
+    if not state.expanded_dirs[path] then
+        state.expanded_dirs[path] = true
+        return true
+    end
+
+    local frontier = {}
+    local frontier_depth
+
+    local function visit(dir, depth)
+        for _, file in ipairs(visible_files(dir)) do
+            if file.type == 'directory' then
+                local child_path = util.join_path(dir, file.name)
+                if state.expanded_dirs[child_path] then
+                    visit(child_path, depth + 1)
+                elseif not frontier_depth or depth < frontier_depth then
+                    frontier_depth = depth
+                    frontier = {child_path}
+                elseif depth == frontier_depth then
+                    frontier[#frontier+1] = child_path
+                end
+            end
+        end
+    end
+
+    visit(path, 1)
+    for _, dir in ipairs(frontier) do
+        state.expanded_dirs[dir] = true
+    end
+    return #frontier > 0
 end
 
 -- Keymaps ---------------------------------------------------------------------
@@ -183,9 +279,9 @@ function M.up_dir()
     local state = store.get()
     local cwd = state.cwd
     local parent_dir = fs.get_parent_dir(state.cwd)
-    local hovered_file = util.get_line()
-    if hovered_file then
-        state.hovered_files[state.cwd] = hovered_file
+    local row = current_row(state)
+    if row then
+        state.hovered_files[state.cwd] = row.name
     end
     state.cwd = parent_dir
     render(state)
@@ -196,12 +292,12 @@ end
 
 function M.open(cmd)
     local state = store.get()
-    local filename = util.get_line()
-    if filename == '' then
+    local row = current_row(state)
+    if not row then
         return
     end
     -- fs_realpath also checks file existence
-    local path, msg = uv.fs_realpath(util.join_path(state.cwd, filename))
+    local path, msg = uv.fs_realpath(row.path)
     if not path then
         util.err(msg)
     else
@@ -223,6 +319,30 @@ function M.open(cmd)
             cleanup(state)
         end
     end
+end
+
+function M.expand()
+    local state = store.get()
+    local row = current_row(state)
+    if not row or row.type ~= 'directory' then
+        return
+    end
+    local changed = expand_next_level(state, row.path)
+    if changed then
+        render(state)
+        util.set_cursor_pos(row.display_name)
+    end
+end
+
+function M.collapse()
+    local state = store.get()
+    local row = current_row(state)
+    if not row or row.type ~= 'directory' or not state.expanded_dirs[row.path] then
+        return
+    end
+    state.expanded_dirs[row.path] = nil
+    render(state)
+    util.set_cursor_pos(row.display_name)
 end
 
 function M.toggle_mark()
@@ -345,7 +465,8 @@ end
 
 function M.toggle_hidden_files()
     local state = store.get()
-    local hovered_file = util.get_line()
+    local row = current_row(state)
+    local hovered_file = row and row.display_name or nil
     config.show_hidden_files = not config.show_hidden_files
     render(state)
     util.set_cursor_pos(hovered_file)
@@ -391,6 +512,8 @@ function M.udir(dir, from_au)
         cwd_restore = cwd_restore,
         ns = ns,
         hovered_files = {},  -- map<realpath, filename>
+        expanded_dirs = {},  -- map<realpath, true>
+        rows = {},
         marks = {},  -- map<path, true>
     }
     setup_keymaps(buf)

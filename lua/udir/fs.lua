@@ -5,10 +5,11 @@ local M = {}
 
 -- Polyfill for vim.fs.dir
 local function dir(path)
+    local scanner, msg = uv.fs_scandir(path)
+    assert(scanner, msg or ('Could not scan ' .. path))
     return function(fs)
         return uv.fs_scandir_next(fs)
-    end,
-    uv.fs_scandir(path)
+    end, scanner
 end
 
 local function move(src, dest)
