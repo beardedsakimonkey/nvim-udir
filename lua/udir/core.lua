@@ -262,12 +262,22 @@ end
 
 -- Keymaps ---------------------------------------------------------------------
 
+local function normalize_keymap(rhs)
+    if type(rhs) == 'table' then
+        assert(rhs[1], 'keymap table must include an action at index 1')
+        return rhs[1], rhs.desc
+    end
+    return rhs, nil
+end
+
 local function setup_keymaps(buf)
     for lhs, rhs in pairs(config.keymaps) do
-        vim.keymap.set('n', lhs, rhs, {nowait=true, silent=true, buffer=buf})
+        local action, desc = normalize_keymap(rhs)
+        vim.keymap.set('n', lhs, action, {nowait=true, silent=true, buffer=buf, desc=desc})
     end
     for lhs, rhs in pairs(config.visual_keymaps or {}) do
-        vim.keymap.set('x', lhs, rhs, {nowait=true, silent=true, buffer=buf})
+        local action, desc = normalize_keymap(rhs)
+        vim.keymap.set('x', lhs, action, {nowait=true, silent=true, buffer=buf, desc=desc})
     end
 end
 

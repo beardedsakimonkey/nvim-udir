@@ -9,6 +9,7 @@ local function assert_match(str, pattern, msg)
 end
 
 local fs = require'udir.fs'
+local config = require'udir'.config
 local prompt = require'udir.prompt'
 local core = require'udir.core'
 local store = require'udir.store'
@@ -209,6 +210,32 @@ do
 
     core.quit()
     assert_eq(vim.fn.delete(tmp, 'rf'), 0)
+end
+
+do
+    vim.cmd('Udir ' .. vim.fn.fnameescape(cwd))
+    assert_eq(vim.fn.maparg('q', 'n', false, true).desc, 'Quit')
+    assert_eq(vim.fn.maparg('<Tab>', 'x', false, true).desc, 'Toggle marks')
+    core.quit()
+end
+
+do
+    local old_keymaps = config.keymaps
+    local old_visual_keymaps = config.visual_keymaps
+    config.keymaps = {
+        x = "<Cmd>lua vim.g.udir_smoke_legacy_keymap = 'normal'<CR>",
+    }
+    config.visual_keymaps = {
+        y = "<Cmd>lua vim.g.udir_smoke_legacy_keymap = 'visual'<CR>",
+    }
+
+    vim.cmd('Udir ' .. vim.fn.fnameescape(cwd))
+    assert_eq(vim.fn.maparg('x', 'n', false, true).rhs, "<Cmd>lua vim.g.udir_smoke_legacy_keymap = 'normal'<CR>")
+    assert_eq(vim.fn.maparg('y', 'x', false, true).rhs, "<Cmd>lua vim.g.udir_smoke_legacy_keymap = 'visual'<CR>")
+    core.quit()
+
+    config.keymaps = old_keymaps
+    config.visual_keymaps = old_visual_keymaps
 end
 
 do
