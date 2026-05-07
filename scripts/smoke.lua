@@ -305,6 +305,31 @@ end
 do
     local tmp = vim.fn.tempname()
     assert(vim.loop.fs_mkdir(tmp, tonumber('755', 8)))
+    assert(vim.loop.fs_mkdir(tmp .. '/empty', tonumber('755', 8)))
+
+    vim.cmd('Udir ' .. vim.fn.fnameescape(tmp))
+    local state = store.get()
+
+    util.set_cursor_pos('empty')
+    core.expand()
+    assert(vim.tbl_contains(lines(), '└── (empty)'), 'empty directories should render a placeholder')
+    assert(has_highlight(state, 'UdirTree'), 'empty placeholder should be highlighted as tree text')
+
+    set_cursor_line('%(empty%)$')
+    core.toggle_mark()
+    assert_eq(mark_count(state), 0, 'empty placeholder should not be markable')
+
+    util.set_cursor_pos('empty')
+    core.collapse()
+    assert(not vim.tbl_contains(lines(), '└── (empty)'), 'collapsing empty directory should hide placeholder')
+
+    core.quit()
+    assert_eq(vim.fn.delete(tmp, 'rf'), 0)
+end
+
+do
+    local tmp = vim.fn.tempname()
+    assert(vim.loop.fs_mkdir(tmp, tonumber('755', 8)))
     assert(vim.loop.fs_mkdir(tmp .. '/unreadable', tonumber('755', 8)))
 
     vim.cmd('Udir ' .. vim.fn.fnameescape(tmp))

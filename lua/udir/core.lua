@@ -9,6 +9,8 @@ local uv = vim.loop
 
 local M = {}
 
+local EMPTY_LABEL = '(empty)'
+
 -- Render ----------------------------------------------------------------------
 
 local function sort_by_name(files)
@@ -44,6 +46,18 @@ local function build_tree_rows(state)
 
     local function add_dir(dir, prefix, depth)
         local files = visible_files(dir)
+        if depth > 0 and #files == 0 then
+            local tree_prefix = prefix .. '└── '
+            rows[#rows+1] = {
+                name = EMPTY_LABEL,
+                display_name = tree_prefix .. EMPTY_LABEL,
+                path = nil,
+                type = 'placeholder',
+                depth = depth,
+                tree_prefix_len = #tree_prefix,
+            }
+            return
+        end
         for i, file in ipairs(files) do
             local is_last = i == #files
             local connector = depth == 0 and '' or (is_last and '└── ' or '├── ')
@@ -89,6 +103,8 @@ local function render(state)
         local virttext, hl
         if file.type == 'directory' then
             virttext, hl = nil, 'UdirDirectory'
+        elseif file.type == 'placeholder' then
+            virttext, hl = nil, 'UdirTree'
         elseif file.type == 'link' then
             virttext = '@ → ' .. (uv.fs_readlink(path) or '???')
             hl = 'UdirSymlink'
@@ -121,7 +137,7 @@ local function render(state)
                 priority = 10000,
             })
         end
-        if state.marks[path] then
+        if path and state.marks[path] then
             api.nvim_buf_set_extmark(buf, ns, i-1, 0, {
                 virt_text = {{'> ', 'UdirMarkedText'}},
                 virt_text_pos = 'inline',
@@ -147,6 +163,9 @@ local function current_path(state)
     local row = current_row(state)
     if not row then
         return nil, 'Empty filename'
+    end
+    if not row.path then
+        return nil, 'No file selected'
     end
     return row.path
 end
@@ -296,7 +315,7 @@ end
 function M.open(cmd)
     local state = store.get()
     local row = current_row(state)
-    if not row then
+    if not row or not row.path then
         return
     end
     -- fs_realpath also checks file existence
@@ -327,7 +346,7 @@ end
 function M.expand()
     local state = store.get()
     local row = current_row(state)
-    if not row or row.type ~= 'directory' then
+    if not row or not row.path or row.type ~= 'directory' then
         return
     end
     local changed = expand_next_level(state, row.path)
@@ -340,7 +359,7 @@ end
 function M.collapse()
     local state = store.get()
     local row = current_row(state)
-    if not row or row.type ~= 'directory' or not state.expanded_dirs[row.path] then
+    if not row or not row.path or row.type ~= 'directory' or not state.expanded_dirs[row.path] then
         return
     end
     state.expanded_dirs[row.path] = nil
@@ -350,6 +369,10 @@ end
 
 function M.toggle_mark()
     local state = store.get()
+    local row = current_row(state)
+    if row and not row.path then
+        return
+    end
     local path, msg = current_path(state)
     if not path then
         util.err(msg)
@@ -374,7 +397,7 @@ function M.toggle_mark_visual()
     end
     for line = start_line, end_line do
         local row = state.rows and state.rows[line]
-        if row then
+        if row and row.path then
             if state.marks[row.path] then
                 state.marks[row.path] = nil
             else
