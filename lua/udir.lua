@@ -34,6 +34,7 @@ M.config = {
         s = {"<Cmd>lua require'udir.core'.open('split')<CR>", desc="Open in split"},
         v = {"<Cmd>lua require'udir.core'.open('vsplit')<CR>", desc="Open in vertical split"},
         t = {"<Cmd>lua require'udir.core'.open('tabedit')<CR>", desc="Open in tab"},
+        gx = {"<Cmd>lua require'udir.core'.open_external()<CR>", desc="Open externally"},
         R = {"<Cmd>lua require'udir.core'.reload()<CR>", desc="Reload"},
         d = {"<Cmd>lua require'udir.core'.delete()<CR>", desc="Delete"},
         ['+'] = {"<Cmd>lua require'udir.core'.create()<CR>", desc="Create"},

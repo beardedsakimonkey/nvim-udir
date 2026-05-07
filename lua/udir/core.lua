@@ -499,6 +499,15 @@ function M.open(cmd)
     end
 end
 
+function M.open_external()
+    local state = store.get()
+    local row = current_row(state)
+    if not row or not row.path or not fs.exists(row.path) then
+        return
+    end
+    pcall(vim.ui.open, row.path)
+end
+
 function M.expand()
     local state = store.get()
     local row = current_row(state)

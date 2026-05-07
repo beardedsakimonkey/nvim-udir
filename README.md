@@ -47,6 +47,7 @@ collapse only that directory; previously expanded descendants are remembered and
 restored when the directory is expanded again. Press `U` to collapse a directory
 and forget its expanded descendant state. Press `J` or `K` to jump to the next
 or previous visible directory row. Press `H` to show keymap help.
+Press `gx` to open the currently hovered path with `vim.ui.open()`.
 Use `<Tab>` to toggle a mark on the current row, or select multiple rows in
 visual mode and press `<Tab>` to toggle marks for every selected row.
 
@@ -73,6 +74,7 @@ require'udir'.config = {
         s = {"<Cmd>lua require'udir.core'.open('split')<CR>", desc="Open in split"},
         v = {"<Cmd>lua require'udir.core'.open('vsplit')<CR>", desc="Open in vertical split"},
         t = {"<Cmd>lua require'udir.core'.open('tabedit')<CR>", desc="Open in tab"},
+        gx = {"<Cmd>lua require'udir.core'.open_external()<CR>", desc="Open externally"},
         R = {"<Cmd>lua require'udir.core'.reload()<CR>", desc="Reload"},
         d = {"<Cmd>lua require'udir.core'.delete()<CR>", desc="Delete"},
         ['+'] = {"<Cmd>lua require'udir.core'.create()<CR>", desc="Create"},
