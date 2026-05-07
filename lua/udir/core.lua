@@ -24,6 +24,14 @@ local function sort_by_name(files)
     end)
 end
 
+local function display_path(path)
+    local home = os.getenv'HOME'
+    if home and home ~= '' and (path == home or vim.startswith(path, home .. util.sep)) then
+        return '~' .. path:sub(#home + 1)
+    end
+    return path
+end
+
 local function visible_files(dir)
     local ok, all_files = pcall(fs.list, dir)
     if not ok then
@@ -109,7 +117,8 @@ local function render(state)
         elseif file.type == 'placeholder' then
             virttext, hl = nil, 'UdirTree'
         elseif file.type == 'link' then
-            virttext = '@ → ' .. (uv.fs_readlink(path) or '???')
+            local link = uv.fs_readlink(path)
+            virttext = '@ → ' .. (link and display_path(link) or '???')
             hl = 'UdirSymlink'
         elseif uv.fs_access(path, 'X') then
             virttext, hl = '*', 'UdirExecutable'

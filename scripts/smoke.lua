@@ -213,6 +213,27 @@ do
 end
 
 do
+    local tmp = vim.fn.tempname()
+    assert(vim.loop.fs_mkdir(tmp, tonumber('755', 8)))
+    local home = assert(os.getenv'HOME')
+    assert(vim.loop.fs_symlink(home, tmp .. '/home-link'))
+
+    vim.cmd('Udir ' .. vim.fn.fnameescape(tmp))
+    local state = store.get()
+    local marks = api.nvim_buf_get_extmarks(state.buf, state.ns, 0, -1, {details = true})
+    local has_home_link = false
+    for _, mark in ipairs(marks) do
+        local virt_text = mark[4].virt_text
+        has_home_link = has_home_link
+            or virt_text and virt_text[1] and virt_text[1][1] == '@ → ~'
+    end
+    assert(has_home_link, 'symlink virtual text should abbreviate home directory')
+
+    core.quit()
+    assert_eq(vim.fn.delete(tmp, 'rf'), 0)
+end
+
+do
     vim.cmd('Udir ' .. vim.fn.fnameescape(cwd))
     assert_eq(vim.fn.maparg('q', 'n', false, true).desc, 'Quit')
     assert_eq(vim.fn.maparg('H', 'n', false, true).desc, 'Show help')
