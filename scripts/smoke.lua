@@ -186,15 +186,15 @@ do
     assert(state.marks[state.cwd .. '/a'], 'a should be marked')
     assert(state.marks[state.cwd .. '/b'], 'b should be marked')
     local marks = api.nvim_buf_get_extmarks(state.buf, state.ns, 0, -1, {details = true})
-    local has_prefix = false
+    local has_sign, has_file_hl = false, false
     for _, mark in ipairs(marks) do
         local details = mark[4]
-        if details.virt_text and details.virt_text[1] and details.virt_text[1][1] == '> ' then
-            has_prefix = true
-            break
-        end
+        has_sign = has_sign
+            or details.sign_text and details.sign_text:match('^>') and details.sign_hl_group == 'UdirMarkedSign'
+        has_file_hl = has_file_hl or details.hl_group == 'UdirMarkedFile'
     end
-    assert(has_prefix, 'marked rows should render a visible prefix')
+    assert(has_sign, 'marked rows should render a sign marker')
+    assert(has_file_hl, 'marked rows should highlight filenames')
 
     local old_input = prompt.input
     prompt.input = function(opts, cb)

@@ -134,6 +134,8 @@ UdirPromptBorderValid
 UdirPromptBorderInvalid
 UdirPromptCompletion
 UdirMarkedText
+UdirMarkedSign
+UdirMarkedFile
 UdirHelpHeader
 UdirHelpKey
 UdirHelpDesc

@@ -78,6 +78,8 @@ local function build_tree_rows(state)
                 type = file.type,
                 depth = depth,
                 tree_prefix_len = #tree_prefix,
+                name_start_col = #tree_prefix,
+                name_end_col = #tree_prefix + #file.name,
                 directory_suffix_col = directory_suffix_col,
             }
             if file.type == 'directory' and state.expanded_dirs[path] then
@@ -140,8 +142,13 @@ local function render(state)
         end
         if path and state.marks[path] then
             api.nvim_buf_set_extmark(buf, ns, i-1, 0, {
-                virt_text = {{'> ', 'UdirMarkedText'}},
-                virt_text_pos = 'inline',
+                sign_text = '>',
+                sign_hl_group = 'UdirMarkedSign',
+            })
+            api.nvim_buf_set_extmark(buf, ns, i-1, file.name_start_col, {
+                end_col = file.name_end_col,
+                hl_group = 'UdirMarkedFile',
+                priority = 10000,
             })
         end
     end
