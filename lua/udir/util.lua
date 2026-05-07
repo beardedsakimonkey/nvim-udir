@@ -2,6 +2,10 @@ local M = {}
 
 local api = vim.api
 
+---@generic T
+---@param list T[]
+---@param fn fun(item: T): boolean
+---@return integer?
 local function find_index(list, fn)
     for idx, item in ipairs(list) do
         if fn(item) then
@@ -11,11 +15,16 @@ local function find_index(list, fn)
 end
 
 -- Returns the first line number that matches the predicate, otherwise nil
+---@param fn fun(line: string): boolean
+---@return integer?
 local function find_line(fn)
     local lines = api.nvim_buf_get_lines(0, 0, -1, false)
     return find_index(lines, fn)
 end
 
+---@param buf integer
+---@param var_name string
+---@return any
 local function buf_has_var(buf, var_name)
     local ok, ret = pcall(api.nvim_buf_get_var, buf, var_name)
     return ok and ret or false
@@ -41,6 +50,8 @@ end
 -- So, the best we can do is name a buffer by its path if it isn't currently
 -- loaded, or otherwise name it by its path with an appended id, which makes it
 -- unique but not `:cd`able.
+---@param cwd string
+---@return string
 local function create_buf_name(cwd)
     local loaded_bufs = {}
     for _, buf in ipairs(vim.fn.getbufinfo()) do
@@ -58,6 +69,8 @@ local function create_buf_name(cwd)
     return new_name
 end
 
+---@param cwd string
+---@return integer buf
 function M.create_buf(cwd)
     local existing_buf = vim.fn.bufnr('^' .. cwd .. '$')
     local buf
@@ -90,6 +103,7 @@ function M.create_buf(cwd)
     return buf
 end
 
+---@param name string
 function M.delete_buffers(name)
     for _, buf in pairs(vim.fn.getbufinfo()) do
         if buf.name == name then
@@ -98,6 +112,7 @@ function M.delete_buffers(name)
     end
 end
 
+---@param cwd string
 function M.update_buf_name(cwd)
     local old_name = vim.fn.bufname
     local new_name = create_buf_name(cwd)
@@ -106,23 +121,29 @@ function M.update_buf_name(cwd)
     M.delete_buffers(old_name)
 end
 
+---@param buf integer
 function M.set_current_buf(buf)
     if vim.fn.bufexists(buf) then
         vim.cmd('sil! keepj buffer' .. buf)
     end
 end
 
+---@param buf integer
+---@param lines string[]
 function M.set_lines(buf, lines)
     vim.opt_local.modifiable = true
     api.nvim_buf_set_lines(buf, 0, -1, false, lines)
     vim.opt_local.modifiable = false
 end
 
+---@return string
 function M.get_line()
     local row = api.nvim_win_get_cursor(0)[1]
     return api.nvim_buf_get_lines(0, row-1, row, true)[1]
 end
 
+---@param old_name string
+---@param new_name string
 function M.rename_buffers(old_name, new_name)
     -- If we're clobbering an existing file for which we have a buffer, delete
     -- the buffer first
@@ -143,10 +164,15 @@ end
 
 M.sep = package.config:sub(1, 1)
 
+---@param fst string
+---@param snd string
+---@return string
 function M.join_path(fst, snd)
     return fst .. M.sep .. snd
 end
 
+---@param filename? string
+---@param or_top? boolean
 function M.set_cursor_pos(filename, or_top)
     local line = or_top and 1 or nil
     if filename then
@@ -162,9 +188,13 @@ function M.set_cursor_pos(filename, or_top)
     end
 end
 
+---@param msg any
 function M.err(msg)  vim.notify('[udir] ' .. msg, vim.log.levels.ERROR) end
+---@param msg any
 function M.warn(msg) vim.notify('[udir] ' .. msg, vim.log.levels.WARN) end
 
+---@param str string
+---@return string
 function M.trim_start(str)
     return (str:gsub('^%s*', ''))
 end

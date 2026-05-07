@@ -12,8 +12,39 @@ local M = {}
 
 local EMPTY_LABEL = '(empty)'
 
+---@alias UdirCwdScope 'window'|'tab'|'global'
+
+---@class UdirTreeRow
+---@field name string
+---@field display_name string
+---@field path? string
+---@field type UdirFileType|'placeholder'
+---@field depth integer
+---@field tree_prefix_len integer
+---@field name_start_col? integer
+---@field name_end_col? integer
+---@field directory_suffix_col? integer
+
+---@class UdirCwdRestore
+---@field cwd string
+---@field scope UdirCwdScope
+
+---@class UdirState
+---@field buf integer
+---@field origin_buf integer
+---@field alt_buf? integer
+---@field cwd string
+---@field sync_local_cwd boolean
+---@field cwd_restore? UdirCwdRestore
+---@field ns integer
+---@field hovered_files table<string, string>
+---@field expanded_dirs table<string, true>
+---@field rows UdirTreeRow[]
+---@field marks table<string, true>
+
 -- Render ----------------------------------------------------------------------
 
+---@param files UdirFile[]
 local function sort_by_name(files)
     table.sort(files, function(a, b)
         if (a.type == 'directory') == (b.type == 'directory') then
@@ -24,6 +55,8 @@ local function sort_by_name(files)
     end)
 end
 
+---@param path string
+---@return string
 local function display_path(path)
     local home = os.getenv'HOME'
     if home and home ~= '' and (path == home or vim.startswith(path, home .. util.sep)) then
@@ -32,10 +65,12 @@ local function display_path(path)
     return path
 end
 
+---@param dir string
+---@return UdirFile[]
 local function visible_files(dir)
     local ok, all_files = pcall(fs.list, dir)
     if not ok then
-        util.warn(all_files)
+        util.warn(tostring(all_files))
         return {}
     end
     local files = vim.tbl_filter(function(file)
@@ -50,9 +85,14 @@ local function visible_files(dir)
     return files
 end
 
+---@param state UdirState
+---@return UdirTreeRow[]
 local function build_tree_rows(state)
     local rows = {}
 
+    ---@param dir string
+    ---@param prefix string
+    ---@param depth integer
     local function add_dir(dir, prefix, depth)
         local files = visible_files(dir)
         if depth > 0 and #files == 0 then
@@ -100,6 +140,7 @@ local function build_tree_rows(state)
     return rows
 end
 
+---@param state UdirState
 local function render(state)
     local buf, ns = state.buf, state.ns
     local rows = build_tree_rows(state)
@@ -163,11 +204,15 @@ local function render(state)
     end
 end
 
+---@param state UdirState
+---@return UdirTreeRow?
 local function current_row(state)
     local row = api.nvim_win_get_cursor(0)[1]
     return state.rows and state.rows[row] or nil
 end
 
+---@param state UdirState
+---@param step integer
 local function move_to_directory(state, step)
     local line = api.nvim_win_get_cursor(0)[1] + step
     while line >= 1 and line <= #state.rows do
@@ -180,6 +225,8 @@ local function move_to_directory(state, step)
     end
 end
 
+---@param state UdirState
+---@return integer
 local function count_marks(state)
     local count = 0
     for _ in pairs(state.marks) do
@@ -188,6 +235,9 @@ local function count_marks(state)
     return count
 end
 
+---@param state UdirState
+---@return string? path
+---@return string? error
 local function current_path(state)
     local row = current_row(state)
     if not row then
@@ -199,6 +249,9 @@ local function current_path(state)
     return row.path
 end
 
+---@param state UdirState
+---@return string[]? paths
+---@return boolean|string? is_bulk_or_error
 local function selected_paths(state)
     if count_marks(state) == 0 then
         local path, msg = current_path(state)
@@ -215,10 +268,14 @@ local function selected_paths(state)
     return paths, true
 end
 
+---@param state UdirState
 local function clear_marks(state)
     state.marks = {}
 end
 
+---@param state UdirState
+---@param path string
+---@return boolean changed
 local function expand_next_level(state, path)
     if not state.expanded_dirs[path] then
         state.expanded_dirs[path] = true
@@ -228,6 +285,8 @@ local function expand_next_level(state, path)
     local frontier = {}
     local frontier_depth
 
+    ---@param dir string
+    ---@param depth integer
     local function visit(dir, depth)
         for _, file in ipairs(visible_files(dir)) do
             if file.type == 'directory' then
@@ -251,6 +310,9 @@ local function expand_next_level(state, path)
     return #frontier > 0
 end
 
+---@param state UdirState
+---@param path string
+---@return boolean changed
 local function expand_all_dirs(state, path)
     local changed = not state.expanded_dirs[path]
     state.expanded_dirs[path] = true
@@ -265,6 +327,9 @@ local function expand_all_dirs(state, path)
     return changed
 end
 
+---@param state UdirState
+---@param path string
+---@return boolean changed
 local function clear_expanded_subtree(state, path)
     local prefix = path .. util.sep
     local changed = false
@@ -279,6 +344,9 @@ end
 
 -- Keymaps ---------------------------------------------------------------------
 
+---@param rhs UdirKeymapSpec
+---@return UdirKeymapAction action
+---@return string? desc
 local function normalize_keymap(rhs)
     if type(rhs) == 'table' then
         assert(rhs[1], 'keymap table must include an action at index 1')
@@ -287,6 +355,7 @@ local function normalize_keymap(rhs)
     return rhs, nil
 end
 
+---@param buf integer
 local function setup_keymaps(buf)
     for lhs, rhs in pairs(config.keymaps) do
         local action, desc = normalize_keymap(rhs)
@@ -298,11 +367,13 @@ local function setup_keymaps(buf)
     end
 end
 
+---@param state UdirState
 local function cleanup(state)
     api.nvim_buf_delete(state.buf, {force=true})
     store.remove(state.buf)
 end
 
+---@return UdirCwdScope
 local function get_cwd_scope()
     if vim.fn.haslocaldir(0, 0) == 1 then
         return 'window'
@@ -313,6 +384,7 @@ local function get_cwd_scope()
     end
 end
 
+---@return UdirCwdRestore
 local function save_cwd()
     return {
         cwd = vim.fn.getcwd(0, 0),
@@ -320,6 +392,8 @@ local function save_cwd()
     }
 end
 
+---@param scope UdirCwdScope
+---@return 'lcd'|'tcd'|'cd'
 local function cd_cmd(scope)
     return ({
         window = 'lcd',
@@ -328,10 +402,13 @@ local function cd_cmd(scope)
     })[scope]
 end
 
+---@param scope UdirCwdScope
+---@param cwd string
 local function set_cwd(scope, cwd)
     vim.cmd(('sil %s %s'):format(cd_cmd(scope), vim.fn.fnameescape(cwd)))
 end
 
+---@param state UdirState
 local function sync_local_cwd(state)
     if state.sync_local_cwd then
         local ok, msg = pcall(set_cwd, 'window', state.cwd)
@@ -341,11 +418,12 @@ local function sync_local_cwd(state)
     end
 end
 
+---@param state UdirState
 local function restore_cwd(state)
     if state.cwd_restore then
-        local restore = state.cwd_restore
-        state.cwd_restore = nil
+        local restore = assert(state.cwd_restore)
         local ok, msg = pcall(set_cwd, restore.scope, restore.cwd)
+        state.cwd_restore = nil
         if not ok then
             util.warn(msg)
         end
@@ -389,6 +467,7 @@ function M.help()
     help.open(config)
 end
 
+---@param cmd? UdirOpenCommand
 function M.open(cmd)
     local state = store.get()
     local row = current_row(state)
@@ -542,6 +621,7 @@ function M.delete()
     end
 end
 
+---@param is_move boolean
 local function copy_or_move(is_move)
     local state = store.get()
     local paths, is_bulk = selected_paths(state)
@@ -629,7 +709,10 @@ end
 
 -- Initialization --------------------------------------------------------------
 
+---@param dir? string
+---@return string
 local function getcwd(dir)
+    dir = dir or ''
     if dir ~= '' then return fs.realpath(vim.fn.expand(dir)) end
     local p = vim.fn.expand'%:p:h'
     if p ~= '' then return fs.realpath(p) end
@@ -638,6 +721,8 @@ local function getcwd(dir)
     return assert(uv.cwd())
 end
 
+---@param dir? string
+---@param from_au? boolean
 function M.udir(dir, from_au)
     -- If we're executing from the BufEnter autocmd, the current buffer has
     -- already changed, so the origin_buf is actually the altbuf, and we don't

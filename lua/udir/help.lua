@@ -4,6 +4,15 @@ local api = vim.api
 
 local M = {}
 
+---@class UdirHelpRow
+---@field lhs? string
+---@field desc? string
+---@field label? string
+---@field header? boolean
+---@field blank? boolean
+
+---@param hl string
+---@return table
 local function make_border(hl)
     return {
         {'╭', hl}, {'─', hl}, {'╮', hl}, {'│', hl},
@@ -11,6 +20,8 @@ local function make_border(hl)
     }
 end
 
+---@param buf integer?
+---@param win integer?
 local function close_float(buf, win)
     if win and api.nvim_win_is_valid(win) then
         pcall(api.nvim_win_close, win, true)
@@ -20,6 +31,9 @@ local function close_float(buf, win)
     end
 end
 
+---@param width integer
+---@param height integer
+---@return table
 local function layout(width, height)
     width = math.min(width, math.max(20, vim.o.columns - 4))
     height = math.min(height, math.max(1, vim.o.lines - 4))
@@ -38,6 +52,9 @@ local function layout(width, height)
     }
 end
 
+---@param label string
+---@param keymaps? table<string, UdirKeymapSpec>
+---@return UdirHelpRow[]
 local function keymap_rows(label, keymaps)
     local rows = {}
     for lhs, rhs in pairs(keymaps or {}) do
@@ -54,6 +71,8 @@ local function keymap_rows(label, keymaps)
     return section
 end
 
+---@param config UdirConfig
+---@return UdirHelpRow[]
 local function rows(config)
     local normal_rows = keymap_rows('Normal', config.keymaps)
     local visual_rows = keymap_rows('Visual', config.visual_keymaps)
@@ -64,6 +83,9 @@ local function rows(config)
     return normal_rows
 end
 
+---@param buf integer
+---@param ns integer
+---@param help_rows UdirHelpRow[]
 local function render(buf, ns, help_rows)
     local key_width = 1
     for _, row in ipairs(help_rows) do
@@ -105,6 +127,7 @@ local function render(buf, ns, help_rows)
     end
 end
 
+---@param config UdirConfig
 function M.open(config)
     local help_rows = rows(config)
     if #help_rows == 0 then

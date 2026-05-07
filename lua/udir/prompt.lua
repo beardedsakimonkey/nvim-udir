@@ -4,14 +4,32 @@ local util = require'udir.util'
 
 local M = {}
 
+---@class UdirPromptOptions
+---@field prompt? string
+---@field cwd string
+---@field default? string
+---@field width? integer
+---@field validate fun(input: string): any
+
+---@class UdirPromptCompletion
+---@field word string
+---@field suffix string
+---@field start_col integer
+
+---@param win integer?
+---@return boolean
 local function valid_win(win)
-    return win and api.nvim_win_is_valid(win)
+    return win ~= nil and api.nvim_win_is_valid(win)
 end
 
+---@param buf integer?
+---@return boolean
 local function valid_buf(buf)
-    return buf and api.nvim_buf_is_valid(buf)
+    return buf ~= nil and api.nvim_buf_is_valid(buf)
 end
 
+---@param hl string
+---@return table
 local function make_border(hl)
     return {
         {'╭', hl}, {'─', hl}, {'╮', hl}, {'│', hl},
@@ -19,6 +37,9 @@ local function make_border(hl)
     }
 end
 
+---@param prompt? string
+---@param width integer
+---@return table
 local function win_layout(prompt, width)
     local title = prompt and (' ' .. prompt .. ' ') or nil
     width = math.min(width, math.max(20, vim.o.columns - 4))
@@ -37,10 +58,17 @@ local function win_layout(prompt, width)
     }
 end
 
+---@param str string
+---@return string
 local function pesc(str)
     return (str:gsub('([^%w])', '%%%1'))
 end
 
+---@param input string
+---@param col integer
+---@return string dir
+---@return string base
+---@return integer start_col
 local function path_segment(input, col)
     local before = input:sub(1, col)
     local sep = pesc(util.sep)
@@ -51,17 +79,24 @@ local function path_segment(input, col)
     return '', before, 0
 end
 
+---@param input string
+---@param cwd string
+---@return string
 local function normalize_dir(input, cwd)
     if input == '' then
         return cwd
     end
-    input = input:gsub('^~', os.getenv'HOME')
+    input = input:gsub('^~', os.getenv'HOME' or '')
     if input:sub(1, 1) == util.sep then
         return input
     end
     return util.join_path(cwd, input)
 end
 
+---@param input string
+---@param col integer
+---@param cwd string
+---@return UdirPromptCompletion?
 local function completion(input, col, cwd)
     if input == '' then
         return nil
@@ -110,6 +145,20 @@ local function completion(input, col, cwd)
     }
 end
 
+---@class UdirPrompt
+---@field opts UdirPromptOptions
+---@field cb fun(input?: string, result?: any)
+---@field origin_win integer
+---@field width integer
+---@field autocmds integer[]
+---@field ns integer
+---@field input_buf integer
+---@field input_win integer
+---@field closed? boolean
+---@field is_valid? boolean
+---@field valid_result? any
+---@field completion? UdirPromptCompletion
+---@field list_win? integer
 local Prompt = {}
 
 function Prompt:close()
@@ -132,10 +181,13 @@ function Prompt:close()
     vim.cmd'stopinsert'
 end
 
+---@return string
 function Prompt:get_input()
     return api.nvim_buf_get_lines(self.input_buf, 0, 1, false)[1] or ''
 end
 
+---@param input string
+---@param col integer
 function Prompt:set_input(input, col)
     api.nvim_buf_set_lines(self.input_buf, 0, 1, false, {input})
     api.nvim_win_set_cursor(self.input_win, {1, col})
@@ -216,10 +268,17 @@ function Prompt:relayout()
     end
 end
 
+---@param buf integer
+---@param mode string|string[]
+---@param lhs string
+---@param rhs string|function
 local function keymap(buf, mode, lhs, rhs)
     vim.keymap.set(mode, lhs, rhs, {buffer = buf, silent = true, nowait = true})
 end
 
+---@param opts UdirPromptOptions
+---@param cb fun(input?: string, result?: any)
+---@return UdirPrompt
 function M.input(opts, cb)
     local self = setmetatable({
         opts = opts,

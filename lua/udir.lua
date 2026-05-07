@@ -1,6 +1,23 @@
 local M = {}
 
----@alias File {name: string, type: 'file'|'directory'|'link'}
+---@alias UdirFileType 'file'|'directory'|'link'
+---@alias UdirOpenCommand 'edit'|'split'|'vsplit'|'tabedit'|string
+---@alias UdirKeymapAction string|function
+---@alias UdirKeymapSpec UdirKeymapAction|{[1]: UdirKeymapAction, desc?: string}
+
+---@class UdirFile
+---@field name string
+---@field type UdirFileType
+
+---@class UdirConfig
+---@field keymaps table<string, UdirKeymapSpec>
+---@field visual_keymaps table<string, UdirKeymapSpec>
+---@field show_hidden_files boolean
+---@field sync_local_cwd boolean
+---@field is_file_hidden fun(file: UdirFile, files: UdirFile[], dir: string): boolean
+---@field sort? fun(files: UdirFile[])
+
+---@type UdirConfig
 M.config = {
     keymaps = {
         q = {"<Cmd>lua require'udir.core'.quit()<CR>", desc="Quit"},
@@ -34,13 +51,13 @@ M.config = {
     -- Whether to sync the window's current directory with udir's current path
     sync_local_cwd = false,
     -- Function used to determine what files should be hidden
-    ---@type fun(file: File, files: File[], dir: string): boolean
     is_file_hidden = function() return false end,
     -- Function used to sort files
-    ---@type fun(files: File[])
     sort = nil,
 }
 
+---@param dir? string
+---@param from_au? boolean
 function M.udir(dir, from_au)
     require'udir.core'.udir(dir, from_au)
 end

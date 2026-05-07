@@ -80,6 +80,7 @@ do
         vim.g.udir_smoke_input = input or 'nil'
         vim.g.udir_smoke_result = result or 'nil'
     end)
+    ---@cast p UdirPrompt
 
     local cfg = api.nvim_win_get_config(p.input_win)
     assert_eq(cfg.relative, 'editor')
@@ -95,6 +96,7 @@ do
 
     p:set_input('u', 1)
     p:redraw()
+    assert(p.completion)
     assert_eq(p.completion.word, 'UNLICENSE')
     assert_eq(p.completion.suffix, 'NLICENSE')
     p:accept_completion()
@@ -102,6 +104,7 @@ do
 
     p:set_input('lua/u', 5)
     p:redraw()
+    assert(p.completion)
     assert_eq(p.completion.word, 'lua/udir/')
     assert_eq(p.completion.suffix, 'dir/')
     p:accept_completion()
@@ -123,6 +126,7 @@ do
     }, function(input)
         vim.g.udir_smoke_escape_non_empty = input == nil
     end)
+    ---@cast p UdirPrompt
 
     p:set_input('abc', 3)
     p:escape_insert()
@@ -141,6 +145,7 @@ do
     }, function(input)
         vim.g.udir_smoke_escape_empty = input == nil
     end)
+    ---@cast p UdirPrompt
 
     p:set_input('', 0)
     p:escape_insert()
@@ -158,6 +163,7 @@ do
     }, function(input)
         vim.g.udir_smoke_cancelled = input == nil
     end)
+    ---@cast p UdirPrompt
 
     p:cancel()
     assert_eq(vim.g.udir_smoke_cancelled, true)
@@ -197,6 +203,7 @@ do
     assert(has_file_hl, 'marked rows should highlight filenames')
 
     local old_input = prompt.input
+    ---@diagnostic disable-next-line: duplicate-set-field
     prompt.input = function(opts, cb)
         local dest = opts.validate('dest')
         cb('dest', dest)
@@ -500,6 +507,7 @@ do
 
     vim.cmd('Udir ' .. vim.fn.fnameescape(tmp))
     local old_list = fs.list
+    ---@diagnostic disable-next-line: duplicate-set-field
     fs.list = function(path)
         if path:match('/unreadable$') then
             error('permission denied')
