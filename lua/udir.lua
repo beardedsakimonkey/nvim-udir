@@ -37,6 +37,7 @@ M.config = {
         gx = {"<Cmd>lua require'udir.core'.open_external()<CR>", desc="Open externally"},
         R = {"<Cmd>lua require'udir.core'.reload()<CR>", desc="Reload"},
         i = {"<Cmd>lua require'udir.core'.info()<CR>", desc="Show info"},
+        y = {"<Cmd>lua require'udir.core'.yank_path()<CR>", desc="Yank path"},
         d = {"<Cmd>lua require'udir.core'.delete()<CR>", desc="Delete"},
         ['+'] = {"<Cmd>lua require'udir.core'.create()<CR>", desc="Create"},
         m = {"<Cmd>lua require'udir.core'.move()<CR>", desc="Move"},

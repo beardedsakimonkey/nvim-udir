@@ -360,6 +360,7 @@ do
     vim.cmd('Udir ' .. vim.fn.fnameescape(cwd))
     assert_eq(vim.fn.maparg('q', 'n', false, true).desc, 'Quit')
     assert_eq(vim.fn.maparg('i', 'n', false, true).desc, 'Show info')
+    assert_eq(vim.fn.maparg('y', 'n', false, true).desc, 'Yank path')
     assert_eq(vim.fn.maparg('H', 'n', false, true).desc, 'Show help')
     assert_eq(vim.fn.maparg('<S-Tab>', 'n', false, true).desc, 'Clear marks')
     assert_eq(vim.fn.maparg('<Tab>', 'x', false, true).desc, 'Toggle marks')
@@ -386,6 +387,55 @@ do
 
     core.quit()
     assert_eq(vim.fn.delete(tmp, 'rf'), 0)
+end
+
+do
+    local had_clipboard, old_clipboard = pcall(api.nvim_get_var, 'clipboard')
+    vim.g.clipboard = {
+        name = 'udir-smoke',
+        copy = {
+            ['+'] = function(lines) vim.g.udir_smoke_clipboard = table.concat(lines, '\n') end,
+            ['*'] = function() end,
+        },
+        paste = {
+            ['+'] = function() return {vim.split(vim.g.udir_smoke_clipboard or '', '\n'), 'v'} end,
+            ['*'] = function() return {{''}, 'v'} end,
+        },
+    }
+    local tmp = vim.fn.tempname()
+    assert(vim.loop.fs_mkdir(tmp, tonumber('755', 8)))
+    touch(tmp .. '/a')
+
+    local augroup = api.nvim_create_augroup('udir-smoke-yank', {})
+    api.nvim_create_autocmd('TextYankPost', {
+        group = augroup,
+        callback = function()
+            vim.g.udir_smoke_yankpost_operator = vim.v.event.operator
+            vim.g.udir_smoke_yankpost_regname = vim.v.event.regname
+            vim.g.udir_smoke_yankpost_text = vim.v.event.regcontents[1]
+        end,
+    })
+
+    vim.cmd('Udir ' .. vim.fn.fnameescape(tmp))
+    local expected_path = fs.realpath(tmp) .. '/a'
+    core.yank_path()
+    assert_eq(vim.fn.getreg('+'), expected_path)
+    assert_eq(vim.g.udir_smoke_yankpost_operator, 'y')
+    assert_eq(vim.g.udir_smoke_yankpost_regname, '+')
+    assert_eq(vim.g.udir_smoke_yankpost_text, 'a')
+
+    core.quit()
+    assert_eq(vim.fn.delete(tmp, 'rf'), 0)
+    api.nvim_del_augroup_by_id(augroup)
+    if had_clipboard then
+        vim.g.clipboard = old_clipboard
+    else
+        pcall(api.nvim_del_var, 'clipboard')
+    end
+    vim.g.udir_smoke_clipboard = nil
+    vim.g.udir_smoke_yankpost_operator = nil
+    vim.g.udir_smoke_yankpost_regname = nil
+    vim.g.udir_smoke_yankpost_text = nil
 end
 
 do
@@ -441,6 +491,7 @@ do
     assert(vim.tbl_contains(help_lines, 'Visual'), 'help should show visual mappings')
     assert(table.concat(help_lines, '\n'):match('H%s+Show help'), 'help should include described mappings')
     assert(table.concat(help_lines, '\n'):match('i%s+Show info'), 'help should include the info mapping')
+    assert(table.concat(help_lines, '\n'):match('y%s+Yank path'), 'help should include the yank path mapping')
     assert(table.concat(help_lines, '\n'):match('<S%-Tab>%s+Clear marks'), 'help should include the clear marks mapping')
 
     local marks = api.nvim_buf_get_extmarks(help_buf, -1, 0, -1, {details=true})

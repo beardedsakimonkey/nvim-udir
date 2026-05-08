@@ -607,6 +607,22 @@ function M.clear_marks()
     render(state)
 end
 
+function M.yank_path()
+    local state = store.get()
+    local path, msg = current_path(state)
+    if not path then
+        util.err(msg)
+        return
+    end
+    -- Trigger a real yank so TextYankPost autocmds see vim.v.event.
+    pcall(vim.cmd, [[normal! "+yy]])
+    local ok, err = pcall(vim.fn.setreg, '+', path, 'c')
+    if not ok then
+        util.err(err)
+        return
+    end
+end
+
 function M.delete()
     local state = store.get()
     local paths, is_bulk = selected_paths(state)
