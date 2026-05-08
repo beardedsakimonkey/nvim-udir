@@ -1,7 +1,7 @@
 local fs = require'udir.fs'
-local help = require'udir.help'
-local confirm = require'udir.confirm'
-local info = require'udir.info'
+local help_win = require'udir.help_win'
+local delete_win = require'udir.delete_win'
+local info_win = require'udir.info_win'
 local prompt = require'udir.prompt'
 local store = require'udir.store'
 local util = require'udir.util'
@@ -463,7 +463,7 @@ function M.prev_directory()
 end
 
 function M.help()
-    help.open(config)
+    help_win.open(config)
 end
 
 function M.info()
@@ -473,7 +473,7 @@ function M.info()
         util.err(msg)
         return
     end
-    info.open(path)
+    info_win.open(path)
 end
 
 ---@param cmd? UdirOpenCommand
@@ -639,7 +639,7 @@ function M.delete()
         util.err(is_bulk)
         return
     end
-    confirm.delete(paths, state.cwd, function(confirmed)
+    delete_win.delete(paths, state.cwd, function(confirmed)
         if not confirmed then
             return
         end

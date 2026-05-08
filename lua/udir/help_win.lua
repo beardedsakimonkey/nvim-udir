@@ -1,5 +1,5 @@
 local util = require'udir.util'
-local float = require'udir.float'
+local window = require'udir.window'
 
 local api = vim.api
 
@@ -16,7 +16,7 @@ local M = {}
 ---@param height integer
 ---@return table
 local function layout(width, height)
-    return float.centered_layout({
+    return window.centered_layout({
         title = 'Help',
         width = width,
         height = height,
@@ -120,7 +120,7 @@ function M.open(config)
     local height = #help_rows
     local origin_win = api.nvim_get_current_win()
     local buf = api.nvim_create_buf(false, true)
-    local ns = api.nvim_create_namespace('udir/help.' .. buf)
+    local ns = api.nvim_create_namespace('udir/help_win.' .. buf)
 
     vim.bo[buf].buftype = 'nofile'
     vim.bo[buf].bufhidden = 'wipe'
@@ -133,7 +133,7 @@ function M.open(config)
     vim.wo[win].cursorline = false
 
     local function close()
-        float.close(buf, win)
+        window.close(buf, win)
         if api.nvim_win_is_valid(origin_win) then
             pcall(api.nvim_set_current_win, origin_win)
         end

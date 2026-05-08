@@ -1,7 +1,7 @@
 local api = vim.api
 local uv = vim.loop
 
-local float = require'udir.float'
+local window = require'udir.window'
 local fs = require'udir.fs'
 local util = require'udir.util'
 
@@ -172,7 +172,7 @@ function M.delete(paths, cwd, cb)
     local autocmds = {}
     local closed = false
     local buf = api.nvim_create_buf(false, true)
-    local ns = api.nvim_create_namespace('udir/delete-confirm.' .. buf)
+    local ns = api.nvim_create_namespace('udir/delete_win.' .. buf)
 
     vim.bo[buf].buftype = 'nofile'
     vim.bo[buf].bufhidden = 'wipe'
@@ -181,7 +181,7 @@ function M.delete(paths, cwd, cb)
     vim.bo[buf].modifiable = false
 
     local function layout()
-        return float.centered_layout({
+        return window.centered_layout({
             title = confirm_title,
             width = width(confirm_title, rendered_lines),
             height = #rendered_lines,
@@ -203,8 +203,8 @@ function M.delete(paths, cwd, cb)
             pcall(api.nvim_del_autocmd, au)
         end
         vim.o.guicursor = guicursor
-        float.close(buf, win)
-        if float.valid_win(origin_win) then
+        window.close(buf, win)
+        if window.valid_win(origin_win) then
             pcall(api.nvim_set_current_win, origin_win)
         end
         cb(confirmed)
@@ -219,7 +219,7 @@ function M.delete(paths, cwd, cb)
 
     autocmds[#autocmds+1] = api.nvim_create_autocmd('VimResized', {
         callback = function()
-            if float.valid_win(win) then
+            if window.valid_win(win) then
                 api.nvim_win_set_config(win, layout())
             end
         end,

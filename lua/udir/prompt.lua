@@ -1,6 +1,6 @@
 local api = vim.api
 local uv = vim.loop
-local float = require'udir.float'
+local window = require'udir.window'
 local util = require'udir.util'
 
 local M = {}
@@ -21,7 +21,7 @@ local M = {}
 ---@param width integer
 ---@return table
 local function win_layout(prompt, width)
-    return float.centered_layout({
+    return window.centered_layout({
         title = prompt,
         width = width,
         height = 1,
@@ -140,8 +140,8 @@ function Prompt:close()
     for _, au in ipairs(self.autocmds) do
         pcall(api.nvim_del_autocmd, au)
     end
-    float.close(self.input_buf, self.input_win)
-    if float.valid_win(self.origin_win) then
+    window.close(self.input_buf, self.input_win)
+    if window.valid_win(self.origin_win) then
         pcall(api.nvim_set_current_win, self.origin_win)
     end
     vim.cmd'stopinsert'
@@ -164,9 +164,9 @@ function Prompt:validate()
     self.is_valid = ok
     self.valid_result = ok and result or nil
     local hl = ok and 'UdirPromptBorderValid' or 'UdirPromptBorderInvalid'
-    if float.valid_win(self.input_win) then
+    if window.valid_win(self.input_win) then
         local cfg = api.nvim_win_get_config(self.input_win)
-        cfg.border = float.border(hl)
+        cfg.border = window.border(hl)
         api.nvim_win_set_config(self.input_win, cfg)
     end
 end
@@ -174,7 +174,7 @@ end
 function Prompt:update_completion()
     api.nvim_buf_clear_namespace(self.input_buf, self.ns, 0, -1)
     self.completion = nil
-    if not float.valid_win(self.input_win) then
+    if not window.valid_win(self.input_win) then
         return
     end
     local input = self:get_input()
@@ -194,7 +194,7 @@ function Prompt:redraw()
 end
 
 function Prompt:accept_completion()
-    if not self.completion or not float.valid_win(self.input_win) then
+    if not self.completion or not window.valid_win(self.input_win) then
         return
     end
     local input = self:get_input()
@@ -228,7 +228,7 @@ function Prompt:escape_insert()
 end
 
 function Prompt:relayout()
-    if float.valid_win(self.input_win) then
+    if window.valid_win(self.input_win) then
         api.nvim_win_set_config(self.input_win, win_layout(self.opts.prompt, self.width))
         self:redraw()
     end

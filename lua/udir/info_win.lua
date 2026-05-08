@@ -1,7 +1,7 @@
 local api = vim.api
 local uv = vim.loop
 
-local float = require'udir.float'
+local window = require'udir.window'
 local fs = require'udir.fs'
 local util = require'udir.util'
 
@@ -168,7 +168,7 @@ function M.open(path)
     local rendered_lines = lines(info_rows, label_len)
     local origin_win = api.nvim_get_current_win()
     local buf = api.nvim_create_buf(false, true)
-    local ns = api.nvim_create_namespace('udir/info.' .. buf)
+    local ns = api.nvim_create_namespace('udir/info_win.' .. buf)
 
     vim.bo[buf].buftype = 'nofile'
     vim.bo[buf].bufhidden = 'wipe'
@@ -176,7 +176,7 @@ function M.open(path)
     render(buf, ns, info_rows, label_len)
     vim.bo[buf].modifiable = false
 
-    local win = api.nvim_open_win(buf, true, float.centered_layout({
+    local win = api.nvim_open_win(buf, true, window.centered_layout({
         title = 'Info',
         width = width(rendered_lines),
         height = #rendered_lines,
@@ -186,7 +186,7 @@ function M.open(path)
     vim.wo[win].wrap = false
 
     local function close()
-        float.close(buf, win)
+        window.close(buf, win)
         if api.nvim_win_is_valid(origin_win) then
             pcall(api.nvim_set_current_win, origin_win)
         end

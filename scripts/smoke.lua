@@ -10,7 +10,7 @@ end
 
 local fs = require'udir.fs'
 local config = require'udir'.config
-local confirm = require'udir.confirm'
+local delete_win = require'udir.delete_win'
 local prompt = require'udir.prompt'
 local core = require'udir.core'
 local store = require'udir.store'
@@ -113,7 +113,7 @@ do
         paths[#paths+1] = tmp .. '/dir/file-' .. i .. '.txt'
     end
 
-    confirm.delete(paths, tmp, function(confirmed)
+    delete_win.delete(paths, tmp, function(confirmed)
         vim.g.udir_smoke_confirm_delete = confirmed
     end)
     local confirm_win = api.nvim_get_current_win()
