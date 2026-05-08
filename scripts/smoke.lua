@@ -264,7 +264,7 @@ assert_match(fs.validate_create('x-new-file', cwd), 'x%-new%-file$')
 assert_match(fs.validate_create('x-new-dir/', cwd), 'x%-new%-dir/$')
 assert_match(fs.validate_create('x-new-parent/x-new-file', cwd), 'x%-new%-parent/x%-new%-file$')
 assert(not pcall(fs.validate_create, '/tmp/x', cwd), 'create paths should stay relative')
-assert_match(fs.resolve_copy_or_move_dest(false, cwd, '/tmp', cwd), '/tmp/[^/]+$')
+assert_match(fs.resolve_copy_or_move_dest(cwd, '/tmp', cwd), '/tmp/[^/]+$')
 
 do
     local tmp = vim.fn.tempname()

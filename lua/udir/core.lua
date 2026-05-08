@@ -680,11 +680,11 @@ local function copy_or_move(is_move)
                 local dest = fs.normalize_path(input, state.cwd)
                 assert(fs.is_dir(dest), 'Bulk destination must be an existing directory')
                 for _, src in ipairs(paths) do
-                    fs.resolve_copy_or_move_dest(is_move, src, dest, state.cwd)
+                    fs.resolve_copy_or_move_dest(src, dest, state.cwd)
                 end
                 return dest
             end
-            return fs.resolve_copy_or_move_dest(is_move, paths[1], input, state.cwd)
+            return fs.resolve_copy_or_move_dest(paths[1], input, state.cwd)
         end,
     }, function(input, dest)
         if not input then

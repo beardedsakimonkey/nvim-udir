@@ -146,12 +146,11 @@ function M.validate_create(input, cwd)
     return path
 end
 
----@param is_move boolean
 ---@param src string
 ---@param dest string
 ---@param cwd string
 ---@return string dest
-function M.resolve_copy_or_move_dest(is_move, src, dest, cwd)
+function M.resolve_copy_or_move_dest(src, dest, cwd)
     assert(exists(src), ("%s doesn't exist"):format(src))
     dest = M.normalize_path(dest, cwd)
     assert(src ~= dest, '`src` equals `dest`')
@@ -167,7 +166,7 @@ end
 ---@param dest string
 ---@param cwd string
 function M.copy_or_move(is_move, src, dest, cwd)
-    dest = M.resolve_copy_or_move_dest(is_move, src, dest, cwd)
+    dest = M.resolve_copy_or_move_dest(src, dest, cwd)
     local op = is_move and move or M.is_dir(src) and copy_dir or copy_file
     -- Note: Moving from a file to a file should overwrite the file
     op(src, dest)
