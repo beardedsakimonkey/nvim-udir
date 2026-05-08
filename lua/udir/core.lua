@@ -49,17 +49,6 @@ local FILE_HL_PRIORITY = 100  -- Below vim.highlight.on_yank's default priority.
 
 -- Render ----------------------------------------------------------------------
 
----@param files UdirFile[]
-local function sort_by_name(files)
-    table.sort(files, function(a, b)
-        if (a.type == 'directory') == (b.type == 'directory') then
-            return a.name < b.name
-        else
-            return a.type == 'directory'
-        end
-    end)
-end
-
 ---@param msg any
 ---@return boolean
 local function is_permission_error(msg)
@@ -89,8 +78,7 @@ local function visible_files(state, dir)
             return not config.hidden_filter(file, all_files, dir)
         end
     end, all_files)
-    local sort_fn = config.sort or sort_by_name
-    sort_fn(files)
+    config.sort(files)
     return files, nil
 end
 

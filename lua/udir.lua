@@ -1,5 +1,13 @@
 local M = {}
 
+local function sort_by_name(a, b)
+    if (a.type == 'directory') == (b.type == 'directory') then
+        return a.name < b.name
+    else
+        return a.type == 'directory'
+    end
+end
+
 ---@alias UdirFileType 'file'|'directory'|'link'
 ---@alias UdirOpenCommand 'edit'|'split'|'vsplit'|'tabedit'|string
 ---@alias UdirKeymapAction string|function
@@ -58,7 +66,7 @@ M.config = {
     -- Function used to determine what files should be hidden behind `gh`
     hidden_filter = function(file) return vim.startswith(file.name, '.') end,
     -- Function used to sort files
-    sort = nil,
+    sort = function(files) table.sort(files, sort_by_name) end,
 }
 
 ---@param dir? string
