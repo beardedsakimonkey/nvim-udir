@@ -579,6 +579,7 @@ do
     local help_lines = api.nvim_buf_get_lines(help_buf, 0, -1, false)
     local help_cfg = api.nvim_win_get_config(help_win)
     assert_eq(help_cfg.height, math.min(#help_lines, math.max(1, vim.o.lines - 4)))
+    assert_eq(vim.wo[help_win].cursorline, false, 'help should disable cursorline')
     assert(vim.tbl_contains(help_lines, 'Normal'), 'help should show normal mappings')
     assert(vim.tbl_contains(help_lines, 'Visual'), 'help should show visual mappings')
     assert(table.concat(help_lines, '\n'):match('H%s+Show help'), 'help should include described mappings')

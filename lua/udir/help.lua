@@ -130,7 +130,7 @@ function M.open(config)
 
     local win = api.nvim_open_win(buf, true, layout(width, height))
     vim.wo[win].winhighlight = 'NormalFloat:Normal,FloatBorder:UdirPromptBorder'
-    vim.wo[win].cursorline = true
+    vim.wo[win].cursorline = false
 
     local function close()
         float.close(buf, win)
