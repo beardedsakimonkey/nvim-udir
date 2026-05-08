@@ -48,6 +48,7 @@ restored when the directory is expanded again. Press `U` to collapse a directory
 and forget its expanded descendant state. Press `J` or `K` to jump to the next
 or previous visible directory row. Press `H` to show keymap help.
 Press `gx` to open the currently hovered path with `vim.ui.open()`.
+Press `i` to show file metadata for the current row in a floating window.
 Use `<Tab>` to toggle a mark on the current row, or select multiple rows in
 visual mode and press `<Tab>` to toggle marks for every selected row.
 
@@ -76,6 +77,7 @@ require'udir'.config = {
         t = {"<Cmd>lua require'udir.core'.open('tabedit')<CR>", desc="Open in tab"},
         gx = {"<Cmd>lua require'udir.core'.open_external()<CR>", desc="Open externally"},
         R = {"<Cmd>lua require'udir.core'.reload()<CR>", desc="Reload"},
+        i = {"<Cmd>lua require'udir.core'.info()<CR>", desc="Show info"},
         d = {"<Cmd>lua require'udir.core'.delete()<CR>", desc="Delete"},
         ['+'] = {"<Cmd>lua require'udir.core'.create()<CR>", desc="Create"},
         m = {"<Cmd>lua require'udir.core'.move()<CR>", desc="Move"},
@@ -107,7 +109,7 @@ local udir = require'udir'
 udir.config = vim.tbl_deep_extend('force', udir.config, {
     show_hidden_files = false,
     keymaps = {
-        i = "<Cmd>lua require'udir'.open()<CR>",
+        e = "<Cmd>lua require'udir.core'.open()<CR>",
         C = function() --[[...]] end,  -- keymaps can also be lua functions
     },
 })
@@ -115,7 +117,7 @@ udir.config = vim.tbl_deep_extend('force', udir.config, {
 -- or...
 
 udir.config.show_hidden_files = false
-udir.config.keymaps.i = "<Cmd>lua require'udir'.open()<CR>"
+udir.config.keymaps.e = "<Cmd>lua require'udir.core'.open()<CR>"
 ```
 
 Keymaps may also be provided as plain strings or functions. Use the table form
@@ -145,6 +147,8 @@ UdirMarkedFile
 UdirHelpHeader
 UdirHelpKey
 UdirHelpDesc
+UdirInfoLabel
+UdirInfoValue
 ```
 
 ## Smoke test

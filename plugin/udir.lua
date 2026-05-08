@@ -23,6 +23,8 @@ vim.cmd 'hi default link UdirMarkedFile Special'
 vim.cmd 'hi default link UdirHelpHeader  Title'
 vim.cmd 'hi default link UdirHelpKey     Special'
 vim.cmd 'hi default link UdirHelpDesc    Normal'
+vim.cmd 'hi default link UdirInfoLabel   Special'
+vim.cmd 'hi default link UdirInfoValue   Normal'
 
 vim.api.nvim_create_user_command('Udir', function(o)
     require'udir'.udir(o.args)

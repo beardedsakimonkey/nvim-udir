@@ -23,6 +23,12 @@ local function touch(path)
     assert(vim.loop.fs_close(fd))
 end
 
+local function write_file(path, contents)
+    local fd = assert(vim.loop.fs_open(path, 'w', tonumber('644', 8)))
+    assert(vim.loop.fs_write(fd, contents, 0))
+    assert(vim.loop.fs_close(fd))
+end
+
 local function mark_count(state)
     local count = 0
     for _ in pairs(state.marks) do
@@ -341,9 +347,49 @@ end
 do
     vim.cmd('Udir ' .. vim.fn.fnameescape(cwd))
     assert_eq(vim.fn.maparg('q', 'n', false, true).desc, 'Quit')
+    assert_eq(vim.fn.maparg('i', 'n', false, true).desc, 'Show info')
     assert_eq(vim.fn.maparg('H', 'n', false, true).desc, 'Show help')
     assert_eq(vim.fn.maparg('<Tab>', 'x', false, true).desc, 'Toggle marks')
     core.quit()
+end
+
+do
+    local tmp = vim.fn.tempname()
+    assert(vim.loop.fs_mkdir(tmp, tonumber('755', 8)))
+    write_file(tmp .. '/alpha.txt', 'hello')
+
+    vim.cmd('Udir ' .. vim.fn.fnameescape(tmp))
+    local origin_win = api.nvim_get_current_win()
+    core.info()
+    local info_win = api.nvim_get_current_win()
+    local info_buf = api.nvim_get_current_buf()
+    local info_cfg = api.nvim_win_get_config(info_win)
+    local info_lines = api.nvim_buf_get_lines(info_buf, 0, -1, false)
+    local info_text = table.concat(info_lines, '\n')
+
+    assert(info_win ~= origin_win, 'info should open in a floating window')
+    assert_eq(info_cfg.border[1][2], 'UdirPromptBorder')
+    assert_match(win_title(info_win), 'Info')
+    assert_match(info_text, 'Name%s+alpha%.txt')
+    assert_match(info_text, 'Type%s+File')
+    assert_match(info_text, 'Size%s+5 B')
+    assert_match(info_text, 'Permissions%s+rw%-r%-%-r%-%-')
+    assert(info_text:find(tmp .. '/alpha.txt', 1, true), 'info should show the selected path')
+
+    local marks = api.nvim_buf_get_extmarks(info_buf, -1, 0, -1, {details=true})
+    local has_label, has_value = false, false
+    for _, mark in ipairs(marks) do
+        local hl = mark[4].hl_group
+        has_label = has_label or hl == 'UdirInfoLabel'
+        has_value = has_value or hl == 'UdirInfoValue'
+    end
+    assert(has_label, 'info should highlight labels')
+    assert(has_value, 'info should highlight values')
+
+    api.nvim_feedkeys('q', 'xt', false)
+    assert_eq(api.nvim_get_current_win(), origin_win, 'closing info should restore origin window')
+    core.quit()
+    assert_eq(vim.fn.delete(tmp, 'rf'), 0)
 end
 
 do
@@ -359,6 +405,7 @@ do
     assert(vim.tbl_contains(help_lines, 'Normal'), 'help should show normal mappings')
     assert(vim.tbl_contains(help_lines, 'Visual'), 'help should show visual mappings')
     assert(table.concat(help_lines, '\n'):match('H%s+Show help'), 'help should include described mappings')
+    assert(table.concat(help_lines, '\n'):match('i%s+Show info'), 'help should include the info mapping')
 
     local marks = api.nvim_buf_get_extmarks(help_buf, -1, 0, -1, {details=true})
     local has_header, has_key, has_desc = false, false, false

@@ -1,6 +1,7 @@
 local fs = require'udir.fs'
 local help = require'udir.help'
 local confirm = require'udir.confirm'
+local info = require'udir.info'
 local prompt = require'udir.prompt'
 local store = require'udir.store'
 local util = require'udir.util'
@@ -456,6 +457,16 @@ end
 
 function M.help()
     help.open(config)
+end
+
+function M.info()
+    local state = store.get()
+    local path, msg = current_path(state)
+    if not path then
+        util.err(msg)
+        return
+    end
+    info.open(path)
 end
 
 ---@param cmd? UdirOpenCommand
