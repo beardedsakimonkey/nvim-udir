@@ -82,6 +82,9 @@ end
 ---@param count integer
 ---@return string
 local function title(count)
+    if count == 1 then
+        return 'Delete? (y/n)'
+    end
     return string.format('Delete %d %s? (y/n)', count, count == 1 and 'file' or 'files')
 end
 

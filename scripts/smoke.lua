@@ -342,6 +342,26 @@ end
 do
     local tmp = vim.fn.tempname()
     assert(vim.loop.fs_mkdir(tmp, tonumber('755', 8)))
+    touch(tmp .. '/single.txt')
+
+    vim.cmd('Udir ' .. vim.fn.fnameescape(tmp))
+    util.set_cursor_pos('single%.txt')
+    core.delete()
+
+    local confirm_win = api.nvim_get_current_win()
+    local confirm_buf = api.nvim_get_current_buf()
+    local confirm_lines = api.nvim_buf_get_lines(confirm_buf, 0, -1, false)
+    assert_match(win_title(confirm_win), 'Delete%? %(y/n%)')
+    assert_eq(confirm_lines[1], '  single.txt')
+
+    api.nvim_feedkeys('n', 'xt', false)
+    core.quit()
+    assert_eq(vim.fn.delete(tmp, 'rf'), 0)
+end
+
+do
+    local tmp = vim.fn.tempname()
+    assert(vim.loop.fs_mkdir(tmp, tonumber('755', 8)))
     assert(vim.loop.fs_mkdir(tmp .. '/dest', tonumber('755', 8)))
     touch(tmp .. '/a')
     touch(tmp .. '/b')
