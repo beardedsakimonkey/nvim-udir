@@ -361,8 +361,31 @@ do
     assert_eq(vim.fn.maparg('q', 'n', false, true).desc, 'Quit')
     assert_eq(vim.fn.maparg('i', 'n', false, true).desc, 'Show info')
     assert_eq(vim.fn.maparg('H', 'n', false, true).desc, 'Show help')
+    assert_eq(vim.fn.maparg('<S-Tab>', 'n', false, true).desc, 'Clear marks')
     assert_eq(vim.fn.maparg('<Tab>', 'x', false, true).desc, 'Toggle marks')
     core.quit()
+end
+
+do
+    local tmp = vim.fn.tempname()
+    assert(vim.loop.fs_mkdir(tmp, tonumber('755', 8)))
+    touch(tmp .. '/a')
+    touch(tmp .. '/b')
+
+    vim.cmd('Udir ' .. vim.fn.fnameescape(tmp))
+    local state = store.get()
+
+    util.set_cursor_pos('a')
+    core.toggle_mark()
+    util.set_cursor_pos('b')
+    core.toggle_mark()
+    assert_eq(mark_count(state), 2)
+
+    core.clear_marks()
+    assert_eq(mark_count(state), 0)
+
+    core.quit()
+    assert_eq(vim.fn.delete(tmp, 'rf'), 0)
 end
 
 do
@@ -418,6 +441,7 @@ do
     assert(vim.tbl_contains(help_lines, 'Visual'), 'help should show visual mappings')
     assert(table.concat(help_lines, '\n'):match('H%s+Show help'), 'help should include described mappings')
     assert(table.concat(help_lines, '\n'):match('i%s+Show info'), 'help should include the info mapping')
+    assert(table.concat(help_lines, '\n'):match('<S%-Tab>%s+Clear marks'), 'help should include the clear marks mapping')
 
     local marks = api.nvim_buf_get_extmarks(help_buf, -1, 0, -1, {details=true})
     local has_header, has_key, has_desc = false, false, false

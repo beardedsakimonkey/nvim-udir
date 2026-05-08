@@ -42,6 +42,7 @@ M.config = {
         m = {"<Cmd>lua require'udir.core'.move()<CR>", desc="Move"},
         c = {"<Cmd>lua require'udir.core'.copy()<CR>", desc="Copy"},
         ['<Tab>'] = {"<Cmd>lua require'udir.core'.toggle_mark()<CR>", desc="Toggle mark"},
+        ['<S-Tab>'] = {"<Cmd>lua require'udir.core'.clear_marks()<CR>", desc="Clear marks"},
         ['.'] = {"<Cmd>lua require'udir.core'.toggle_hidden_files()<CR>", desc="Toggle hidden files"},
         H = {"<Cmd>lua require'udir.core'.help()<CR>", desc="Show help"},
     },

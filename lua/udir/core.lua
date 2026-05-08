@@ -601,6 +601,12 @@ function M.toggle_mark_visual()
     render(state)
 end
 
+function M.clear_marks()
+    local state = store.get()
+    clear_marks(state)
+    render(state)
+end
+
 function M.delete()
     local state = store.get()
     local paths, is_bulk = selected_paths(state)
