@@ -1,67 +1,54 @@
 # Udir
 
-Udir is a small (~500 sloc) directory viewer for neovim (>= 0.12). Similar to
-[vim-dirvish](https://github.com/justinmk/vim-dirvish), udir opens within the
-current window and is not meant to be used as a project drawer as found in IDEs.
+Udir is a small directory viewer for Neovim 0.12+. It opens in the current
+window, works well with normal buffer navigation, and stays out of the way when
+you only need to browse, create, move, copy, delete, or inspect files.
 
-However, udir differs from vim-dirvish in a few key ways.
+It is closer to [vim-dirvish](https://github.com/justinmk/vim-dirvish) than to
+a project drawer. Udir is meant to be opened when you need it, then closed or
+replaced by the file you choose.
 
-1) **Udir does not use modifiable buffers.** I found myself seldom using this
-   feature and I prefer the extra keymap availability from not having modifiable
-   buffers.
+## Why Udir?
 
-2) **Udir buffers don't populate the jumplist.**  Hitting `<C-o>` typically won't take
-   you to a udir buffer. This is partly a matter of personal preference, and dirvish
-   opts [against it](https://github.com/justinmk/vim-dirvish/issues/110).
-
-3) **Udir ensures that each instance is isolated.** This means that if you open
-   udir to the same directory in two different windows, those buffers are distinct,
-   and as such, opening a file or navigating in one won't affect the other.
-
-   To achieve isolation, udir must give each buffer a unique name. Usually, this is
-   the directory path, such that commands like `:cd %` work. However, if you have
-   multiple loaded udir buffers on the same directory, the buffer names will be made
-   unique by appending an id like "[2]" to the name (in which case `:cd %` won't work).
-
-   Admittedly, this is a hack; vim buffers are intended to have a 1-to-1 mapping
-   with files. When naming a buffer with something that looks like a path, vim
-   internally canonicalizes the name in order to avoid having multiple buffers
-   correspond to the same file. However, this approach avoids surprising and
-   inconvenient behavior that occurs when windows share the same buffer.
+- **Normal buffers, not editable directory listings.** Udir does not make the
+  directory buffer modifiable, which leaves more keys available for actions.
+- **Quiet navigation history.** Udir buffers avoid populating the jumplist, so
+  `<C-o>` usually takes you back through files rather than directory views.
+- **Isolated instances.** Opening the same directory in two windows creates two
+  independent Udir buffers. Navigation, marks, and expanded directories in one
+  window do not affect the other.
+- **Inline tree expansion.** You can stay in one directory while expanding
+  selected subdirectories into a tree.
 
 ## Screenshot
+
 <img width="676" alt="Screen Shot 2022-02-12 at 1 19 51 PM" src="https://user-images.githubusercontent.com/54521218/153728813-bcad4cb8-3494-482f-be05-7032f35fed81.png">
 
 ## Usage
 
-You can use the `:Udir [dir]` command to open udir, or create your own mapping:
-``` lua
+Open Udir with:
+
+```vim
+:Udir
+:Udir path/to/dir
+```
+
+Or add a mapping:
+
+```lua
 vim.keymap.set('n', '-', '<Cmd>Udir<CR>')
 ```
 
-In a udir buffer, `l`/`<CR>` navigates into a directory. Press `o` on a
-directory to expand it inline using a tree-style view, and press `o` again on
-that directory to expand one more level of subdirectories. Press `O` to expand
-all nested subdirectories recursively. Press `u` on an expanded directory to
-collapse only that directory; previously expanded descendants are remembered and
-restored when the directory is expanded again. Press `U` to collapse a directory
-and forget its expanded descendant state. Press `J` or `K` to jump to the next
-or previous visible directory row. Press `H` to show keymap help.
-Press `gx` to open the currently hovered path with `vim.ui.open()`.
-Press `i` to show file metadata for the current row in a floating window.
-Press `y` to yank the current row's path, or `Y` to yank it to the clipboard.
-Use `<Tab>` to toggle a mark on the current row, or select multiple rows in
-visual mode and press `<Tab>` to toggle marks for every selected row. Press
-`<S-Tab>` to clear all marks.
-
-
 ## Configuration
 
-Udir does not require any configuration, but can be configured by mutating `udir.config`.
-The defaults are listed below.
+Udir works without setup. To customize it, mutate `require'udir'.config` from
+your Neovim config.
+
+The default config is generated from `lua/udir.lua`:
+
 <!-- udir-config:start -->
 ```lua
-require'udir'.config = {
+config = {
     keymaps = {
         q = {"<Cmd>lua require'udir.core'.quit()<CR>", desc="Quit"},
         h = {"<Cmd>lua require'udir.core'.up_dir()<CR>", desc="Up directory"},
@@ -106,7 +93,8 @@ require'udir'.config = {
 ```
 <!-- udir-config:end -->
 
-Configuration can be applied by mutating the `config` table:
+Example:
+
 ```lua
 local udir = require'udir'
 
@@ -116,25 +104,23 @@ udir.config = vim.tbl_deep_extend('force', udir.config, {
         return vim.startswith(file.name, '.') or file.name == 'node_modules'
     end,
     keymaps = {
-        e = "<Cmd>lua require'udir.core'.open()<CR>",
+        H = "<Cmd>lua require'udir.core'.help()<CR>",
         C = function() --[[...]] end,  -- keymaps can also be lua functions
     },
 })
-
--- or...
-
-udir.config.show_hidden = false
-udir.config.hidden_filter = function(file) return vim.startswith(file.name, '.') end
-udir.config.keymaps.e = "<Cmd>lua require'udir.core'.open()<CR>"
 ```
 
-Keymaps may also be provided as plain strings or functions. Use the table form
-when you want to attach a description:
+Keymaps may be strings, functions, or `{action, desc=...}` tables. Use the table
+form when you want the mapping to appear nicely in `g?` help:
+
 ```lua
 udir.config.keymaps.q = {"<Cmd>lua require'udir.core'.quit()<CR>", desc="Quit"}
 ```
 
-You can also customize the colors in udir using the following highlight groups:
+## Highlights
+
+Customize Udir with these highlight groups:
+
 ```
 UdirDirectory
 UdirSymlink
@@ -158,19 +144,22 @@ UdirInfoLabel
 UdirInfoValue
 ```
 
-## Smoke test
+## Development
 
 Regenerate the default configuration docs with:
+
 ```sh
 sh scripts/docs.sh
 ```
 
 Run the headless smoke test with:
+
 ```sh
 sh scripts/smoke.sh
 ```
 
 Benchmark Lua module load time with:
+
 ```sh
 sh scripts/bench-require.sh
 ```
