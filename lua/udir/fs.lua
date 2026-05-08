@@ -48,6 +48,14 @@ local function exists(path)
 end
 
 ---@param path string
+---@return string
+local function parent_dir(path)
+    local parts = vim.split(path, util.sep)
+    table.remove(parts)
+    return table.concat(parts, util.sep)
+end
+
+---@param path string
 ---@return boolean
 function M.exists(path)
     return exists(path)
@@ -91,9 +99,7 @@ end
 ---@param dir string
 ---@return string
 function M.get_parent_dir(dir)
-    local parts = vim.split(dir, util.sep)
-    table.remove(parts)
-    local parent = table.concat(parts, util.sep)
+    local parent = parent_dir(dir)
     assert(exists(parent))
     return parent
 end
@@ -120,12 +126,14 @@ end
 function M.create_dir(path)
     assert(not exists(path), ('%q already exists'):format(path))
     -- 755 = RWX for owner, RX for group/other
-    assert(uv.fs_mkdir(path, tonumber('755', 8)))
+    assert(vim.fn.mkdir(path, 'p') == 1)
 end
 
 ---@param path string
 function M.create_file(path)
     assert(not exists(path), ('%q already exists'):format(path))
+    local parent = parent_dir(path)
+    assert(vim.fn.mkdir(parent, 'p') == 1)
     -- 644 = RW for owner, R for group/other
     local fd = assert(uv.fs_open(path, 'w', tonumber('644', 8)))
     assert(uv.fs_close(fd))
@@ -142,7 +150,10 @@ function M.validate_create(input, cwd)
     local path = util.join_path(cwd, input)
     assert(not exists(path), ('%q already exists'):format(path))
     local path_for_parent = vim.endswith(path, util.sep) and path:sub(1, -2) or path
-    local parent = M.get_parent_dir(path_for_parent)
+    local parent = parent_dir(path_for_parent)
+    while not exists(parent) do
+        parent = parent_dir(parent)
+    end
     assert(M.is_dir(parent), ('%q is not a directory'):format(parent))
     return path
 end

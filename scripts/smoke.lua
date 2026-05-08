@@ -262,8 +262,47 @@ end
 
 assert_match(fs.validate_create('x-new-file', cwd), 'x%-new%-file$')
 assert_match(fs.validate_create('x-new-dir/', cwd), 'x%-new%-dir/$')
+assert_match(fs.validate_create('x-new-parent/x-new-file', cwd), 'x%-new%-parent/x%-new%-file$')
 assert(not pcall(fs.validate_create, '/tmp/x', cwd), 'create paths should stay relative')
 assert_match(fs.resolve_copy_or_move_dest(false, cwd, '/tmp', cwd), '/tmp/[^/]+$')
+
+do
+    local tmp = vim.fn.tempname()
+    assert(vim.loop.fs_mkdir(tmp, tonumber('755', 8)))
+
+    fs.create_file(tmp .. '/foo/bar.txt')
+    assert(fs.exists(tmp .. '/foo/bar.txt'), 'create_file should create missing parent directories')
+    assert(fs.is_dir(tmp .. '/foo'), 'create_file should create the parent directory')
+
+    fs.create_dir(tmp .. '/alpha/beta/')
+    assert(fs.is_dir(tmp .. '/alpha/beta'), 'create_dir should create missing parent directories')
+
+    touch(tmp .. '/blocked')
+    assert(not pcall(fs.validate_create, 'blocked/child.txt', tmp), 'create should reject paths below files')
+
+    assert_eq(vim.fn.delete(tmp, 'rf'), 0)
+end
+
+do
+    local tmp = vim.fn.tempname()
+    assert(vim.loop.fs_mkdir(tmp, tonumber('755', 8)))
+
+    vim.cmd('Udir ' .. vim.fn.fnameescape(tmp))
+    local old_input = prompt.input
+    ---@diagnostic disable-next-line: duplicate-set-field
+    prompt.input = function(opts, cb)
+        local path = opts.validate('foo/bar.txt')
+        cb('foo/bar.txt', path)
+    end
+    core.create()
+    prompt.input = old_input
+
+    assert(fs.exists(tmp .. '/foo/bar.txt'), 'create should create a nested file path')
+    assert(vim.tbl_contains(lines(), 'foo/'), 'create should render the new top-level parent')
+
+    core.quit()
+    assert_eq(vim.fn.delete(tmp, 'rf'), 0)
+end
 
 do
     local tmp = vim.fn.tempname()
