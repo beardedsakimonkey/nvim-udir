@@ -3,18 +3,6 @@ local uv = vim.loop
 
 local M = {}
 
--- Polyfill for vim.fs.dir
----@param path string
----@return fun(fs: userdata): string?, UdirFileType?
----@return userdata scanner
-local function dir(path)
-    local scanner, msg = uv.fs_scandir(path)
-    assert(scanner, msg or ('Could not scan ' .. path))
-    return function(fs)
-        return uv.fs_scandir_next(fs)
-    end, scanner
-end
-
 ---@param src string
 ---@param dest string
 local function move(src, dest)
@@ -35,7 +23,7 @@ end
 local function copy_dir(src, dest)
     local stat = assert(uv.fs_stat(src))
     assert(uv.fs_mkdir(dest, stat.mode))
-    for name, type in dir(src) do
+    for name, type in vim.fs.dir(src) do
         local copy = type == 'directory' and copy_dir or copy_file
         copy(util.join_path(src, name), util.join_path(dest, name))
     end
@@ -90,7 +78,7 @@ end
 ---@return UdirFile[]
 function M.list(path)
     local ret = {}
-    for basename, type in dir(path) do
+    for basename, type in vim.fs.dir(path) do
         table.insert(ret, {name=basename, type=type})
     end
     return ret
