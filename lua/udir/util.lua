@@ -202,6 +202,8 @@ end
 function M.err(msg)  vim.notify('[udir] ' .. msg, vim.log.levels.ERROR) end
 ---@param msg any
 function M.warn(msg) vim.notify('[udir] ' .. msg, vim.log.levels.WARN) end
+---@param msg any
+function M.info(msg) vim.notify('[udir] ' .. msg, vim.log.levels.INFO) end
 
 ---@param str string
 ---@return string

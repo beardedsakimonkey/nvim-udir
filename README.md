@@ -49,7 +49,7 @@ and forget its expanded descendant state. Press `J` or `K` to jump to the next
 or previous visible directory row. Press `H` to show keymap help.
 Press `gx` to open the currently hovered path with `vim.ui.open()`.
 Press `i` to show file metadata for the current row in a floating window.
-Press `y` to yank the current row's path to the clipboard.
+Press `y` to yank the current row's path, or `Y` to yank it to the clipboard.
 Use `<Tab>` to toggle a mark on the current row, or select multiple rows in
 visual mode and press `<Tab>` to toggle marks for every selected row. Press
 `<S-Tab>` to clear all marks.
@@ -81,6 +81,7 @@ require'udir'.config = {
         R = {"<Cmd>lua require'udir.core'.reload()<CR>", desc="Reload"},
         i = {"<Cmd>lua require'udir.core'.info()<CR>", desc="Show info"},
         y = {"<Cmd>lua require'udir.core'.yank_path()<CR>", desc="Yank path"},
+        Y = {"<Cmd>lua require'udir.core'.yank_path('+')<CR>", desc="Yank path to clipboard"},
         d = {"<Cmd>lua require'udir.core'.delete()<CR>", desc="Delete"},
         ['+'] = {"<Cmd>lua require'udir.core'.create()<CR>", desc="Create"},
         m = {"<Cmd>lua require'udir.core'.move()<CR>", desc="Move"},

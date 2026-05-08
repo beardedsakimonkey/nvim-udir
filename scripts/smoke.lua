@@ -90,6 +90,16 @@ local function has_high_priority_highlight(state, hl_group)
     return false
 end
 
+local function has_priority_highlight(state, hl_group, priority)
+    local marks = api.nvim_buf_get_extmarks(state.buf, state.ns, 0, -1, {details = true})
+    for _, mark in ipairs(marks) do
+        if mark[4].hl_group == hl_group and mark[4].priority == priority then
+            return true
+        end
+    end
+    return false
+end
+
 do
     local origin_win = api.nvim_get_current_win()
     local old_guicursor = vim.o.guicursor
@@ -361,6 +371,7 @@ do
     assert_eq(vim.fn.maparg('q', 'n', false, true).desc, 'Quit')
     assert_eq(vim.fn.maparg('i', 'n', false, true).desc, 'Show info')
     assert_eq(vim.fn.maparg('y', 'n', false, true).desc, 'Yank path')
+    assert_eq(vim.fn.maparg('Y', 'n', false, true).desc, 'Yank path to clipboard')
     assert_eq(vim.fn.maparg('H', 'n', false, true).desc, 'Show help')
     assert_eq(vim.fn.maparg('<S-Tab>', 'n', false, true).desc, 'Clear marks')
     assert_eq(vim.fn.maparg('<Tab>', 'x', false, true).desc, 'Toggle marks')
@@ -390,6 +401,13 @@ do
 end
 
 do
+    local old_unnamed = vim.fn.getreg('"')
+    local old_unnamed_type = vim.fn.getregtype('"')
+    local old_notify = vim.notify
+    local notifications = {}
+    vim.notify = function(msg, level)
+        notifications[#notifications+1] = {msg = msg, level = level}
+    end
     local had_clipboard, old_clipboard = pcall(api.nvim_get_var, 'clipboard')
     vim.g.clipboard = {
         name = 'udir-smoke',
@@ -419,7 +437,20 @@ do
     vim.cmd('Udir ' .. vim.fn.fnameescape(tmp))
     local expected_path = fs.realpath(tmp) .. '/a'
     core.yank_path()
+    assert_eq(vim.fn.getreg('"'), expected_path)
+    assert_eq(notifications[#notifications].msg, '[udir] Yanked path')
+    assert_eq(notifications[#notifications].level, vim.log.levels.INFO)
+    assert_eq(vim.g.udir_smoke_yankpost_operator, 'y')
+    assert_eq(vim.g.udir_smoke_yankpost_regname, '')
+    assert_eq(vim.g.udir_smoke_yankpost_text, 'a')
+
+    vim.g.udir_smoke_yankpost_operator = nil
+    vim.g.udir_smoke_yankpost_regname = nil
+    vim.g.udir_smoke_yankpost_text = nil
+    core.yank_path('+')
     assert_eq(vim.fn.getreg('+'), expected_path)
+    assert_eq(notifications[#notifications].msg, '[udir] Yanked path to clipboard')
+    assert_eq(notifications[#notifications].level, vim.log.levels.INFO)
     assert_eq(vim.g.udir_smoke_yankpost_operator, 'y')
     assert_eq(vim.g.udir_smoke_yankpost_regname, '+')
     assert_eq(vim.g.udir_smoke_yankpost_text, 'a')
@@ -427,11 +458,13 @@ do
     core.quit()
     assert_eq(vim.fn.delete(tmp, 'rf'), 0)
     api.nvim_del_augroup_by_id(augroup)
+    vim.fn.setreg('"', old_unnamed, old_unnamed_type)
     if had_clipboard then
         vim.g.clipboard = old_clipboard
     else
         pcall(api.nvim_del_var, 'clipboard')
     end
+    vim.notify = old_notify
     vim.g.udir_smoke_clipboard = nil
     vim.g.udir_smoke_yankpost_operator = nil
     vim.g.udir_smoke_yankpost_regname = nil
@@ -492,6 +525,7 @@ do
     assert(table.concat(help_lines, '\n'):match('H%s+Show help'), 'help should include described mappings')
     assert(table.concat(help_lines, '\n'):match('i%s+Show info'), 'help should include the info mapping')
     assert(table.concat(help_lines, '\n'):match('y%s+Yank path'), 'help should include the yank path mapping')
+    assert(table.concat(help_lines, '\n'):match('Y%s+Yank path to clipboard'), 'help should include the clipboard yank mapping')
     assert(table.concat(help_lines, '\n'):match('<S%-Tab>%s+Clear marks'), 'help should include the clear marks mapping')
 
     local marks = api.nvim_buf_get_extmarks(help_buf, -1, 0, -1, {details=true})
@@ -680,6 +714,7 @@ do
     assert(vim.tbl_contains(lines(), '└── two/'), 'first expand should show all alpha children')
     assert(not vim.tbl_contains(lines(), '│   └── file.txt'), 'first expand should not expand grandchildren')
     assert(has_highlight(state, 'UdirDirectory'), 'directory rows should be highlighted')
+    assert(has_priority_highlight(state, 'UdirFile', 100), 'file row highlights should not cover yank highlights')
     assert(has_high_priority_highlight(state, 'UdirTree'), 'tree prefixes should be highlighted')
     assert(has_high_priority_highlight(state, 'UdirVirtText'), 'directory suffixes should be highlighted')
 

@@ -13,6 +13,7 @@ local uv = vim.loop
 local M = {}
 
 local EMPTY_LABEL = '(empty)'
+local FILE_HL_PRIORITY = 100  -- Below vim.highlight.on_yank's default priority.
 
 ---@alias UdirCwdScope 'window'|'tab'|'global'
 
@@ -161,6 +162,7 @@ local function render(state)
         api.nvim_buf_set_extmark(0, ns, i-1, 0, {
             end_col = #file.display_name,
             hl_group = hl,
+            priority = FILE_HL_PRIORITY,
         })
         if virttext then
             api.nvim_buf_set_extmark(0, ns, i-1, #file.display_name, {
@@ -607,7 +609,8 @@ function M.clear_marks()
     render(state)
 end
 
-function M.yank_path()
+---@param reg? string
+function M.yank_path(reg)
     local state = store.get()
     local path, msg = current_path(state)
     if not path then
@@ -615,12 +618,13 @@ function M.yank_path()
         return
     end
     -- Trigger a real yank so TextYankPost autocmds see vim.v.event.
-    pcall(vim.cmd, [[normal! "+yy]])
-    local ok, err = pcall(vim.fn.setreg, '+', path, 'c')
+    pcall(vim.cmd, reg == '+' and [[normal! "+yy]] or [[normal! yy]])
+    local ok, err = pcall(vim.fn.setreg, reg or '"', path, 'c')
     if not ok then
         util.err(err)
         return
     end
+    util.info(reg == '+' and 'Yanked path to clipboard' or 'Yanked path')
 end
 
 function M.delete()
