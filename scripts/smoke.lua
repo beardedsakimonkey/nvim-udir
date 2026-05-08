@@ -300,7 +300,7 @@ do
     for _, mark in ipairs(marks) do
         local details = mark[4]
         has_sign = has_sign
-            or details.sign_text and details.sign_text:match('^>') and details.sign_hl_group == 'UdirMarkedSign'
+            or details.sign_text and vim.startswith(details.sign_text, '▌') and details.sign_hl_group == 'UdirMarkedSign'
         has_file_hl = has_file_hl or details.hl_group == 'UdirMarkedFile'
     end
     assert(has_sign, 'marked rows should render a sign marker')

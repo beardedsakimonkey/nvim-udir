@@ -184,7 +184,7 @@ local function render(state)
         end
         if path and state.marks[path] then
             api.nvim_buf_set_extmark(buf, ns, i-1, 0, {
-                sign_text = '>',
+                sign_text = '▌',
                 sign_hl_group = 'UdirMarkedSign',
             })
             api.nvim_buf_set_extmark(buf, ns, i-1, file.name_start_col, {
