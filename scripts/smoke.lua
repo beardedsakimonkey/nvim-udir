@@ -94,8 +94,12 @@ do
     local origin_win = api.nvim_get_current_win()
     local old_guicursor = vim.o.guicursor
     local tmp = vim.fn.tempname()
-    local paths = {tmp .. '/foo.js', tmp .. '/dir/bar.lua'}
-    for i = 3, 12 do
+    assert(vim.loop.fs_mkdir(tmp, tonumber('755', 8)))
+    assert(vim.loop.fs_mkdir(tmp .. '/dir', tonumber('755', 8)))
+    touch(tmp .. '/foo.js')
+    touch(tmp .. '/dir/bar.lua')
+    local paths = {tmp .. '/foo.js', tmp .. '/dir', tmp .. '/dir/bar.lua'}
+    for i = 4, 12 do
         paths[#paths+1] = tmp .. '/dir/file-' .. i .. '.txt'
     end
 
@@ -112,29 +116,37 @@ do
     assert_eq(vim.o.guicursor, 'a:block-UdirDeleteCursor')
     assert_match(win_title(confirm_win), 'Delete 12 files%? %(y/n%)')
     assert_eq(#confirm_lines, 11, 'delete confirmation should cap visible files')
-    assert_eq(confirm_lines[1], '  ./foo.js')
-    assert_eq(confirm_lines[2], '  ./dir/bar.lua')
+    assert_eq(confirm_lines[1], '  foo.js')
+    assert_eq(confirm_lines[2], '  dir/')
+    assert_eq(confirm_lines[3], '  dir/bar.lua')
     assert_eq(confirm_lines[11], '  ... and 2 more')
 
     local marks = api.nvim_buf_get_extmarks(confirm_buf, -1, 0, -1, {details=true})
-    local has_path, has_file, has_more = false, false, false
+    local has_path, has_file, has_dir, has_dir_suffix, has_more = false, false, false, false, false
     for _, mark in ipairs(marks) do
         local row, col, details = mark[2], mark[3], mark[4]
         has_path = has_path
-            or row == 0 and col == 2 and details.end_col == 4 and details.hl_group == 'UdirDeletePath'
+            or row == 2 and col == 2 and details.end_col == 6 and details.hl_group == 'UdirDeletePath'
         has_file = has_file
-            or row == 0 and col == 4 and details.end_col == 10 and details.hl_group == 'UdirDeleteFile'
+            or row == 0 and col == 2 and details.end_col == 8 and details.hl_group == 'UdirFile'
+        has_dir = has_dir
+            or row == 1 and col == 2 and details.end_col == 5 and details.hl_group == 'UdirDirectory'
+        has_dir_suffix = has_dir_suffix
+            or row == 1 and col == 5 and details.end_col == 6 and details.hl_group == 'UdirVirtText'
         has_more = has_more
             or row == 10 and details.hl_group == 'UdirDeleteMore'
     end
     assert(has_path, 'delete confirmation should dim the path portion')
-    assert(has_file, 'delete confirmation should highlight the file name')
+    assert(has_file, 'delete confirmation should highlight file names by type')
+    assert(has_dir, 'delete confirmation should highlight directory names by type')
+    assert(has_dir_suffix, 'delete confirmation should dim directory suffixes')
     assert(has_more, 'delete confirmation should highlight the overflow row')
 
     api.nvim_feedkeys('n', 'xt', false)
     assert_eq(vim.g.udir_smoke_confirm_delete, false)
     assert_eq(api.nvim_get_current_win(), origin_win)
     assert_eq(vim.o.guicursor, old_guicursor)
+    assert_eq(vim.fn.delete(tmp, 'rf'), 0)
 end
 
 do
@@ -263,10 +275,10 @@ do
 
     local confirm_win = api.nvim_get_current_win()
     local confirm_buf = api.nvim_get_current_buf()
-    local confirm_lines = table.concat(api.nvim_buf_get_lines(confirm_buf, 0, -1, false), '\n')
+    local confirm_lines = api.nvim_buf_get_lines(confirm_buf, 0, -1, false)
     assert_match(win_title(confirm_win), 'Delete 2 files%? %(y/n%)')
-    assert_match(confirm_lines, '%./a')
-    assert_match(confirm_lines, '%./dir/nested%.js')
+    assert_eq(confirm_lines[1], '  a')
+    assert_eq(confirm_lines[2], '  dir/nested.js')
 
     api.nvim_feedkeys('y', 'xt', false)
     assert(not api.nvim_win_is_valid(confirm_win), 'confirming delete should close the confirmation window')

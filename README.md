@@ -138,7 +138,6 @@ UdirPromptBorderValid
 UdirPromptBorderInvalid
 UdirPromptCompletion
 UdirDeletePath
-UdirDeleteFile
 UdirDeleteMore
 UdirDeleteCursor
 UdirMarkedText

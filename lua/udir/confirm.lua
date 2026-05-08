@@ -1,4 +1,5 @@
 local api = vim.api
+local uv = vim.loop
 
 local float = require'udir.float'
 local fs = require'udir.fs'
@@ -12,17 +13,35 @@ local MAX_DELETE_PATHS = 10
 ---@field display string
 ---@field file_start_col integer
 ---@field file_end_col integer
+---@field file_hl string
+---@field directory_suffix_col? integer
+
+---@param path string
+---@return string
+local function file_hl(path)
+    if uv.fs_readlink(path) then
+        return 'UdirSymlink'
+    end
+    local stat = uv.fs_stat(path)
+    if stat and stat.type == 'directory' then
+        return 'UdirDirectory'
+    end
+    if uv.fs_access(path, 'X') then
+        return 'UdirExecutable'
+    end
+    return 'UdirFile'
+end
 
 ---@param path string
 ---@param cwd string
 ---@return string
 local function relative_display_path(path, cwd)
     if cwd == util.sep and vim.startswith(path, util.sep) then
-        return './' .. path:sub(2)
+        return path:sub(2)
     end
     local cwd_prefix = cwd .. util.sep
     if vim.startswith(path, cwd_prefix) then
-        return './' .. path:sub(#cwd_prefix + 1)
+        return path:sub(#cwd_prefix + 1)
     end
     return util.display_path(path)
 end
@@ -34,10 +53,18 @@ local function item(path, cwd)
     local display = relative_display_path(path, cwd)
     local basename = fs.basename(path)
     local file_start_col = math.max(0, #display - #basename)
+    local directory_suffix_col
+    local hl = file_hl(path)
+    if hl == 'UdirDirectory' then
+        directory_suffix_col = #display
+        display = display .. util.sep
+    end
     return {
         display = display,
         file_start_col = file_start_col,
-        file_end_col = #display,
+        file_end_col = directory_suffix_col or #display,
+        file_hl = hl,
+        directory_suffix_col = directory_suffix_col,
     }
 end
 
@@ -85,15 +112,25 @@ local function render(buf, ns, confirm_items, overflow)
         local path_start_col = line_prefix_len
         local file_start_col = line_prefix_len + confirm_item.file_start_col
         local file_end_col = line_prefix_len + confirm_item.file_end_col
-        api.nvim_buf_set_extmark(buf, ns, i - 1, path_start_col, {
-            end_col = file_start_col,
-            hl_group = 'UdirDeletePath',
-        })
+        if path_start_col < file_start_col then
+            api.nvim_buf_set_extmark(buf, ns, i - 1, path_start_col, {
+                end_col = file_start_col,
+                hl_group = 'UdirDeletePath',
+            })
+        end
         api.nvim_buf_set_extmark(buf, ns, i - 1, file_start_col, {
             end_col = file_end_col,
-            hl_group = 'UdirDeleteFile',
+            hl_group = confirm_item.file_hl,
             priority = 10000,
         })
+        if confirm_item.directory_suffix_col then
+            local suffix_col = line_prefix_len + confirm_item.directory_suffix_col
+            api.nvim_buf_set_extmark(buf, ns, i - 1, suffix_col, {
+                end_col = file_end_col + 1,
+                hl_group = 'UdirVirtText',
+                priority = 10000,
+            })
+        end
     end
     if overflow > 0 then
         local row = #rendered_lines - 1
