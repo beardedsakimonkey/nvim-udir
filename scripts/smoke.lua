@@ -837,7 +837,7 @@ do
     ---@diagnostic disable-next-line: duplicate-set-field
     fs.list = function(path)
         if path:match('/unreadable$') then
-            error('permission denied')
+            error('EPERM: operation not permitted')
         end
         return old_list(path)
     end
@@ -846,6 +846,7 @@ do
     local ok, msg = pcall(core.expand)
     fs.list = old_list
     assert(ok, msg)
+    assert(vim.tbl_contains(lines(), '└── (not permitted)'), 'unreadable directories should render a placeholder')
 
     core.quit()
     assert_eq(vim.fn.delete(tmp, 'rf'), 0)

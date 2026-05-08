@@ -13,6 +13,7 @@ local uv = vim.loop
 local M = {}
 
 local EMPTY_LABEL = '(empty)'
+local NOT_PERMITTED_LABEL = '(not permitted)'
 local FILE_HL_PRIORITY = 100  -- Below vim.highlight.on_yank's default priority.
 
 ---@alias UdirCwdScope 'window'|'tab'|'global'
@@ -58,13 +59,26 @@ local function sort_by_name(files)
     end)
 end
 
+---@param msg any
+---@return boolean
+local function is_permission_error(msg)
+    msg = tostring(msg)
+    return msg:match('EPERM') ~= nil
+        or msg:lower():match('operation not permitted') ~= nil
+        or msg:lower():match('permission denied') ~= nil
+end
+
 ---@param dir string
----@return UdirFile[]
+---@return UdirFile[] files
+---@return string? placeholder_label
 local function visible_files(dir)
     local ok, all_files = pcall(fs.list, dir)
     if not ok then
+        if is_permission_error(all_files) then
+            return {}, NOT_PERMITTED_LABEL
+        end
         util.warn(tostring(all_files))
-        return {}
+        return {}, nil
     end
     local files = vim.tbl_filter(function(file)
         if config.show_hidden_files then
@@ -75,7 +89,7 @@ local function visible_files(dir)
     end, all_files)
     local sort_fn = config.sort or sort_by_name
     sort_fn(files)
-    return files
+    return files, nil
 end
 
 ---@param state UdirState
@@ -87,12 +101,13 @@ local function build_tree_rows(state)
     ---@param prefix string
     ---@param depth integer
     local function add_dir(dir, prefix, depth)
-        local files = visible_files(dir)
-        if depth > 0 and #files == 0 then
+        local files, placeholder_label = visible_files(dir)
+        if depth > 0 and (#files == 0 or placeholder_label) then
+            placeholder_label = placeholder_label or EMPTY_LABEL
             local tree_prefix = prefix .. '└── '
             rows[#rows+1] = {
-                name = EMPTY_LABEL,
-                display_name = tree_prefix .. EMPTY_LABEL,
+                name = placeholder_label,
+                display_name = tree_prefix .. placeholder_label,
                 path = nil,
                 type = 'placeholder',
                 depth = depth,
