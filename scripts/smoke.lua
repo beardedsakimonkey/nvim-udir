@@ -307,6 +307,23 @@ end
 do
     local tmp = vim.fn.tempname()
     assert(vim.loop.fs_mkdir(tmp, tonumber('755', 8)))
+    touch(tmp .. '/visible')
+    touch(tmp .. '/.hidden')
+
+    local old_show_hidden = config.show_hidden
+    config.show_hidden = false
+
+    vim.cmd('Udir ' .. vim.fn.fnameescape(tmp))
+    config.show_hidden = old_show_hidden
+    assert(not vim.tbl_contains(lines(), '.hidden'), 'hidden files should be hidden when configured')
+
+    core.quit()
+    assert_eq(vim.fn.delete(tmp, 'rf'), 0)
+end
+
+do
+    local tmp = vim.fn.tempname()
+    assert(vim.loop.fs_mkdir(tmp, tonumber('755', 8)))
     assert(vim.loop.fs_mkdir(tmp .. '/dir', tonumber('755', 8)))
     touch(tmp .. '/a')
     touch(tmp .. '/dir/nested.js')
@@ -435,6 +452,23 @@ do
     assert_eq(vim.fn.maparg('<S-Tab>', 'n', false, true).desc, 'Clear marks')
     assert_eq(vim.fn.maparg('<Tab>', 'x', false, true).desc, 'Toggle marks')
     core.quit()
+end
+
+do
+    local tmp = vim.fn.tempname()
+    assert(vim.loop.fs_mkdir(tmp, tonumber('755', 8)))
+    touch(tmp .. '/visible')
+    touch(tmp .. '/.hidden')
+
+    vim.cmd('Udir ' .. vim.fn.fnameescape(tmp))
+    assert(vim.tbl_contains(lines(), 'visible'), 'visible files should render by default')
+    assert(vim.tbl_contains(lines(), '.hidden'), 'dotfiles should render by default')
+
+    core.toggle_hidden_files()
+    assert(not vim.tbl_contains(lines(), '.hidden'), 'hidden files should be hidden after toggling visibility')
+
+    core.quit()
+    assert_eq(vim.fn.delete(tmp, 'rf'), 0)
 end
 
 do

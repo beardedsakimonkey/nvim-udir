@@ -41,6 +41,7 @@ local FILE_HL_PRIORITY = 100  -- Below vim.highlight.on_yank's default priority.
 ---@field sync_local_cwd boolean
 ---@field cwd_restore? UdirCwdRestore
 ---@field ns integer
+---@field show_hidden boolean
 ---@field hovered_files table<string, string>
 ---@field expanded_dirs table<string, true>
 ---@field rows UdirTreeRow[]
@@ -68,10 +69,11 @@ local function is_permission_error(msg)
         or msg:lower():match('permission denied') ~= nil
 end
 
+---@param state UdirState
 ---@param dir string
 ---@return UdirFile[] files
 ---@return string? placeholder_label
-local function visible_files(dir)
+local function visible_files(state, dir)
     local ok, all_files = pcall(fs.list, dir)
     if not ok then
         if is_permission_error(all_files) then
@@ -81,10 +83,10 @@ local function visible_files(dir)
         return {}, nil
     end
     local files = vim.tbl_filter(function(file)
-        if config.show_hidden_files then
+        if state.show_hidden then
             return true
         else
-            return not config.is_file_hidden(file, all_files, dir)
+            return not config.hidden_filter(file, all_files, dir)
         end
     end, all_files)
     local sort_fn = config.sort or sort_by_name
@@ -101,7 +103,7 @@ local function build_tree_rows(state)
     ---@param prefix string
     ---@param depth integer
     local function add_dir(dir, prefix, depth)
-        local files, placeholder_label = visible_files(dir)
+        local files, placeholder_label = visible_files(state, dir)
         if depth > 0 and (#files == 0 or placeholder_label) then
             placeholder_label = placeholder_label or EMPTY_LABEL
             local tree_prefix = prefix .. '└── '
@@ -297,7 +299,7 @@ local function expand_next_level(state, path)
     ---@param dir string
     ---@param depth integer
     local function visit(dir, depth)
-        for _, file in ipairs(visible_files(dir)) do
+        for _, file in ipairs(visible_files(state, dir)) do
             if file.type == 'directory' then
                 local child_path = util.join_path(dir, file.name)
                 if state.expanded_dirs[child_path] then
@@ -325,7 +327,7 @@ end
 local function expand_all_dirs(state, path)
     local changed = not state.expanded_dirs[path]
     state.expanded_dirs[path] = true
-    for _, file in ipairs(visible_files(path)) do
+    for _, file in ipairs(visible_files(state, path)) do
         if file.type == 'directory' then
             local child_path = util.join_path(path, file.name)
             if expand_all_dirs(state, child_path) then
@@ -750,7 +752,7 @@ function M.toggle_hidden_files()
     local state = store.get()
     local row = current_row(state)
     local hovered_file = row and row.display_name or nil
-    config.show_hidden_files = not config.show_hidden_files
+    state.show_hidden = not state.show_hidden
     render(state)
     util.set_cursor_pos(hovered_file)
 end
@@ -799,6 +801,7 @@ function M.udir(dir, from_au)
         sync_local_cwd = sync,
         cwd_restore = cwd_restore,
         ns = ns,
+        show_hidden = config.show_hidden,
         hovered_files = {},  -- map<realpath, filename>
         expanded_dirs = {},  -- map<realpath, true>
         rows = {},

@@ -12,9 +12,9 @@ local M = {}
 ---@class UdirConfig
 ---@field keymaps table<string, UdirKeymapSpec>
 ---@field visual_keymaps table<string, UdirKeymapSpec>
----@field show_hidden_files boolean
+---@field show_hidden boolean
 ---@field sync_local_cwd boolean
----@field is_file_hidden fun(file: UdirFile, files: UdirFile[], dir: string): boolean
+---@field hidden_filter fun(file: UdirFile, files: UdirFile[], dir: string): boolean
 ---@field sort? fun(files: UdirFile[])
 
 ---@type UdirConfig
@@ -51,12 +51,12 @@ M.config = {
     visual_keymaps = {
         ['<Tab>'] = {"<Cmd>lua require'udir.core'.toggle_mark_visual()<CR>", desc="Toggle marks"},
     },
-    -- Whether hidden files should be shown by default
-    show_hidden_files = true,
+    -- Whether hidden files should be shown when udir opens
+    show_hidden = true,
     -- Whether to sync the window's current directory with udir's current path
     sync_local_cwd = false,
-    -- Function used to determine what files should be hidden
-    is_file_hidden = function() return false end,
+    -- Function used to determine what files should be hidden behind `gh`
+    hidden_filter = function(file) return vim.startswith(file.name, '.') end,
     -- Function used to sort files
     sort = nil,
 }

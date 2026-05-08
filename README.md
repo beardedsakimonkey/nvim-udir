@@ -94,12 +94,12 @@ require'udir'.config = {
     visual_keymaps = {
         ['<Tab>'] = {"<Cmd>lua require'udir.core'.toggle_mark_visual()<CR>", desc="Toggle marks"},
     },
-    -- Whether hidden files should be shown by default
-    show_hidden_files = true,
+    -- Whether hidden files should be shown when udir opens
+    show_hidden = true,
     -- Whether to sync the window's current directory with udir's current path
     sync_local_cwd = false,
-    -- Function used to determine what files should be hidden
-    is_file_hidden = function() return false end,
+    -- Function used to determine what files should be hidden behind `gh`
+    hidden_filter = function(file) return vim.startswith(file.name, '.') end,
     -- Function used to sort files
     sort = nil,
 }
@@ -111,7 +111,10 @@ Configuration can be applied by mutating the `config` table:
 local udir = require'udir'
 
 udir.config = vim.tbl_deep_extend('force', udir.config, {
-    show_hidden_files = false,
+    show_hidden = false,
+    hidden_filter = function(file)
+        return vim.startswith(file.name, '.') or file.name == 'node_modules'
+    end,
     keymaps = {
         e = "<Cmd>lua require'udir.core'.open()<CR>",
         C = function() --[[...]] end,  -- keymaps can also be lua functions
@@ -120,7 +123,8 @@ udir.config = vim.tbl_deep_extend('force', udir.config, {
 
 -- or...
 
-udir.config.show_hidden_files = false
+udir.config.show_hidden = false
+udir.config.hidden_filter = function(file) return vim.startswith(file.name, '.') end
 udir.config.keymaps.e = "<Cmd>lua require'udir.core'.open()<CR>"
 ```
 
