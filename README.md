@@ -170,6 +170,11 @@ Run the headless smoke test with:
 sh scripts/smoke.sh
 ```
 
+Benchmark Lua module load time with:
+```sh
+sh scripts/bench-require.sh
+```
+
 ## Acknowledgements
 
 Some minor bits of code were adapted from vim-dirvish and nvim-tree.

@@ -763,6 +763,7 @@ local function getcwd(dir)
     return assert(uv.cwd())
 end
 
+-- Handler for the :Udir command
 ---@param dir? string
 ---@param from_au? boolean
 function M.udir(dir, from_au)
