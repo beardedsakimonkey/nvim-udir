@@ -59,8 +59,8 @@ visual mode and press `<Tab>` to toggle marks for every selected row. Press
 
 Udir does not require any configuration, but can be configured by mutating `udir.config`.
 The defaults are listed below.
+<!-- udir-config:start -->
 ```lua
----@alias File {name: string, type: 'file'|'directory'|'link'}
 require'udir'.config = {
     keymaps = {
         q = {"<Cmd>lua require'udir.core'.quit()<CR>", desc="Quit"},
@@ -83,13 +83,13 @@ require'udir'.config = {
         y = {"<Cmd>lua require'udir.core'.yank_path()<CR>", desc="Yank path"},
         Y = {"<Cmd>lua require'udir.core'.yank_path('+')<CR>", desc="Yank path to clipboard"},
         d = {"<Cmd>lua require'udir.core'.delete()<CR>", desc="Delete"},
-        ['+'] = {"<Cmd>lua require'udir.core'.create()<CR>", desc="Create"},
+        a = {"<Cmd>lua require'udir.core'.create()<CR>", desc="Create"},
         m = {"<Cmd>lua require'udir.core'.move()<CR>", desc="Move"},
         c = {"<Cmd>lua require'udir.core'.copy()<CR>", desc="Copy"},
         ['<Tab>'] = {"<Cmd>lua require'udir.core'.toggle_mark()<CR>", desc="Toggle mark"},
         ['<S-Tab>'] = {"<Cmd>lua require'udir.core'.clear_marks()<CR>", desc="Clear marks"},
-        ['.'] = {"<Cmd>lua require'udir.core'.toggle_hidden_files()<CR>", desc="Toggle hidden files"},
-        H = {"<Cmd>lua require'udir.core'.help()<CR>", desc="Show help"},
+        gh = {"<Cmd>lua require'udir.core'.toggle_hidden_files()<CR>", desc="Toggle hidden files"},
+        ['g?'] = {"<Cmd>lua require'udir.core'.help()<CR>", desc="Show help"},
     },
     visual_keymaps = {
         ['<Tab>'] = {"<Cmd>lua require'udir.core'.toggle_mark_visual()<CR>", desc="Toggle marks"},
@@ -99,13 +99,12 @@ require'udir'.config = {
     -- Whether to sync the window's current directory with udir's current path
     sync_local_cwd = false,
     -- Function used to determine what files should be hidden
-    ---@type fun(file: File, files: File[], dir: string): boolean
     is_file_hidden = function() return false end,
     -- Function used to sort files
-    ---@type fun(files: File[])
     sort = nil,
 }
 ```
+<!-- udir-config:end -->
 
 Configuration can be applied by mutating the `config` table:
 ```lua
@@ -156,6 +155,11 @@ UdirInfoValue
 ```
 
 ## Smoke test
+
+Regenerate the default configuration docs with:
+```sh
+sh scripts/docs.sh
+```
 
 Run the headless smoke test with:
 ```sh
