@@ -21,9 +21,9 @@ end
 ---@field keymaps table<string, UdirKeymapSpec>
 ---@field visual_keymaps table<string, UdirKeymapSpec>
 ---@field show_hidden boolean
----@field sync_local_cwd boolean
 ---@field hidden_filter fun(file: UdirFile, files: UdirFile[], dir: string): boolean
 ---@field sort? fun(files: UdirFile[])
+---@field sync_local_cwd boolean
 
 ---@type UdirConfig
 M.config = {
@@ -61,12 +61,12 @@ M.config = {
     },
     -- Whether hidden files should be shown when udir opens
     show_hidden = true,
-    -- Whether to sync the window's current directory with udir's current path
-    sync_local_cwd = false,
     -- Function used to determine what files should be hidden behind `gh`
     hidden_filter = function(file) return vim.startswith(file.name, '.') end,
     -- Function used to sort files
     sort = function(files) table.sort(files, sort_by_name) end,
+    -- Whether to sync the window's current directory with udir's current path
+    sync_local_cwd = true,
 }
 
 ---@param dir? string

@@ -96,12 +96,12 @@ require'udir'.config = {
     },
     -- Whether hidden files should be shown when udir opens
     show_hidden = true,
-    -- Whether to sync the window's current directory with udir's current path
-    sync_local_cwd = false,
     -- Function used to determine what files should be hidden behind `gh`
     hidden_filter = function(file) return vim.startswith(file.name, '.') end,
     -- Function used to sort files
     sort = function(files) table.sort(files, sort_by_name) end,
+    -- Whether to sync the window's current directory with udir's current path
+    sync_local_cwd = true,
 }
 ```
 <!-- udir-config:end -->
